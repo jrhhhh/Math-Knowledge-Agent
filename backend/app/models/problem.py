@@ -1,4 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy.orm import relationship
+
 from datetime import datetime
 
 from app.database import Base
@@ -40,4 +42,10 @@ class Problem(Base):
     created_at = Column(
         DateTime,
         default=datetime.utcnow
+    )
+
+
+    concepts = relationship(
+        "ProblemConcept",
+        back_populates="problem"
     )
