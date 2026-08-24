@@ -1,67 +1,190 @@
--- Math Knowledge Agent Database
+-- =====================================
+-- Math Knowledge Agent Database Schema
+-- Version: 0.1
+-- =====================================
 
 
--- 数学概念表
+-- =========================
+-- 1. 数学知识点
+-- =========================
+
 CREATE TABLE concepts (
-    id INTEGER PRIMARY KEY,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     name TEXT NOT NULL,
+
     description TEXT,
+
     field TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    level INTEGER DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 
--- 定义表
+
+-- =========================
+-- 2. 数学定义
+-- =========================
+
 CREATE TABLE definitions (
-    id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     concept_id INTEGER,
+
+    title TEXT NOT NULL,
+
+    content TEXT NOT NULL,
+
+    source TEXT,
+
 
     FOREIGN KEY(concept_id)
     REFERENCES concepts(id)
+
 );
 
 
--- 定理表
+
+-- =========================
+-- 3. 定理
+-- =========================
+
 CREATE TABLE theorems (
-    id INTEGER PRIMARY KEY,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     title TEXT NOT NULL,
+
     statement TEXT NOT NULL,
+
     proof TEXT,
 
-    difficulty INTEGER
+
+    difficulty INTEGER DEFAULT 1
+
 );
 
 
--- 题目表
+
+-- =========================
+-- 4. 引理
+-- =========================
+
+CREATE TABLE lemmas (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    title TEXT NOT NULL,
+
+    statement TEXT,
+
+    proof TEXT
+
+);
+
+
+
+-- =========================
+-- 5. 数学题目
+-- =========================
+
 CREATE TABLE problems (
-    id INTEGER PRIMARY KEY,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     question TEXT NOT NULL,
+
     source TEXT,
+
     difficulty INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
 );
 
 
--- 用户解答表
+
+-- =========================
+-- 6. 用户解答
+-- =========================
+
 CREATE TABLE solutions (
-    id INTEGER PRIMARY KEY,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+
     problem_id INTEGER,
 
+
     content TEXT,
+
+
     ai_feedback TEXT,
+
+
+    score INTEGER,
+
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
 
     FOREIGN KEY(problem_id)
     REFERENCES problems(id)
+
 );
 
 
--- 错误记录表
+
+-- =========================
+-- 7. 错误记录
+-- =========================
+
 CREATE TABLE mistakes (
-    id INTEGER PRIMARY KEY,
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+
+    problem_id INTEGER,
+
 
     description TEXT,
+
+
     category TEXT,
-    frequency INTEGER DEFAULT 1
+
+
+    frequency INTEGER DEFAULT 1,
+
+
+    FOREIGN KEY(problem_id)
+    REFERENCES problems(id)
+
+);
+
+
+
+-- =========================
+-- 8. 学习记录
+-- =========================
+
+CREATE TABLE learning_events (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+
+    object_type TEXT,
+
+
+    object_id INTEGER,
+
+
+    action TEXT,
+
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
 );
