@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.orm import declarative_base
 
 
-Base = declarative_base()
+
+from app.database import Base
 
 
 class Concept(Base):

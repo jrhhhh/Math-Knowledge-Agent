@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 
-DATABASE_URL = "sqlite:///./app/math_agent.db"
+DATABASE_URL = "sqlite:///./math_agent.db"
 
 
 engine = create_engine(
@@ -18,3 +18,6 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine
 )
+
+
+Base = declarative_base()
