@@ -7,6 +7,7 @@ from app.schemas.ai import ProblemAnalysisRequest
 from app.models.problem import Problem
 from app.models.concept import Concept
 from app.models.problem_concept import ProblemConcept
+from app.models.concept_relation import ConceptRelation
 
 
 router = APIRouter(
@@ -29,7 +30,7 @@ def analyze_math_problem(
     db: Session = Depends(get_db)
 ):
 
-    # 1. 检查题目是否存在
+    # 1. 查找题目
     problem = db.query(Problem).filter(
         Problem.id == request.problem_id
     ).first()
@@ -40,7 +41,7 @@ def analyze_math_problem(
             detail="Problem not found"
         )
 
-    # 2. 调用 DeepSeek 分析题目
+    # 2. 调用 DeepSeek
     result = analyze_problem(problem.content)
 
     concepts_result = result.get(
@@ -48,9 +49,17 @@ def analyze_math_problem(
         []
     )
 
+    relations_result = result.get(
+        "relations",
+        []
+    )
+
     created_concepts = []
 
-    # 3. 处理每一个知识点
+    # ==================================================
+    # 第一部分：创建 / 复用 Concept
+    # ==================================================
+
     for item in concepts_result:
 
         name = item.get("name")
@@ -58,12 +67,12 @@ def analyze_math_problem(
         if not name:
             continue
 
-        # 4. 查询数据库中是否已经存在
+        # 查询已有知识点
         concept = db.query(Concept).filter(
             Concept.name == name
         ).first()
 
-        # 5. 不存在就创建
+        # 如果不存在，创建
         if concept is None:
 
             concept = Concept(
@@ -77,27 +86,6 @@ def analyze_math_problem(
             db.add(concept)
             db.flush()
 
-        # 6. 检查题目和知识点是否已经建立关系
-        relation = db.query(ProblemConcept).filter(
-            ProblemConcept.problem_id == problem.id,
-            ProblemConcept.concept_id == concept.id
-        ).first()
-
-        # 7. 如果没有关系，就建立关系
-        if relation is None:
-
-            relation = ProblemConcept(
-                problem_id=problem.id,
-                concept_id=concept.id,
-                importance=item.get(
-                    "importance",
-                    1.0
-                ),
-                relation="related"
-            )
-
-            db.add(relation)
-
         created_concepts.append({
             "id": concept.id,
             "name": concept.name,
@@ -108,10 +96,119 @@ def analyze_math_problem(
             )
         })
 
-    # 8. 保存数据库
+        # ==================================================
+        # 第二部分：创建 ProblemConcept
+        # ==================================================
+
+        existing_problem_concept = db.query(
+            ProblemConcept
+        ).filter(
+            ProblemConcept.problem_id == problem.id,
+            ProblemConcept.concept_id == concept.id
+        ).first()
+
+        if existing_problem_concept is None:
+
+            problem_concept = ProblemConcept(
+                problem_id=problem.id,
+                concept_id=concept.id,
+                importance=item.get(
+                    "importance",
+                    1.0
+                ),
+                relation="related"
+            )
+
+            db.add(problem_concept)
+
+    # ==================================================
+    # 第三部分：建立知识点名称 → ID 的映射
+    # ==================================================
+
+    concept_map = {}
+
+    for item in concepts_result:
+
+        name = item.get("name")
+
+        if not name:
+            continue
+
+        concept = db.query(Concept).filter(
+            Concept.name == name
+        ).first()
+
+        if concept is not None:
+            concept_map[name] = concept.id
+
+    # ==================================================
+    # 第四部分：创建 ConceptRelation
+    # ==================================================
+
+    created_relations = []
+
+    for item in relations_result:
+
+        source_name = item.get("source")
+        target_name = item.get("target")
+        relation_type = item.get(
+            "relation",
+            "related"
+        )
+        weight = item.get(
+            "weight",
+            1.0
+        )
+
+        # source 或 target 不存在，跳过
+        if (
+            source_name not in concept_map
+            or target_name not in concept_map
+        ):
+            continue
+
+        source_id = concept_map[source_name]
+        target_id = concept_map[target_name]
+
+        # 防止自己指向自己
+        if source_id == target_id:
+            continue
+
+        # 检查关系是否已经存在
+        existing_relation = db.query(
+            ConceptRelation
+        ).filter(
+            ConceptRelation.source_concept_id == source_id,
+            ConceptRelation.target_concept_id == target_id,
+            ConceptRelation.relation == relation_type
+        ).first()
+
+        if existing_relation is None:
+
+            concept_relation = ConceptRelation(
+                source_concept_id=source_id,
+                target_concept_id=target_id,
+                relation=relation_type,
+                weight=weight
+            )
+
+            db.add(concept_relation)
+
+            created_relations.append({
+                "source": source_name,
+                "target": target_name,
+                "relation": relation_type,
+                "weight": weight
+            })
+
+    # ==================================================
+    # 第五部分：提交数据库
+    # ==================================================
+
     db.commit()
 
     return {
         "problem_id": problem.id,
-        "concepts": created_concepts
+        "concepts": created_concepts,
+        "relations": created_relations
     }

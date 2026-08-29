@@ -1,3 +1,5 @@
+from app.models.concept_relation import ConceptRelation
+
 from fastapi import FastAPI
 from app.api.ai import router as ai_router
 
