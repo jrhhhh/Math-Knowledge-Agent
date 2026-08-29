@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.api.ai import router as ai_router
 
 from app.database import engine
 
@@ -19,6 +20,8 @@ Base.metadata.create_all(
 app = FastAPI(
     title="Math Knowledge Agent"
 )
+
+app.include_router(ai_router)
 
 
 app.include_router(router)
