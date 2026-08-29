@@ -3,4 +3,4 @@ from pydantic import BaseModel
 
 class ProblemAnalysisRequest(BaseModel):
 
-    problem: str
+    problem_id: int

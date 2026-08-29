@@ -36,6 +36,11 @@ class Concept(Base):
         default=1
     )
 
+    type = Column(
+    String,
+    default="concept"
+    )
+
 
     problems = relationship(
         "ProblemConcept",
