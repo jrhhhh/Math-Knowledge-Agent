@@ -1,29 +1,46 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
-
-from app.ai.analyzer import analyze_problem, client
-from app.ai.concept_matcher import (
-    resolve_concept,
-    validate_relation,
-    semantic_retrieve_concepts
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    RateLimitError,
+    APIStatusError,
 )
 
-from app.schemas.ai import ProblemAnalysisRequest
-from app.schemas.ask import AskRequest
-
-from app.models.problem import Problem
+from app.database import SessionLocal
 from app.models.concept import Concept
-from app.models.problem_concept import ProblemConcept
 from app.models.concept_relation import ConceptRelation
+from app.models.problem import Problem
+from app.models.problem_concept import ProblemConcept
+
+from app.ai.analyzer import client
+from app.ai.concept_matcher import (
+    semantic_retrieve_concepts,
+    search_similar_problems,
+)
 
 
-router = APIRouter(prefix="/ai", tags=["AI"])
+router = APIRouter(
+    prefix="/ai",
+    tags=["AI"]
+)
 
+
+class AskRequest(BaseModel):
+    question: str
+
+
+# ============================================================
+# Database
+# ============================================================
 
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
     finally:
@@ -31,667 +48,254 @@ def get_db():
 
 
 # ============================================================
-# AI：分析数学题目
+# DeepSeek API helper
 # ============================================================
 
-@router.post("/analyze-problem")
-def analyze_math_problem(
-    request: ProblemAnalysisRequest,
-    db: Session = Depends(get_db)
+def call_deepseek(
+    messages,
+    max_retries: int = 3,
+    retry_delay: float = 2.0,
+    response_format=None,
 ):
-    problem = db.query(Problem).filter(
-        Problem.id == request.problem_id
-    ).first()
+    """
+    调用 DeepSeek API。
 
-    if problem is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Problem not found"
-        )
+    主要解决：
+    - APIConnectionError
+    - incomplete chunked read
+    - APITimeoutError
+    - RateLimitError
+    - 部分 5xx 错误
 
-    # --------------------------------------------------------
-    # 1. DeepSeek 分析题目
-    # --------------------------------------------------------
+    自动重试。
+    """
 
-    result = analyze_problem(problem.content)
+    last_error = None
 
-    concepts_result = result.get("concepts", [])
-    relations_result = result.get("relations", [])
+    for attempt in range(max_retries):
+        try:
+            kwargs = {
+                "model": "deepseek-v4-pro",
+                "messages": messages,
+            }
 
-    created_concepts = []
-    concept_map = {}
+            if response_format is not None:
+                kwargs["response_format"] = response_format
 
-    # --------------------------------------------------------
-    # 2. 创建 / 匹配知识点
-    # --------------------------------------------------------
+            response = client.chat.completions.create(
+                **kwargs
+            )
 
-    for item in concepts_result:
+            if (
+                response.choices
+                and response.choices[0].message
+                and response.choices[0].message.content
+            ):
+                return response.choices[0].message.content
 
-        name = item.get("name")
+            raise RuntimeError(
+                "DeepSeek 返回了空响应。"
+            )
 
-        if not name:
-            continue
+        except (
+            APIConnectionError,
+            APITimeoutError,
+            RateLimitError,
+        ) as exc:
 
-        concept = resolve_concept(
+            last_error = exc
+
+            if attempt < max_retries - 1:
+                time.sleep(
+                    retry_delay * (attempt + 1)
+                )
+                continue
+
+            break
+
+        except APIStatusError as exc:
+
+            last_error = exc
+
+            # 只有服务器错误才值得重试
+            if exc.status_code >= 500:
+                if attempt < max_retries - 1:
+                    time.sleep(
+                        retry_delay * (attempt + 1)
+                    )
+                    continue
+
+            break
+
+        except Exception as exc:
+
+            last_error = exc
+
+            # 未知错误不无限重试
+            break
+
+    if last_error is not None:
+        raise last_error
+
+    raise RuntimeError(
+        "DeepSeek API 调用失败。"
+    )
+
+
+# ============================================================
+# Safe AI retrieval
+# ============================================================
+
+def safe_semantic_retrieve_concepts(
+    db: Session,
+    question: str
+):
+    """
+    知识点语义检索。
+
+    semantic_retrieve_concepts() 当前返回：
+
+    [
+        {
+            "concept": Concept对象,
+            "similarity": 0.95,
+            "reason": "..."
+        }
+    ]
+
+    如果 DeepSeek 暂时不可用，
+    不让整个请求直接崩溃。
+    """
+
+    try:
+        return semantic_retrieve_concepts(
             db,
-            name
+            question
         )
 
-        # 如果数据库不存在，则创建
-        if concept is None:
+    except Exception as exc:
+        print(
+            "[AI] semantic concept retrieval failed:",
+            repr(exc)
+        )
 
-            concept = Concept(
-                name=name,
-                description=item.get("description"),
-                field=item.get("field"),
-                level=item.get("level", 1),
-                type=item.get("type", "concept")
+        return []
+
+
+def safe_search_similar_problems(
+    db: Session,
+    question: str,
+    concept_ids: list[int],
+):
+    """
+    历史相似题目检索。
+
+    如果语义排序 API 失败，
+    至少返回基于知识点召回的历史题目。
+    """
+
+    try:
+        return search_similar_problems(
+            db=db,
+            question=question,
+            concept_ids=concept_ids,
+            candidate_limit=10,
+            result_limit=5
+        )
+
+    except Exception as exc:
+        print(
+            "[AI] similar problem search failed:",
+            repr(exc)
+        )
+
+        # ----------------------------------------------------
+        # 降级策略：
+        # 直接根据知识点找历史题目
+        # ----------------------------------------------------
+
+        if not concept_ids:
+            return []
+
+        problems = (
+            db.query(
+                Problem,
+                ProblemConcept
             )
-
-            db.add(concept)
-            db.flush()
-
-        concept_map[name] = concept.id
-
-        created_concepts.append({
-            "id": concept.id,
-            "name": concept.name,
-            "type": concept.type,
-            "importance": item.get(
-                "importance",
-                1.0
+            .join(
+                ProblemConcept,
+                Problem.id
+                == ProblemConcept.problem_id
             )
-        })
-
-        # ----------------------------------------------------
-        # 建立 Problem -> Concept
-        # ----------------------------------------------------
-
-        existing_problem_concept = db.query(
-            ProblemConcept
-        ).filter(
-            ProblemConcept.problem_id == problem.id,
-            ProblemConcept.concept_id == concept.id
-        ).first()
-
-        if existing_problem_concept is None:
-
-            problem_concept = ProblemConcept(
-                problem_id=problem.id,
-                concept_id=concept.id,
-                importance=item.get(
-                    "importance",
-                    1.0
-                ),
-                relation="related"
+            .filter(
+                ProblemConcept.concept_id.in_(
+                    concept_ids
+                )
             )
-
-            db.add(problem_concept)
-
-    # --------------------------------------------------------
-    # 3. 建立 Concept -> Concept 关系
-    # --------------------------------------------------------
-
-    created_relations = []
-
-    for item in relations_result:
-
-        source_name = item.get("source")
-        target_name = item.get("target")
-
-        relation_type = item.get(
-            "relation",
-            "related"
-        )
-
-        weight = item.get(
-            "weight",
-            1.0
-        )
-
-        if not source_name or not target_name:
-            continue
-
-        # 禁止自己指向自己
-        if source_name == target_name:
-            continue
-
-        # 只允许这三种关系
-        if relation_type not in {
-            "prerequisite",
-            "supports",
-            "related"
-        }:
-            continue
-
-        # weight 类型检查
-        if not isinstance(weight, (int, float)):
-            weight = 1.0
-
-        # 限制在 0~1
-        weight = max(
-            0.0,
-            min(1.0, weight)
-        )
-
-        # ----------------------------------------------------
-        # 找 source
-        # ----------------------------------------------------
-
-        source_concept = resolve_concept(
-            db,
-            source_name
-        )
-
-        # ----------------------------------------------------
-        # 找 target
-        # ----------------------------------------------------
-
-        target_concept = resolve_concept(
-            db,
-            target_name
-        )
-
-        if source_concept is None:
-            continue
-
-        if target_concept is None:
-            continue
-
-        # 禁止自己指向自己
-        if source_concept.id == target_concept.id:
-            continue
-
-        # ----------------------------------------------------
-        # DeepSeek 二次验证关系
-        # ----------------------------------------------------
-
-        validation = validate_relation(
-            source_concept.name,
-            target_concept.name,
-            relation_type
-        )
-
-        if validation.get("valid") is not True:
-            continue
-
-        if validation.get(
-            "confidence",
-            0
-        ) < 0.85:
-            continue
-
-        # ----------------------------------------------------
-        # 检查数据库中是否已经存在
-        # ----------------------------------------------------
-
-        existing_relation = db.query(
-            ConceptRelation
-        ).filter(
-            ConceptRelation.source_concept_id
-            == source_concept.id,
-
-            ConceptRelation.target_concept_id
-            == target_concept.id,
-
-            ConceptRelation.relation
-            == relation_type
-        ).first()
-
-        if existing_relation is None:
-
-            concept_relation = ConceptRelation(
-                source_concept_id=source_concept.id,
-                target_concept_id=target_concept.id,
-                relation=relation_type,
-                weight=weight
+            .order_by(
+                ProblemConcept.importance.desc()
             )
+            .limit(5)
+            .all()
+        )
 
-            db.add(concept_relation)
+        results = []
 
-            created_relations.append({
-                "source": source_concept.name,
-                "target": target_concept.name,
-                "relation": relation_type,
-                "weight": weight
+        for problem, relation in problems:
+
+            results.append({
+                "id": problem.id,
+                "title": problem.title,
+                "content": problem.content,
+                "solution": problem.solution,
+                "difficulty": problem.difficulty,
+                "score": relation.importance or 0,
+                "similarity": None,
+                "reason": "基于相关知识点召回"
             })
 
-    # --------------------------------------------------------
-    # 4. 提交数据库
-    # --------------------------------------------------------
-
-    db.commit()
-
-    return {
-        "problem_id": problem.id,
-        "concepts": created_concepts,
-        "relations": created_relations
-    }
+        return results
 
 
 # ============================================================
-# AI：数学问答
+# Knowledge graph
 # ============================================================
 
-@router.post("/ask")
-def ask_question(
-    request: AskRequest,
-    db: Session = Depends(get_db)
+def build_knowledge_graph(
+    db: Session,
+    matched_concepts
 ):
     """
-    根据用户问题：
+    根据当前问题匹配到的知识点，
+    展开一层知识图谱。
 
-    1. 使用 DeepSeek 进行语义检索
-    2. 找到核心知识点
-    3. 沿知识图谱扩展
-    4. 获取前置知识
-    5. 获取支撑知识
-    6. 获取相关知识
-    7. 获取相关题目
-    8. 将知识图谱上下文交给 DeepSeek
-    9. 生成最终数学回答
+    matched_concepts 的结构：
+
+    [
+        {
+            "concept": Concept对象,
+            "similarity": ...,
+            "reason": ...
+        }
+    ]
     """
 
-    # --------------------------------------------------------
-    # 1. 获取用户问题
-    # --------------------------------------------------------
-
-    question = request.question.strip()
-
-    if not question:
-        raise HTTPException(
-            status_code=400,
-            detail="Question cannot be empty"
-        )
-
-    # --------------------------------------------------------
-    # 2. 使用 DeepSeek 进行语义检索
-    # --------------------------------------------------------
-
-    matched_concepts = semantic_retrieve_concepts(
-        db,
-        question
-    )
-
-    # --------------------------------------------------------
-    # 3. 如果没有找到知识点
-    # --------------------------------------------------------
-
-    if not matched_concepts:
-        return {
-            "question": question,
-            "answer": "暂时没有在知识图谱中找到相关知识点。",
-            "concepts": [],
-            "knowledge_graph": {
-                "nodes": [],
-                "relations": []
-            }
-        }
-
-    # --------------------------------------------------------
-    # 4. 沿知识图谱扩展
-    # --------------------------------------------------------
-
-    expanded_concepts = {}
-
-    for concept in matched_concepts:
-
-        # 当前核心知识点
-        expanded_concepts[concept.id] = concept
-
-        # ----------------------------------------------------
-        # 找到与当前知识点直接相连的关系
-        # ----------------------------------------------------
-
-        relations = db.query(
-            ConceptRelation
-        ).filter(
-            (
-                (ConceptRelation.source_concept_id == concept.id)
-                |
-                (ConceptRelation.target_concept_id == concept.id)
-            )
-        ).all()
-
-        # ----------------------------------------------------
-        # 加入关系另一端的知识点
-        # ----------------------------------------------------
-
-        for relation in relations:
-
-            if relation.source_concept_id == concept.id:
-                other_id = relation.target_concept_id
-            else:
-                other_id = relation.source_concept_id
-
-            other = db.query(
-                Concept
-            ).filter(
-                Concept.id == other_id
-            ).first()
-
-            if other is not None:
-                expanded_concepts[other.id] = other
-
-    # --------------------------------------------------------
-    # 限制扩展后的知识点数量
-    # --------------------------------------------------------
-
-    expanded_concepts = dict(
-        list(expanded_concepts.items())[:10]
-    )
-
-    # --------------------------------------------------------
-    # 5. 构造知识图谱上下文
-    # --------------------------------------------------------
-
-    knowledge_context = []
-
-    for concept in expanded_concepts.values():
-
-        # ====================================================
-        # 前置知识
-        # ====================================================
-
-        prerequisite_relations = db.query(
-            ConceptRelation
-        ).filter(
-            ConceptRelation.target_concept_id == concept.id,
-            ConceptRelation.relation == "prerequisite"
-        ).all()
-
-        prerequisites = []
-
-        for relation in prerequisite_relations:
-
-            source = db.query(
-                Concept
-            ).filter(
-                Concept.id == relation.source_concept_id
-            ).first()
-
-            if source:
-                prerequisites.append({
-                    "name": source.name,
-                    "weight": relation.weight
-                })
-
-        # ====================================================
-        # 支撑知识
-        # ====================================================
-
-        support_relations = db.query(
-            ConceptRelation
-        ).filter(
-            ConceptRelation.target_concept_id == concept.id,
-            ConceptRelation.relation == "supports"
-        ).all()
-
-        supports = []
-
-        for relation in support_relations:
-
-            source = db.query(
-                Concept
-            ).filter(
-                Concept.id == relation.source_concept_id
-            ).first()
-
-            if source:
-                supports.append({
-                    "name": source.name,
-                    "weight": relation.weight
-                })
-
-        # ====================================================
-        # Related 知识
-        # ====================================================
-
-        related_relations = db.query(
-            ConceptRelation
-        ).filter(
-            (
-                (ConceptRelation.source_concept_id == concept.id)
-                |
-                (ConceptRelation.target_concept_id == concept.id)
-            ),
-            ConceptRelation.relation == "related"
-        ).all()
-
-        related = []
-
-        for relation in related_relations:
-
-            if relation.source_concept_id == concept.id:
-                other_id = relation.target_concept_id
-            else:
-                other_id = relation.source_concept_id
-
-            other = db.query(
-                Concept
-            ).filter(
-                Concept.id == other_id
-            ).first()
-
-            if other:
-                related.append({
-                    "name": other.name,
-                    "weight": relation.weight
-                })
-
-        # ====================================================
-        # 相关题目
-        # ====================================================
-
-        problem_relations = db.query(
-            ProblemConcept
-        ).filter(
-            ProblemConcept.concept_id == concept.id
-        ).all()
-
-        problems = []
-
-        for relation in problem_relations:
-
-            problem = db.query(
-                Problem
-            ).filter(
-                Problem.id == relation.problem_id
-            ).first()
-
-            if problem:
-                problems.append({
-                    "id": problem.id,
-                    "title": problem.title,
-                    "difficulty": problem.difficulty,
-                    "importance": relation.importance
-                })
-
-        # ====================================================
-        # 保存知识上下文
-        # ====================================================
-
-        knowledge_context.append({
-
-            "id": concept.id,
-
-            "name": concept.name,
-
-            "type": concept.type,
-
-            "description": concept.description,
-
-            "field": concept.field,
-
-            "level": concept.level,
-
-            "prerequisites": prerequisites,
-
-            "supports": supports,
-
-            "related": related,
-
-            "problems": problems
-        })
-
-    # --------------------------------------------------------
-    # 6. 构造给 DeepSeek 的文本
-    # --------------------------------------------------------
-
-    context_text = ""
-
-    for item in knowledge_context:
-
-        prerequisite_text = ", ".join(
-            prerequisite["name"]
-            for prerequisite in item["prerequisites"]
-        )
-
-        supports_text = ", ".join(
-            support["name"]
-            for support in item["supports"]
-        )
-
-        related_text = ", ".join(
-            related_item["name"]
-            for related_item in item["related"]
-        )
-
-        problem_text = ", ".join(
-            problem["title"]
-            for problem in item["problems"]
-        )
-
-        context_text += f"""
-
-==============================
-知识点
-==============================
-
-ID：
-{item["id"]}
-
-名称：
-{item["name"]}
-
-类型：
-{item["type"]}
-
-领域：
-{item["field"]}
-
-层级：
-{item["level"]}
-
-定义 / 描述：
-{item["description"]}
-
-前置知识：
-{prerequisite_text}
-
-支撑知识：
-{supports_text}
-
-相关知识：
-{related_text}
-
-相关题目：
-{problem_text}
-
-"""
-
-    # --------------------------------------------------------
-    # 7. 构造 DeepSeek Prompt
-    # --------------------------------------------------------
-
-    prompt = f"""
-
-你是一名专业、严谨的高等数学教师。
-
-请回答用户的问题。
-
-==============================
-用户问题
-==============================
-
-{question}
-
-
-==============================
-数学知识图谱
-==============================
-
-{context_text}
-
-
-==============================
-回答要求
-==============================
-
-1. 优先使用知识图谱中的信息。
-
-2. 知识图谱中的知识点、前置关系和支撑关系代表已经建立的数学知识网络。
-
-3. 不要编造知识图谱中不存在的关系。
-
-4. 如果知识图谱中的信息不足，可以使用你自己的数学知识补充。
-
-5. 数学定义必须准确。
-
-6. 如果用户要求证明，请给出完整、严谨、连续的证明。
-
-7. 如果知识图谱中存在相关定理，应优先使用该定理解释问题。
-
-8. 如果存在前置知识，应适当解释这些前置知识为什么出现。
-
-9. 如果存在相关题目，可以参考这些题目的知识背景，但不要虚构题目内容。
-
-10. 不要为了使用知识图谱而强行加入无关知识。
-
-11. 使用中文回答。
-
-12. 根据问题复杂程度控制回答长度。
-
-13. 如果是证明题，优先给出：
-    - 定义
-    - 证明思路
-    - 正式证明
-    - 直观解释
-
-14. 数学公式使用 LaTeX。
-
-"""
-
-    # --------------------------------------------------------
-    # 8. 调用 DeepSeek
-    # --------------------------------------------------------
-
-    response = client.chat.completions.create(
-        model="deepseek-v4-pro",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "你是一名严谨的高等数学教师，"
-                    "同时也是数学知识图谱推理专家。"
-                )
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    answer = response.choices[0].message.content
-
-    # --------------------------------------------------------
-    # 9. 构造知识图谱节点
-    # --------------------------------------------------------
-
     graph_nodes = []
+    graph_relations = []
 
-    for concept in expanded_concepts.values():
+    visited_concepts = set()
+    relation_keys = set()
+
+    # --------------------------------------------------------
+    # 第一层：直接匹配知识点
+    # --------------------------------------------------------
+
+    for item in matched_concepts:
+
+        concept = item["concept"]
+
+        if concept.id in visited_concepts:
+            continue
 
         graph_nodes.append({
             "id": concept.id,
@@ -702,88 +306,763 @@ ID：
             "level": concept.level
         })
 
+        visited_concepts.add(
+            concept.id
+        )
+
     # --------------------------------------------------------
-    # 10. 构造知识图谱关系
+    # 第二层：展开关系
     # --------------------------------------------------------
 
-    graph_relations = []
+    for item in matched_concepts:
 
-    concept_ids = set(
-        expanded_concepts.keys()
+        concept = item["concept"]
+
+        relations = (
+            db.query(ConceptRelation)
+            .filter(
+                (
+                    (
+                        ConceptRelation.source_concept_id
+                        == concept.id
+                    )
+                    |
+                    (
+                        ConceptRelation.target_concept_id
+                        == concept.id
+                    )
+                )
+            )
+            .all()
+        )
+
+        for relation in relations:
+
+            source = (
+                db.query(Concept)
+                .filter(
+                    Concept.id
+                    == relation.source_concept_id
+                )
+                .first()
+            )
+
+            target = (
+                db.query(Concept)
+                .filter(
+                    Concept.id
+                    == relation.target_concept_id
+                )
+                .first()
+            )
+
+            if source is None or target is None:
+                continue
+
+            relation_key = (
+                source.id,
+                target.id,
+                relation.relation
+            )
+
+            if relation_key in relation_keys:
+                continue
+
+            relation_keys.add(
+                relation_key
+            )
+
+            # ----------------------------------------------
+            # source node
+            # ----------------------------------------------
+
+            if source.id not in visited_concepts:
+
+                graph_nodes.append({
+                    "id": source.id,
+                    "name": source.name,
+                    "type": source.type,
+                    "description": source.description,
+                    "field": source.field,
+                    "level": source.level
+                })
+
+                visited_concepts.add(
+                    source.id
+                )
+
+            # ----------------------------------------------
+            # target node
+            # ----------------------------------------------
+
+            if target.id not in visited_concepts:
+
+                graph_nodes.append({
+                    "id": target.id,
+                    "name": target.name,
+                    "type": target.type,
+                    "description": target.description,
+                    "field": target.field,
+                    "level": target.level
+                })
+
+                visited_concepts.add(
+                    target.id
+                )
+
+            # ----------------------------------------------
+            # relation
+            # ----------------------------------------------
+
+            graph_relations.append({
+                "source": {
+                    "id": source.id,
+                    "name": source.name
+                },
+                "target": {
+                    "id": target.id,
+                    "name": target.name
+                },
+                "relation": relation.relation,
+                "weight": relation.weight
+            })
+
+    return graph_nodes, graph_relations
+
+
+# ============================================================
+# Historical problems
+# ============================================================
+
+def get_historical_problems(
+    db: Session,
+    matched_concepts,
+    limit: int = 10
+):
+    """
+    根据知识点召回历史题目。
+
+    一个题目可能关联多个知识点。
+    """
+
+    historical_problems = {}
+
+    for item in matched_concepts:
+
+        concept = item["concept"]
+
+        problem_relations = (
+            db.query(ProblemConcept)
+            .filter(
+                ProblemConcept.concept_id
+                == concept.id
+            )
+            .all()
+        )
+
+        for relation in problem_relations:
+
+            problem = (
+                db.query(Problem)
+                .filter(
+                    Problem.id
+                    == relation.problem_id
+                )
+                .first()
+            )
+
+            if problem is None:
+                continue
+
+            importance = (
+                relation.importance
+                if relation.importance is not None
+                else 0
+            )
+
+            if problem.id not in historical_problems:
+
+                historical_problems[
+                    problem.id
+                ] = {
+                    "id": problem.id,
+                    "title": problem.title,
+                    "content": problem.content,
+                    "solution": problem.solution,
+                    "difficulty": problem.difficulty,
+                    "importance": importance,
+                    "matched_concepts": []
+                }
+
+            else:
+
+                # 一个题目如果关联多个知识点，
+                # 使用最高的重要程度
+
+                historical_problems[
+                    problem.id
+                ]["importance"] = max(
+                    historical_problems[
+                        problem.id
+                    ]["importance"],
+                    importance
+                )
+
+            historical_problems[
+                problem.id
+            ]["matched_concepts"].append({
+                "concept_id": concept.id,
+                "concept_name": concept.name,
+                "importance": importance
+            })
+
+    # --------------------------------------------------------
+    # 按重要程度排序
+    # --------------------------------------------------------
+
+    problems = sorted(
+        historical_problems.values(),
+        key=lambda item: item["importance"],
+        reverse=True
     )
 
-    relations = db.query(
-        ConceptRelation
-    ).all()
+    return problems[:limit]
 
-    for relation in relations:
 
-        # 只保留当前知识图谱节点之间的关系
-        if (
-            relation.source_concept_id not in concept_ids
-            or
-            relation.target_concept_id not in concept_ids
-        ):
-            continue
+# ============================================================
+# Format historical problems
+# ============================================================
 
-        source = expanded_concepts.get(
-            relation.source_concept_id
+def format_historical_problems(
+    problems,
+    max_items: int = 8,
+    max_content_length: int = 1500,
+    max_solution_length: int = 2500,
+):
+    """
+    将历史题目压缩成 Prompt。
+
+    防止历史数据过多导致：
+    - Prompt 太长
+    - API 响应慢
+    - connection closed
+    """
+
+    if not problems:
+        return "暂无相关历史题目。"
+
+    text_parts = []
+
+    for problem in problems[:max_items]:
+
+        content = problem.get(
+            "content"
+        ) or ""
+
+        solution = problem.get(
+            "solution"
+        ) or ""
+
+        content = content[
+            :max_content_length
+        ]
+
+        solution = solution[
+            :max_solution_length
+        ]
+
+        matched_names = ", ".join(
+            item["concept_name"]
+            for item in problem.get(
+                "matched_concepts",
+                []
+            )
         )
 
-        target = expanded_concepts.get(
-            relation.target_concept_id
+        text_parts.append(
+            f"""
+题目 ID：
+{problem["id"]}
+
+题目：
+{problem["title"]}
+
+题目内容：
+{content}
+
+已有解答：
+{solution}
+
+难度：
+{problem["difficulty"]}
+
+知识点重要程度：
+{problem["importance"]}
+
+相关知识点：
+{matched_names}
+
+------------------------------
+"""
         )
 
-        if source is None or target is None:
-            continue
+    return "\n".join(
+        text_parts
+    )
 
-        graph_relations.append({
 
-            "source": {
-                "id": source.id,
-                "name": source.name
-            },
+# ============================================================
+# Format similar problems
+# ============================================================
 
-            "target": {
-                "id": target.id,
-                "name": target.name
-            },
+def format_similar_problems(
+    problems,
+    max_items: int = 5,
+    max_content_length: int = 1500,
+    max_solution_length: int = 2500,
+):
+    """
+    将相似题目压缩成 Prompt。
+    """
 
-            "relation": relation.relation,
+    if not problems:
+        return "暂无高度相似的历史题目。"
 
-            "weight": relation.weight
-        })
+    text_parts = []
+
+    for problem in problems[:max_items]:
+
+        content = (
+            problem.get("content")
+            or ""
+        )
+
+        solution = (
+            problem.get("solution")
+            or ""
+        )
+
+        content = content[
+            :max_content_length
+        ]
+
+        solution = solution[
+            :max_solution_length
+        ]
+
+        text_parts.append(
+            f"""
+历史相似题 ID：
+{problem["id"]}
+
+题目：
+{problem["title"]}
+
+题目内容：
+{content}
+
+已有解答：
+{solution}
+
+难度：
+{problem.get("difficulty")}
+
+知识点召回分数：
+{problem.get("score")}
+
+语义相似度：
+{problem.get("similarity")}
+
+相似原因：
+{problem.get("reason")}
+
+------------------------------
+"""
+        )
+
+    return "\n".join(
+        text_parts
+    )
+
+
+# ============================================================
+# Format graph
+# ============================================================
+
+def format_graph_nodes(
+    graph_nodes
+):
+    if not graph_nodes:
+        return "暂无相关知识图谱信息。"
+
+    text_parts = []
+
+    for node in graph_nodes:
+
+        text_parts.append(
+            f"""
+知识点：
+{node["name"]}
+
+类型：
+{node["type"]}
+
+描述：
+{node["description"]}
+
+领域：
+{node["field"]}
+
+层级：
+{node["level"]}
+
+"""
+        )
+
+    return "\n".join(
+        text_parts
+    )
+
+
+def format_graph_relations(
+    graph_relations
+):
+    if not graph_relations:
+        return "暂无相关知识关系。"
+
+    text_parts = []
+
+    for relation in graph_relations:
+
+        text_parts.append(
+            f"""
+{relation["source"]["name"]}
+   -- {relation["relation"]} -->
+{relation["target"]["name"]}
+
+权重：
+{relation["weight"]}
+
+"""
+        )
+
+    return "\n".join(
+        text_parts
+    )
+
+
+# ============================================================
+# Main AI endpoint
+# ============================================================
+
+@router.post("/ask")
+def ask(
+    request: AskRequest,
+    db: Session = Depends(get_db)
+):
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="问题不能为空。"
+        )
+
+    # ========================================================
+    # 1. 语义检索知识点
+    # ========================================================
+
+    matched_concepts = (
+        safe_semantic_retrieve_concepts(
+            db,
+            question
+        )
+    )
 
     # --------------------------------------------------------
-    # 11. 返回最终结果
+    # semantic_retrieve_concepts() 返回的是：
+    #
+    # {
+    #     "concept": Concept,
+    #     "similarity": ...,
+    #     "reason": ...
+    # }
+    #
+    # 因此这里必须取 item["concept"].id
     # --------------------------------------------------------
+
+    concept_ids = [
+        item["concept"].id
+        for item in matched_concepts
+    ]
+
+    # ========================================================
+    # 2. 历史题目召回
+    # ========================================================
+
+    historical_problems = (
+        get_historical_problems(
+            db=db,
+            matched_concepts=matched_concepts,
+            limit=10
+        )
+    )
+
+    # ========================================================
+    # 3. 历史相似题目
+    # ========================================================
+
+    similar_problems = (
+        safe_search_similar_problems(
+            db=db,
+            question=question,
+            concept_ids=concept_ids
+        )
+    )
+
+    # ========================================================
+    # 4. 构建知识图谱
+    # ========================================================
+
+    (
+        graph_nodes,
+        graph_relations
+    ) = build_knowledge_graph(
+        db,
+        matched_concepts
+    )
+
+    # ========================================================
+    # 5. 格式化 Prompt 数据
+    # ========================================================
+
+    graph_text = format_graph_nodes(
+        graph_nodes
+    )
+
+    relation_text = format_graph_relations(
+        graph_relations
+    )
+
+    historical_problem_text = (
+        format_historical_problems(
+            historical_problems
+        )
+    )
+
+    similar_problem_text = (
+        format_similar_problems(
+            similar_problems
+        )
+    )
+
+    # ========================================================
+    # 6. 最终数学回答 Prompt
+    # ========================================================
+
+    prompt = f"""
+你是一名专业的数学知识助手。
+
+你的任务是回答用户提出的数学问题。
+
+============================================================
+用户问题
+============================================================
+
+{question}
+
+============================================================
+一、当前问题相关知识点
+============================================================
+
+{graph_text}
+
+============================================================
+二、知识点之间的关系
+============================================================
+
+{relation_text}
+
+============================================================
+三、历史题目与已有解答
+============================================================
+
+{historical_problem_text}
+
+============================================================
+四、历史相似题目
+============================================================
+
+{similar_problem_text}
+
+============================================================
+回答要求
+============================================================
+
+1. 首先直接回答用户的问题。
+
+2. 如果用户要求证明，
+   必须给出完整、严谨的数学证明。
+
+3. 可以参考历史题目和已有解答，
+   但必须根据当前问题重新进行数学推导。
+
+4. 不要机械复制历史题目的答案。
+
+5. 历史解答只是参考资料。
+   如果历史解答存在错误、不完整或不严谨，
+   必须根据严格的数学推理进行修正。
+
+6. 如果历史题目与当前问题高度相似，
+   可以借鉴其证明思路，
+   但必须根据当前问题重新组织答案。
+
+7. 不要声称自己做过不存在的历史题目。
+
+8. 不要创造数据库中不存在的历史题目、
+   历史解答或知识点。
+
+9. 如果使用知识图谱中的定理、性质或方法，
+   可以自然地解释它们在当前问题中的作用。
+
+10. 数学证明应优先使用定义、定理和严格的逻辑推导。
+
+11. 对于拓扑学问题，
+    特别注意区分：
+
+    - 集合
+    - 拓扑空间
+    - 映射
+    - 像
+    - 原像
+    - 开集
+    - 开覆盖
+    - 有限子覆盖
+    - 紧性
+    - 紧集
+
+12. 不要为了使用知识图谱而强行加入无关知识。
+
+13. 如果当前问题和历史题目高度相似，
+    可以指出两者之间的联系，
+    但不要虚构用户曾经做过某道题。
+
+14. 回答应当具有数学教材级别的严谨性，
+    同时尽量让学生能够理解证明为什么成立。
+
+15. 如果问题存在数学上的歧义，
+    应先说明采用的定义或解释。
+
+16. 历史题目和相似题目只是辅助材料，
+    不能把它们当作数学事实。
+
+17. 如果知识图谱中的关系与严格数学推理冲突，
+    以严格数学推理为准。
+
+18. 如果当前问题可以由某个定理直接解决，
+    应明确指出所使用的定理。
+
+19. 如果给出证明，
+    应尽量按照：
+
+    定义
+    → 已知条件
+    → 关键定理
+    → 推导
+    → 结论
+
+    的结构组织。
+
+20. 不要输出与问题无关的大段知识背景。
+
+请直接用中文回答。
+"""
+
+    # ========================================================
+    # 7. 最终 DeepSeek 调用
+    # ========================================================
+
+    try:
+
+        answer = call_deepseek(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "你是一名专业、严谨的数学知识助手，"
+                        "擅长数学证明、数学知识图谱、"
+                        "历史题目检索和数学题目分析。"
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_retries=3,
+            retry_delay=2.0
+        )
+
+    except Exception as exc:
+
+        print(
+            "[AI] final answer generation failed:",
+            repr(exc)
+        )
+
+        # ----------------------------------------------------
+        # 不再直接返回 Python 500 traceback。
+        # 返回明确的 API 错误。
+        # ----------------------------------------------------
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "DeepSeek 当前暂时无法完成回答。"
+                "知识点和历史题目检索已经完成，"
+                "请稍后重新提交。"
+            )
+        )
+
+    # ========================================================
+    # 8. 返回完整结果
+    # ========================================================
 
     return {
-
         "question": question,
 
         "answer": answer,
 
-        # AI 直接检索到的核心知识点
         "concepts": [
-
             {
-                "id": concept.id,
-                "name": concept.name,
-                "type": concept.type
+                "id": item["concept"].id,
+                "name": item["concept"].name,
+                "type": item["concept"].type,
+                "similarity": item.get("similarity"),
+                "reason": item.get("reason", "")
             }
-
-            for concept in matched_concepts
-
+            for item in matched_concepts
         ],
 
-        # 知识图谱
+        "historical_problems": [
+            {
+                "id": problem["id"],
+                "title": problem["title"],
+                "content": problem["content"],
+                "solution": problem["solution"],
+                "difficulty": problem["difficulty"],
+                "importance": problem["importance"],
+                "matched_concepts": (
+                    problem["matched_concepts"]
+                )
+            }
+            for problem in historical_problems
+        ],
+
+        "similar_problems": similar_problems,
+
         "knowledge_graph": {
-
             "nodes": graph_nodes,
-
             "relations": graph_relations
-
         }
-
     }
