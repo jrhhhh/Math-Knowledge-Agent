@@ -52,6 +52,20 @@ _stream_results = {}
 _STREAM_RESULT_TTL = 600
 
 
+def classify_ai_error(exc):
+    if isinstance(exc, (APITimeoutError, TimeoutError)):
+        return "timeout", "模型响应超时，请稍后重试。"
+    if isinstance(exc, RateLimitError):
+        return "rate_limit", "模型请求过于频繁，请稍后重试。"
+    if isinstance(exc, APIConnectionError):
+        return "network", "无法连接模型服务，请检查网络后重试。"
+    if isinstance(exc, APIStatusError):
+        return ("server_error", "模型服务暂时异常，请稍后重试。") if exc.status_code >= 500 else ("api_error", "模型服务返回了请求错误。")
+    if isinstance(exc, (json.JSONDecodeError, ValueError)):
+        return "invalid_response", "模型返回格式异常，正在等待下一次生成。"
+    return "unknown", "模型暂时无法完成回答，请稍后重试。"
+
+
 def cached_answer(question: str):
     now = time.monotonic()
     for key, value in list(_answer_cache.items()):
@@ -2104,8 +2118,11 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
                 _stream_results[request_id] = {"at": time.monotonic(), "value": result}
             yield emit("result", result)
         except Exception as exc:
-            detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
-            yield emit("error", {"detail": detail})
+            if isinstance(exc, HTTPException):
+                code, detail = "http_error", str(exc.detail)
+            else:
+                code, detail = classify_ai_error(exc)
+            yield emit("error", {"error_code": code, "detail": detail})
         finally:
             if 'db' in locals():
                 db.close()
