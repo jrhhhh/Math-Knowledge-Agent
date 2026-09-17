@@ -86,18 +86,22 @@ def sample_recommendations(db: Session = Depends(get_db)):
 
 
 @router.get("/audit-log")
-def audit_log(action: str | None = None, offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+def audit_log(action: str | None = None, since: str | None = None, until: str | None = None, offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
     query = db.query(TemplateAuditLog)
     if action: query = query.filter(TemplateAuditLog.action == action)
+    if since: query = query.filter(TemplateAuditLog.created_at >= datetime.fromisoformat(since.replace("Z", "+00:00")).replace(tzinfo=None))
+    if until: query = query.filter(TemplateAuditLog.created_at <= datetime.fromisoformat(until.replace("Z", "+00:00")).replace(tzinfo=None))
     total = query.count()
     items = query.order_by(TemplateAuditLog.created_at.desc()).offset(offset).limit(limit).all()
     return {"items": [{"id": item.id, "action": item.action, "detail": item.detail, "created_at": item.created_at.isoformat()} for item in items], "total": total, "offset": offset, "limit": limit}
 
 
 @router.get("/audit-log/export")
-def export_audit_log(action: str | None = None, db: Session = Depends(get_db)):
+def export_audit_log(action: str | None = None, since: str | None = None, until: str | None = None, db: Session = Depends(get_db)):
     query = db.query(TemplateAuditLog)
     if action: query = query.filter(TemplateAuditLog.action == action)
+    if since: query = query.filter(TemplateAuditLog.created_at >= datetime.fromisoformat(since.replace("Z", "+00:00")).replace(tzinfo=None))
+    if until: query = query.filter(TemplateAuditLog.created_at <= datetime.fromisoformat(until.replace("Z", "+00:00")).replace(tzinfo=None))
     output = io.StringIO(); writer = csv.writer(output); writer.writerow(["id", "action", "detail", "created_at"])
     for item in query.order_by(TemplateAuditLog.created_at.desc()).limit(5000).all(): writer.writerow([item.id, item.action, item.detail or "", item.created_at.isoformat()])
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": "attachment; filename=template-audit-log.csv"})
