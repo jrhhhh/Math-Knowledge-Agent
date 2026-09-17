@@ -120,6 +120,9 @@ class GraphWorkflowTests(unittest.TestCase):
         save_graph_candidate(candidate["candidate_id"], self.db)
         relations = self.db.query(ConceptRelation).filter_by(source_concept_id=source.id, target_concept_id=target.id).all()
         self.assertEqual([(relation.relation, relation.weight) for relation in relations], [("defines", 0.95)])
+        events = get_graph_candidate_events(candidate["candidate_id"], self.db)["events"]
+        conflict = next(event for event in events if event["action"] == "relation_conflict")
+        self.assertEqual(conflict["detail"]["action"], "replaced")
 
 
 if __name__ == "__main__":

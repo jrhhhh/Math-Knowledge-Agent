@@ -1164,6 +1164,7 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         id_map[node.get("id")] = concept.id
 
     created_relations = 0
+    relation_conflicts = []
     for edge in graph.get("edges", []):
         source_id, target_id = id_map.get(edge.get("source")), id_map.get(edge.get("target"))
         relation = normalize_relation(edge.get("relation"))
@@ -1181,13 +1182,18 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         new_priority = RELATION_PRIORITY.get(relation, 0)
         old_priorities = [RELATION_PRIORITY.get(normalize_relation(item.relation), 0) for item in existing_relations]
         if old_priorities and new_priority <= max(old_priorities):
+            relation_conflicts.append({"source": source_id, "target": target_id, "new_relation": relation, "old_relations": [item.relation for item in existing_relations], "action": "skipped", "new_priority": new_priority, "old_priority": max(old_priorities)})
             continue
+        if old_priorities:
+            relation_conflicts.append({"source": source_id, "target": target_id, "new_relation": relation, "old_relations": [item.relation for item in existing_relations], "action": "replaced", "new_priority": new_priority, "old_priority": max(old_priorities)})
         for existing in existing_relations:
             db.delete(existing)
         db.add(ConceptRelation(source_concept_id=source_id, target_concept_id=target_id, relation=relation, weight=weight))
         created_relations += 1
     candidate.status = "saved"
-    record_candidate_event(db, candidate.id, "saved", {"created_concepts": created_concepts, "created_relations": created_relations})
+    for conflict in relation_conflicts:
+        record_candidate_event(db, candidate.id, "relation_conflict", conflict)
+    record_candidate_event(db, candidate.id, "saved", {"created_concepts": created_concepts, "created_relations": created_relations, "relation_conflicts": len(relation_conflicts)})
     db.commit()
     return {"candidate_id": candidate.id, "status": candidate.status, "created_concepts": created_concepts, "created_relations": created_relations}
 
