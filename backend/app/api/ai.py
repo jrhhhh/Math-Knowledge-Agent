@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import asyncio
 import time
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -2038,3 +2040,25 @@ def ask(
     result["cache_hit"] = False
     _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
     return result
+
+
+@router.post("/ask-stream")
+async def ask_stream(request: AskRequest):
+    """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
+    async def events():
+        yield f"event: progress\ndata: {json.dumps({'stage': '检索知识点'}, ensure_ascii=False)}\n\n"
+        try:
+            db = SessionLocal()
+            task = asyncio.create_task(asyncio.to_thread(ask, request, db))
+            yield f"event: progress\ndata: {json.dumps({'stage': '召回历史题目'}, ensure_ascii=False)}\n\n"
+            await asyncio.sleep(0)
+            yield f"event: progress\ndata: {json.dumps({'stage': '生成数学解答'}, ensure_ascii=False)}\n\n"
+            result = await task
+            yield f"event: result\ndata: {json.dumps(result, ensure_ascii=False)}\n\n"
+        except Exception as exc:
+            detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+            yield f"event: error\ndata: {json.dumps({'detail': detail}, ensure_ascii=False)}\n\n"
+        finally:
+            if 'db' in locals():
+                db.close()
+    return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
