@@ -1988,6 +1988,7 @@ def _ask_impl(
             max_tokens=primary_max_tokens,
             timeout=primary_timeout,
             on_chunk=stream_callback,
+            extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
         )
         print("[Timing] final answer: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2021,6 +2022,7 @@ def _ask_impl(
                 max_tokens=1600,
                 timeout=70.0,
                 on_chunk=stream_callback,
+                extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
             )
             answer_source = "deepseek_extended"
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
