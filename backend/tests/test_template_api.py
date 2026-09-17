@@ -22,6 +22,11 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("matched", response.json())
 
+    def test_template_events_contract(self):
+        response = self.client.get("/local-templates/not-found/events")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("events", response.json())
+
 
 if __name__ == "__main__":
     unittest.main()

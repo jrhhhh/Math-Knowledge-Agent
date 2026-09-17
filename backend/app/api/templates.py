@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.ai import get_db
 from app.models.local_template import LocalTemplate
+from app.models.local_template_event import LocalTemplateEvent
 
 router = APIRouter(prefix="/local-templates", tags=["Local answer templates"])
 
@@ -29,6 +30,9 @@ class TemplatePreview(BaseModel):
 def serialize(item):
     return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
 
+def audit(db, template_id, action, detail=""):
+    db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail))
+
 
 @router.get("")
 def list_templates(enabled: bool | None = Query(default=None), db: Session = Depends(get_db)):
@@ -44,7 +48,7 @@ def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
     if db.query(LocalTemplate).filter(LocalTemplate.template_id == request.template_id).first():
         raise HTTPException(status_code=409, detail="模板 ID 已存在。")
     item = LocalTemplate(**request.model_dump())
-    db.add(item); db.commit(); db.refresh(item)
+    db.add(item); audit(db, request.template_id, "created"); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -70,7 +74,7 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
         raise HTTPException(status_code=404, detail="模板不存在。")
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
-    db.commit(); db.refresh(item)
+    audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys())); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -79,5 +83,11 @@ def delete_template(template_id: str, db: Session = Depends(get_db)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
-    db.delete(item); db.commit()
+    db.delete(item); audit(db, template_id, "deleted"); db.commit()
     return {"deleted": True, "template_id": template_id}
+
+
+@router.get("/{template_id}/events")
+def template_events(template_id: str, db: Session = Depends(get_db)):
+    events = db.query(LocalTemplateEvent).filter(LocalTemplateEvent.template_id == template_id).order_by(LocalTemplateEvent.created_at.desc()).all()
+    return {"template_id": template_id, "events": [{"action": event.action, "detail": event.detail, "created_at": event.created_at.isoformat()} for event in events]}

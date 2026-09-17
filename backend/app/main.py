@@ -16,6 +16,7 @@ from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 from app.models.local_template import LocalTemplate
+from app.models.local_template_event import LocalTemplateEvent
 from app.ai.retry_queue import resume_pending_jobs
 
 
