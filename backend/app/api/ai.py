@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -594,7 +594,7 @@ def get_related_graph(
         .order_by(GraphCandidate.created_at.desc())
         .first()
     )
-    if cached and cached.created_at and datetime.utcnow() - cached.created_at < timedelta(hours=24):
+    if cached and cached.created_at and datetime.now(timezone.utc).replace(tzinfo=None) - cached.created_at < timedelta(hours=24):
         graph = json.loads(cached.graph_json)
         return graph_candidate_response(cached, graph, "已复用 24 小时内的 AI 图谱缓存。")
 

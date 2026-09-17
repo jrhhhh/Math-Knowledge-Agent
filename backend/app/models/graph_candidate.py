@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Integer, Text, String
 
@@ -15,4 +15,4 @@ class GraphCandidate(Base):
     graph_json = Column(Text, nullable=False)
     validation_json = Column(Text, nullable=False, default="{}")
     status = Column(String, nullable=False, default="pending")
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
