@@ -1,2 +1,4 @@
 math_agent.log
 math_agent.log.*
+*.db-wal
+*.db-shm

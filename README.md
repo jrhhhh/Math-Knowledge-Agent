@@ -69,6 +69,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 
 GitHub Actions 会在 push 和 pull request 时自动执行编译、后端测试、前端语法检查和 smoke test。
 可选监控部署：`docker compose -f docker-compose.monitoring.yml up --build` 会启动后端、Prometheus（9090）和 Grafana（3000）；Prometheus 抓取 `/ai/metrics` 并加载告警规则，Grafana 自动加载 Dashboard，本地直接运行方式不受影响。
+数据库备份：执行 `./scripts/backup_db.sh` 使用 SQLite 在线备份生成 `backups/math_agent-时间.db`；恢复前请停止后端，执行 `./scripts/restore_db.sh backups/xxx.db`，脚本会先执行 `PRAGMA integrity_check`。
 CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结果。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
