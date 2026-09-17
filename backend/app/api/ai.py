@@ -2159,6 +2159,24 @@ def _ask_impl(
     # 8. 返回完整结果
     # ========================================================
 
+    # 非流式请求允许在展示前做一次质量修复；流式响应已经发送过 token，不能重复推送。
+    initial_quality = evaluate_answer(answer)
+    if stream_callback is None and answer_source in {"deepseek", "deepseek_extended", "backup_model"} and initial_quality["score"] < 0.5:
+        try:
+            repaired = call_deepseek(
+                messages=[
+                    {"role": "system", "content": "你是严谨的中文数学教师。必须写出结论、全部条件、关键推导和最终结论；不要讨论系统状态。"},
+                    {"role": "user", "content": f"请修正并完整回答：{question}\n\n原回答：{answer}"},
+                ],
+                max_retries=1, max_tokens=1800, timeout=70.0, circuit_enabled=True,
+            )
+            repaired_quality = evaluate_answer(repaired)
+            if repaired_quality["score"] >= initial_quality["score"]:
+                answer, answer_source = repaired, "quality_retry"
+                print("[AI] quality retry improved answer")
+        except Exception as quality_exc:
+            print("[AI] quality retry skipped:", repr(quality_exc))
+
     print("[Timing] request=%s total ask: %.2fs" % (request_id, time.perf_counter() - started_at))
     result = {
         "request_id": request_id,
