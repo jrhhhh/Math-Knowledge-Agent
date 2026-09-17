@@ -53,6 +53,7 @@ Backend
 缓存管理接口：`GET /ai/cache` 查看命中率，`DELETE /ai/cache` 清空全部答案缓存，`DELETE /ai/cache/{question}` 仅失效指定问题。
 AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`server_error`、`invalid_response` 或 `unknown`，便于前端展示针对性提示和后续监控。
 `/ai/health` 还返回平均响应耗时和平均首 token 耗时，用于定位模型生成瓶颈。
+前端知识图谱区域会展示这些指标，并每 30 秒自动刷新。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务
