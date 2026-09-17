@@ -3,6 +3,7 @@ import sqlite3
 import secrets
 import time
 import json
+from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -73,6 +74,28 @@ def repair_integrity(request: RepairRequest, http_request: Request, db: Session 
     db.commit()
     record_security_event("integrity_repaired", http_request, json.dumps({"deleted": deleted, "backup_path": backup_path, "ids": ids}, ensure_ascii=False))
     return {"deleted": deleted, "backup_path": backup_path, "message": "修复完成，已先生成备份。"}
+
+@router.post("/backup")
+def create_backup(_: bool = Depends(require_admin)):
+    backup_dir = os.getenv("MATH_AGENT_BACKUP_DIR", "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    path = os.path.join(backup_dir, f"math_agent-manual-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db")
+    source = engine.raw_connection()
+    destination = sqlite3.connect(path)
+    try:
+        source.driver_connection.backup(destination)
+        destination.commit()
+    finally:
+        destination.close(); source.close()
+    return {"created": True, "path": path, "size_bytes": os.path.getsize(path)}
+
+@router.get("/backups")
+def list_backups(limit: int = 20):
+    backup_dir = Path(os.getenv("MATH_AGENT_BACKUP_DIR", "backups"))
+    if not backup_dir.exists():
+        return {"items": [], "total": 0}
+    files = sorted(backup_dir.glob("math_agent-*.db"), key=lambda item: item.stat().st_mtime, reverse=True)[:max(1, min(limit, 100))]
+    return {"items": [{"path": str(item), "size_bytes": item.stat().st_size, "modified_at": datetime.fromtimestamp(item.stat().st_mtime).isoformat()} for item in files], "total": len(files)}
 
 @router.post("/integrity/repair/prepare")
 def prepare_integrity_repair(request: RepairRequest, _: bool = Depends(require_admin)):
