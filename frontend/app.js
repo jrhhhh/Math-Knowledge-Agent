@@ -42,6 +42,41 @@ async function loadCandidateStats() {
   }
 }
 
+function ensureBatchAuditButton() {
+  if ($('batchValidateCandidates')) return;
+  const filter = $('candidateStatusFilter');
+  if (!filter) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'batchValidateCandidates';
+  button.className = 'batch-audit-button';
+  button.textContent = '批量校验当前列表';
+  button.addEventListener('click', batchValidateCandidates);
+  filter.parentElement?.appendChild(button);
+}
+
+async function batchValidateCandidates() {
+  const ids = [...document.querySelectorAll('.candidate-item')].map(item => Number(item.dataset.candidateId)).filter(Number.isInteger);
+  if (!ids.length) { showMessage('当前没有可批量校验的候选图谱。'); return; }
+  const button = $('batchValidateCandidates');
+  button.disabled = true;
+  button.textContent = '批量校验中…';
+  try {
+    const response = await fetch(`${API}/ai/graph-candidates/batch-validate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate_ids: ids }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '批量校验失败');
+    const summary = Object.entries(data.summary || {}).map(([status, count]) => `${status}: ${count}`).join(' · ');
+    showMessage(`批量校验完成：${summary || '无结果'}`);
+    await loadCandidateStats();
+    await loadCandidateHistory();
+  } catch (error) {
+    showMessage(`批量校验失败：${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = '批量校验当前列表';
+  }
+}
+
 function renderGraph(graph) {
   const nodes = (graph.nodes || []).slice(0, 28), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target })).slice(0, 45);
   if (!nodes.length) { $('graphCanvas').innerHTML = '<div class="empty-state">知识图谱暂无数据</div>'; return; }
@@ -63,6 +98,7 @@ $('graphHistory').addEventListener('toggle', () => { if ($('graphHistory').open)
 $('candidateStatusFilter').addEventListener('change', loadCandidateHistory);
 $('proofForm').addEventListener('submit', analyzeProof);
 $('refreshGraph').addEventListener('click', loadGraph);
+ensureBatchAuditButton();
 loadGraph();
 loadCandidateStats();
 loadCandidateHistory();
