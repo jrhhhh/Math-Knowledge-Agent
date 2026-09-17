@@ -83,6 +83,16 @@ class AnswerRecordContractTests(unittest.TestCase):
             no_webhook = self.client.post("/ai/security-alerts/notify", headers={"X-Admin-Key": "test-secret"})
             self.assertEqual(no_webhook.status_code, 503)
 
+    def test_alert_cooldown_contract(self):
+        from app.security import alert_delivery_allowed, mark_alert_delivered, _alert_deliveries
+        _alert_deliveries.clear()
+        allowed, remaining = alert_delivery_allowed("test-alert")
+        self.assertTrue(allowed)
+        self.assertEqual(remaining, 0)
+        mark_alert_delivered("test-alert")
+        allowed, remaining = alert_delivery_allowed("test-alert")
+        self.assertFalse(allowed)
+        self.assertGreater(remaining, 0)
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})
         self.assertEqual(invalid.status_code, 422)

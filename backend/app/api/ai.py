@@ -57,7 +57,7 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
-from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, record_security_event, _LOCKOUT_SECONDS
+from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, record_security_event, alert_delivery_allowed, mark_alert_delivered, _LOCKOUT_SECONDS
 
 
 router = APIRouter(
@@ -196,6 +196,10 @@ def notify_security_alerts(db: Session = Depends(get_db), _: bool = Depends(requ
     payload = security_alerts(db)
     if not payload["alert"]:
         return {"sent": False, "reason": "no_active_alert", "alerts": []}
+    signature = hashlib.sha256(json.dumps(payload["alerts"], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    allowed, retry_after = alert_delivery_allowed(signature)
+    if not allowed:
+        return {"sent": False, "reason": "cooldown", "retry_after": retry_after, "alerts": payload["alerts"]}
     body = json.dumps({"text": "Math Agent 安全告警", **payload}, ensure_ascii=False).encode()
     request = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
@@ -206,6 +210,7 @@ def notify_security_alerts(db: Session = Depends(get_db), _: bool = Depends(requ
         raise
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Webhook 发送失败：{exc}") from exc
+    mark_alert_delivered(signature)
     return {"sent": True, "alerts": payload["alerts"]}
 
 class ReviewRequest(BaseModel):

@@ -13,6 +13,7 @@ _login_failures = {}
 _login_lock = Lock()
 _MAX_LOGIN_FAILURES = 5
 _LOCKOUT_SECONDS = 300
+_alert_deliveries = {}
 
 def login_allowed(identity: str):
     now = time.time()
@@ -32,6 +33,16 @@ def record_login_failure(identity: str):
 def clear_login_failures(identity: str):
     with _login_lock:
         _login_failures.pop(identity, None)
+
+def alert_delivery_allowed(signature: str, cooldown: int = 600):
+    now = time.time()
+    previous = _alert_deliveries.get(signature)
+    if previous and now - previous < cooldown:
+        return False, max(0, int(cooldown - (now - previous)))
+    return True, 0
+
+def mark_alert_delivered(signature: str):
+    _alert_deliveries[signature] = time.time()
 
 def record_security_event(event: str, request: Request | None = None, detail: str = ""):
     db = SessionLocal()
