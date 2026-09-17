@@ -60,6 +60,28 @@ RELATION_ALIASES = {
 }
 
 
+# Deterministic semantic guards run before the language-model validator.
+def _hard_relation_check(source: Concept, target: Concept, relation: str):
+    source_name = _normalize_text(source.name)
+    target_name = _normalize_text(target.name)
+
+    if relation == "property_of" and source.type not in {"property", "theorem"}:
+        return False, "property_of 的 source 必须是性质、刻画或定理。"
+    if relation == "uses" and source.type not in {"theorem", "method", "property"}:
+        return False, "uses 的 source 应是定理、方法或证明性质。"
+    if relation == "supports" and target.type == "method" and source.type == "property":
+        return False, "性质对证明方法的支持过于宽泛，应记录具体方法使用的性质。"
+    if relation == "prerequisite" and target.type == "theorem" and source.type in {"concept", "property"}:
+        return False, "定理证明中使用的对象或性质不能标成 prerequisite，应使用 uses。"
+    if (
+        relation == "supports"
+        and source_name == _normalize_text("原像")
+        and target_name == _normalize_text("开覆盖转化法")
+    ):
+        return False, "原像不是开覆盖转化法的直接支撑关系。"
+    return True, ""
+
+
 # ============================================================
 # Basic helpers
 # ============================================================
@@ -1283,6 +1305,14 @@ def validate_relation(
             "valid": False,
             "confidence": 0.0,
             "reason": "非法关系类型。",
+        }
+
+    hard_valid, hard_reason = _hard_relation_check(source, target, relation)
+    if not hard_valid:
+        return {
+            "valid": False,
+            "confidence": 0.0,
+            "reason": hard_reason,
         }
 
     prompt = f"""

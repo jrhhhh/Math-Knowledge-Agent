@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Agent · 数学学习助手</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">∑</span><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
+      <nav><a class="active" href="#ask">✦ 智能问答</a><a href="#graph">◎ 知识图谱</a></nav>
+      <div class="side-note"><span class="status-dot"></span><div><b>系统在线</b><small>连接本地知识库</small></div></div>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div><p class="eyebrow">MATH LEARNING WORKSPACE</p><h1>把难题，变成清晰的思路。</h1></div><button class="ghost-btn" id="refreshGraph">↻ 刷新图谱</button></header>
+      <section class="hero" id="ask">
+        <div class="hero-copy"><span class="pill">AI PROOF ASSISTANT</span><h2>今天想探索什么数学问题？</h2><p>输入题目、定义或证明请求，Math Agent 会结合知识图谱，为你拆解关键概念与推理路径。</p><span class="trust-note">⌁ AI 生成内容仅供学习参考，请核对关键推导</span></div>
+        <form id="askForm" class="ask-form"><textarea id="question" placeholder="例如：证明紧集在连续映射下的像是紧集" required></textarea><div class="form-footer"><span>支持中文数学问题</span><button type="submit" id="askButton">开始推理 <span>→</span></button></div></form>
+      </section>
+      <div id="message" class="message hidden"></div>
+      <section class="dashboard-grid">
+        <div class="panel answer-panel"><div class="panel-heading"><div><span class="section-label">01 / RESPONSE</span><h3>推理结果</h3></div><span id="answerStatus" class="muted">等待提问</span></div><div id="answer" class="answer empty-state">你的数学解答会显示在这里。</div></div>
+        <div class="panel concepts-panel"><div class="panel-heading"><div><span class="section-label">02 / CONCEPTS</span><h3>相关知识点</h3></div><span id="conceptCount" class="count">0</span></div><div id="concepts" class="concept-list"><div class="empty-state">提问后显示相关概念</div></div></div>
+      </section>
+      <section class="panel graph-panel" id="graph"><div class="panel-heading"><div><span class="section-label">03 / KNOWLEDGE GRAPH</span><h3>知识关系网络</h3></div><span id="graphStatus" class="muted">正在加载</span></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state">加载知识图谱中…</div></div><div id="legend" class="legend"></div></section>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

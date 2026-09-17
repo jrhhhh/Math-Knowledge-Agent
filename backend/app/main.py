@@ -1,6 +1,7 @@
 from app.models.concept_relation import ConceptRelation
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.ai import router as ai_router
 from app.api.knowledge import router as knowledge_router
 
@@ -23,6 +24,13 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="Math Knowledge Agent"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(ai_router)
