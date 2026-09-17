@@ -72,6 +72,8 @@ _knowledge_version = 0
 _cache_metrics = {"hits": 0, "misses": 0}
 _stream_results = {}
 _STREAM_RESULT_TTL = 600
+_task_status = {}
+_task_status_lock = threading.Lock()
 try:
     REQUEST_BUDGET_SECONDS = max(10.0, float(os.getenv("MATH_AGENT_REQUEST_BUDGET_SECONDS", "85")))
 except (TypeError, ValueError):
@@ -93,6 +95,19 @@ class RequestCancelledError(RuntimeError):
 def check_request_cancelled(cancel_event):
     if cancel_event is not None and cancel_event.is_set():
         raise RequestCancelledError("客户端已断开，已取消本次问答收尾。")
+
+
+def set_task_status(request_id: str | None, status: str, stage: str, detail: str | None = None):
+    if not request_id:
+        return
+    with _task_status_lock:
+        _task_status[request_id] = {
+            "request_id": request_id,
+            "status": status,
+            "stage": stage,
+            "detail": detail,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 def classify_ai_error(exc):
@@ -411,6 +426,25 @@ def ai_health():
     metrics["backup_model_configured"] = backup_client is not None
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
+
+
+@router.get("/tasks/{request_id}")
+def task_status(request_id: str, db: Session = Depends(get_db)):
+    """Return the live in-process state plus the durable request-log result."""
+    with _task_status_lock:
+        live = dict(_task_status.get(request_id, {}))
+    log = db.query(AIRequestLog).filter(AIRequestLog.request_id == request_id).order_by(AIRequestLog.id.desc()).first()
+    if log:
+        live.update({
+            "status": log.status,
+            "error_code": log.error_code,
+            "error_detail": log.error_detail,
+            "duration_seconds": log.duration_seconds,
+            "updated_at": log.created_at.isoformat() if log.created_at else live.get("updated_at"),
+        })
+    if not live:
+        raise HTTPException(status_code=404, detail="未找到该问答任务。")
+    return live
 
 @router.get("/metrics", response_class=PlainTextResponse)
 def prometheus_metrics():
@@ -2117,6 +2151,7 @@ def _ask_impl(
     deadline = started_at + REQUEST_BUDGET_SECONDS
     degradation = []
     question = request.question.strip()
+    set_task_status(request_id, "queued", "准备问答")
     check_request_cancelled(cancel_event)
 
     if not question:
@@ -2133,6 +2168,7 @@ def _ask_impl(
         cached = dict(cached)
         cached["request_id"] = request_id
         cached["cache_hit"] = True
+        set_task_status(request_id, "succeeded", "缓存命中")
         return cached
 
     # ========================================================
@@ -2145,6 +2181,7 @@ def _ask_impl(
             question
         )
     )
+    set_task_status(request_id, "retrieving", "检索知识点")
     check_request_cancelled(cancel_event)
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2176,6 +2213,7 @@ def _ask_impl(
             limit=10
         )
     )
+    set_task_status(request_id, "retrieving", "召回历史题目")
     check_request_cancelled(cancel_event)
     print("[Timing] historical retrieval: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2190,6 +2228,7 @@ def _ask_impl(
             concept_ids=concept_ids
         )
     )
+    set_task_status(request_id, "retrieving", "检索相似题目")
     check_request_cancelled(cancel_event)
     print("[Timing] similar problems: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2204,6 +2243,7 @@ def _ask_impl(
         db,
         matched_concepts
     )
+    set_task_status(request_id, "generating", "构建知识图谱")
     check_request_cancelled(cancel_event)
     print("[Timing] graph build: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2420,6 +2460,7 @@ def _ask_impl(
             repr(exc)
         )
         degradation.append("primary_failed")
+        set_task_status(request_id, "degraded", "主模型失败，执行降级", repr(exc))
 
         # 若配置了备用 OpenAI 兼容服务，先切换供应商，避免再次消耗主服务超时。
         if backup_client is not None:
@@ -2433,6 +2474,7 @@ def _ask_impl(
                 )
                 answer_source = "backup_model"
                 degradation.append("backup_model")
+                set_task_status(request_id, "generating", "备用模型生成")
                 print("[AI] backup model answered")
             except Exception as backup_exc:
                 print("[AI] backup model failed:", repr(backup_exc))
@@ -2469,12 +2511,14 @@ def _ask_impl(
             )
             answer_source = "deepseek_extended"
             degradation.append("extended_primary")
+            set_task_status(request_id, "generating", "延长生成")
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
           except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
             answer = local_math_answer(question, db)
             answer_source = "local_fallback"
             degradation.append("local_fallback")
+            set_task_status(request_id, "degraded", "本地数学兜底")
             print("[AI] using deterministic local fallback")
 
     # ========================================================
@@ -2566,6 +2610,7 @@ def _ask_impl(
     db.commit()
     db.refresh(answer_record)
     result["answer_id"] = answer_record.id
+    set_task_status(request_id, "succeeded", "回答完成")
     return result
 
 
@@ -2576,6 +2621,7 @@ def ask(request: AskRequest, db: Session = Depends(get_db)):
     try:
         return _ask_impl(request, db, request_id=request_id)
     except Exception as exc:
+        set_task_status(request_id, "failed", "问答失败", str(exc))
         log_request_failure(db, request_id, request.question.strip(), started_at, exc)
         raise
 
@@ -2617,6 +2663,10 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
                 _stream_results[request_id] = {"at": time.monotonic(), "value": result}
             yield emit("result", result)
         except Exception as exc:
+            if isinstance(exc, RequestCancelledError):
+                set_task_status(trace_id, "cancelled", "客户端已断开", str(exc))
+            else:
+                set_task_status(trace_id, "failed", "问答失败", str(exc))
             if isinstance(exc, HTTPException):
                 code, detail = "http_error", str(exc.detail)
             else:
