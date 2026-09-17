@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -78,6 +79,14 @@ def sample_recommendations(db: Session = Depends(get_db)):
         bucket = "short" if sample.question_length < 12 else ("medium" if sample.question_length < 40 else "long")
         buckets[bucket] += 1
     return {"unmatched": len(samples), "length_buckets": buckets, "recommendation": "收集更多未命中问题后，人工归纳主题并创建模板。" if samples else "暂无需要补充的模板。"}
+
+
+@router.delete("/samples")
+def cleanup_samples(retention_days: int = Query(default=90, ge=1, le=3650), db: Session = Depends(get_db)):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=retention_days)
+    deleted = db.query(QuestionSample).filter(QuestionSample.created_at < cutoff).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted, "retention_days": retention_days, "cutoff": cutoff.isoformat()}
 
 
 @router.post("/ab-test")

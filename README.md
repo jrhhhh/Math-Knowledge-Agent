@@ -60,6 +60,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 
 可选备用模型：设置 `MATH_AGENT_BACKUP_API_KEY`、`MATH_AGENT_BACKUP_BASE_URL` 和可选的 `MATH_AGENT_BACKUP_MODEL`（OpenAI 兼容接口）。主模型失败后会优先切换备用模型，再进入本地兜底；是否配置可通过 `/ai/health` 的 `backup_model_configured` 查看。
 本地模板变更可通过 `GET /local-templates/{template_id}/events` 查询审计记录。
+匿名样本默认不自动删除，可由管理员调用 `DELETE /local-templates/samples?retention_days=90` 清理过期哈希样本。
 
 启动前后端后，可运行 `./scripts/smoke_test.sh` 做无写入回归检查；也可通过 `API_URL`、`WEB_URL` 环境变量指定服务地址。
 
