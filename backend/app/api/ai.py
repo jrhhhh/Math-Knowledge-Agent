@@ -43,7 +43,7 @@ from app.ai.concept_matcher import (
 from app.ai.telemetry import record_request, snapshot
 from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
 from app.ai.local_fallback import local_math_answer
-from app.ai.answer_quality import evaluate_answer
+from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
 
 
@@ -2166,7 +2166,7 @@ def _ask_impl(
             repaired = call_deepseek(
                 messages=[
                     {"role": "system", "content": "你是严谨的中文数学教师。必须写出结论、全部条件、关键推导和最终结论；不要讨论系统状态。"},
-                    {"role": "user", "content": f"请修正并完整回答：{question}\n\n原回答：{answer}"},
+                    {"role": "user", "content": f"请修正并完整回答：{question}\n{quality_retry_instruction(initial_quality)}\n\n原回答：{answer}"},
                 ],
                 max_retries=1, max_tokens=1800, timeout=70.0, circuit_enabled=True,
             )

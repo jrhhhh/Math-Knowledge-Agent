@@ -18,3 +18,12 @@ def evaluate_answer(answer: str, question: str = "") -> dict:
         })
     score = round(sum(checks.values()) / len(checks), 2)
     return {"score": score, "checks": checks, "question_type": "proof" if is_proof else "general", "level": "good" if score >= 0.75 else ("partial" if score >= 0.5 else "weak")}
+
+
+def quality_retry_instruction(quality: dict) -> str:
+    missing = [label for key, label in {
+        "has_conclusion": "明确结论", "has_conditions": "全部条件和假设",
+        "has_reasoning": "证明依据", "has_formula": "关键公式",
+        "has_basis": "定理/定义依据", "has_derivation": "逐步推导",
+    }.items() if not quality.get("checks", {}).get(key)]
+    return "请重点补齐：" + "、".join(missing) + "。" if missing else "请复核逻辑并保持严谨。"

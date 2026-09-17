@@ -1,6 +1,6 @@
 import unittest
 
-from app.ai.answer_quality import evaluate_answer
+from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 
 
 class AnswerQualityTests(unittest.TestCase):
@@ -17,6 +17,11 @@ class AnswerQualityTests(unittest.TestCase):
         self.assertEqual(result["question_type"], "proof")
         self.assertIn("has_basis", result["checks"])
         self.assertIn("has_derivation", result["checks"])
+
+    def test_retry_instruction_names_missing_parts(self):
+        instruction = quality_retry_instruction({"checks": {"has_conclusion": False, "has_formula": False}})
+        self.assertIn("明确结论", instruction)
+        self.assertIn("关键公式", instruction)
 
 
 if __name__ == "__main__":
