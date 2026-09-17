@@ -52,7 +52,7 @@ Backend
 前端 `/ask` 请求支持手动取消，并设置 90 秒客户端超时；后端调用仍有独立超时保护。答案缓存绑定知识库版本，候选图谱保存后会自动失效旧缓存。
 缓存管理接口：`GET /ai/cache` 查看命中率，`DELETE /ai/cache` 清空全部答案缓存，`DELETE /ai/cache/{question}` 仅失效指定问题。
 AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`server_error`、`invalid_response` 或 `unknown`，便于前端展示针对性提示和后续监控。
-`/ai/health` 还返回平均响应耗时、平均首 token 耗时，以及 `primary_model_configured`、`primary_model`、`primary_base_url`、`primary_timeout_seconds` 和 `model_circuit`，用于区分密钥未配置、供应商网络错误、模型错误和熔断状态；不会返回任何 API 密钥。
+`/ai/health` 还返回平均响应耗时、平均首 token 耗时，以及 `primary_model_configured`、`primary_model`、`primary_base_url`、`primary_timeout_seconds`、`model_circuit` 和 `providers`，用于区分密钥未配置、供应商网络错误、模型错误和熔断状态；不会返回任何 API 密钥。`providers.primary/backup` 会记录最近成功或失败时间及最后错误。
 前端知识图谱区域会展示这些指标，并每 30 秒自动刷新。
 首 token 超过 3 秒或平均响应超过 20 秒时，监控面板会显示慢请求告警。
 每次问答响应都包含 `request_id`，后端耗时日志使用同一 ID，便于端到端排查。

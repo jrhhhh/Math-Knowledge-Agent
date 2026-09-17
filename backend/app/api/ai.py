@@ -723,7 +723,7 @@ def call_deepseek(
                             first_token_at = time.perf_counter()
                         text_parts.append(content)
                         on_chunk(content)
-                record_request(True, attempts - 1, duration=time.perf_counter() - request_started, first_token=first_token_at - request_started if first_token_at else None)
+                record_request(True, attempts - 1, duration=time.perf_counter() - request_started, first_token=first_token_at - request_started if first_token_at else None, provider="backup" if provider_client is not None else "primary")
                 circuit_success()
                 return "".join(text_parts)
 
@@ -732,7 +732,7 @@ def call_deepseek(
                 and response.choices[0].message
                 and response.choices[0].message.content
             ):
-                record_request(True, attempts - 1, duration=time.perf_counter() - request_started)
+                record_request(True, attempts - 1, duration=time.perf_counter() - request_started, provider="backup" if provider_client is not None else "primary")
                 circuit_success()
                 return response.choices[0].message.content
 
@@ -781,7 +781,7 @@ def call_deepseek(
             break
 
     if last_error is not None:
-        record_request(False, max(attempts - 1, 0), repr(last_error), duration=time.perf_counter() - request_started)
+        record_request(False, max(attempts - 1, 0), repr(last_error), duration=time.perf_counter() - request_started, provider="backup" if provider_client is not None else "primary")
         raise last_error
 
     raise RuntimeError(
