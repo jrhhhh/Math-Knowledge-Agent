@@ -8,6 +8,8 @@ from threading import Lock
 from fastapi import Header, HTTPException, Request
 from app.database import SessionLocal
 from app.models.security_event import SecurityEvent
+import logging
+logger = logging.getLogger("math_agent.security")
 
 _login_failures = {}
 _login_lock = Lock()
@@ -45,6 +47,7 @@ def mark_alert_delivered(signature: str):
     _alert_deliveries[signature] = time.time()
 
 def record_security_event(event: str, request: Request | None = None, detail: str = ""):
+    logger.info("security_event", extra={"event": event, "detail": detail})
     db = SessionLocal()
     try:
         db.add(SecurityEvent(event=event, ip_address=request.client.host if request and request.client else None,

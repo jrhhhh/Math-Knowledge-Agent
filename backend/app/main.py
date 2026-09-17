@@ -24,6 +24,7 @@ from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
+from app.logging_config import configure_logging
 from app.ai.retry_queue import resume_pending_jobs
 from sqlalchemy import inspect, text
 
@@ -37,6 +38,7 @@ from app.api.templates import router as template_router
 Base.metadata.create_all(
     bind=engine
 )
+logger = configure_logging()
 
 # 保持旧 SQLite 数据兼容：create_all 不会给已有表补列。
 with engine.begin() as connection:
