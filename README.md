@@ -26,6 +26,9 @@ Current Version: v0.3
 - [x] 题目创建与查询 API
 - [x] AI 数学问答与证明辅助
 - [x] 知识图谱关系检索
+- [x] AI 按问题生成相关知识图谱
+- [x] 候选图谱校验、缓存与幂等入库
+- [x] 知识点别名归一化
 - [x] 产品化前端展示页
 
 
@@ -110,9 +113,22 @@ Backend
 
 - `POST /ai/ask`：数学问答、知识点检索和历史题推荐
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
+- `POST /ai/related-graph`：由 AI 根据问题生成候选知识图谱；相同问题 24 小时内复用缓存
+- `GET /ai/graph-candidates/{candidate_id}`：查看候选图谱及校验状态
+- `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
+- `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库
 - `GET /concepts/graph`：获取知识图谱节点和关系
+- `POST /concepts/{concept_id}/aliases`：为已有知识点添加别名
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。
+
+相关图谱的典型流程：
+
+```text
+问题 → AI 生成候选图谱 → 代码校验 → AI 语义校验 → 显式保存 → 知识库复用
+```
+
+候选图谱中的新概念在保存前只作为临时节点展示；保存时会按标准名称和别名去重，并按关系优先级处理冲突。已有数据库不会被首次启动或生成操作删除。
 
 启动前端展示页：
 
