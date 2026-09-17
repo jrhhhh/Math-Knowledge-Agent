@@ -17,9 +17,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.x'
       - name: Install backend dependencies
         run: python -m pip install -r backend/requirements.txt
       - name: Compile backend
@@ -61,9 +58,11 @@ jobs:
           grep -q 'MathAgentAutomatedBackupFailed' prometheus-alerts.yml
       - name: Validate Prometheus rule syntax
         run: |
-          # Prometheus release 2.53.0 maps to Go module version v0.53.0.
-          go install github.com/prometheus/prometheus/cmd/promtool@v0.53.0
-          "$(go env GOPATH)/bin/promtool" check rules prometheus-alerts.yml
+          curl --fail --silent --show-error --location --retry 3 --retry-all-errors \
+            --output /tmp/prometheus.tar.gz \
+            https://github.com/prometheus/prometheus/releases/download/v2.53.0/prometheus-2.53.0.linux-amd64.tar.gz
+          tar --extract --gzip --file /tmp/prometheus.tar.gz --directory /tmp
+          /tmp/prometheus-2.53.0.linux-amd64/promtool check rules prometheus-alerts.yml
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
