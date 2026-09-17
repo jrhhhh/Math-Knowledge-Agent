@@ -63,6 +63,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 启动前后端后，可运行 `./scripts/smoke_test.sh` 做无写入回归检查；也可通过 `API_URL`、`WEB_URL` 环境变量指定服务地址。
 
 GitHub Actions 会在 push 和 pull request 时自动执行编译、后端测试、前端语法检查和 smoke test。
+CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结果。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务

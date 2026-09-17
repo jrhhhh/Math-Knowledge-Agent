@@ -31,3 +31,9 @@ jobs:
         working-directory: backend
       - name: Run smoke test
         run: ./scripts/smoke_test.sh
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser smoke test
+        run: node scripts/browser_smoke.mjs
