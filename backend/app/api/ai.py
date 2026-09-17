@@ -6,6 +6,7 @@ import queue
 import csv
 import io
 import hashlib
+import re
 from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
@@ -137,6 +138,13 @@ class FeedbackRequest(BaseModel):
     feedback: str | None = None
 
 
+class EvaluateRequest(BaseModel):
+    question: str
+    answer: str
+    reference_answer: str | None = None
+    knowledge_points: list[str] = []
+
+
 @router.get("/answers")
 def list_answers(limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
     items = db.query(AnswerRecord).order_by(AnswerRecord.created_at.desc()).limit(limit).all()
@@ -158,6 +166,34 @@ def submit_answer_feedback(answer_id: int, request: FeedbackRequest, db: Session
     db.commit()
     db.refresh(item)
     return {"id": item.id, "answer_id": item.answer_id, "rating": item.rating, "feedback": item.feedback}
+
+
+@router.post("/evaluate")
+def evaluate_answer_endpoint(request: EvaluateRequest):
+    """返回可解释的启发式质量评估；不把启发式分数冒充数学证明器。"""
+    quality = evaluate_answer(request.answer, request.question)
+    answer_text = request.answer.casefold()
+    missing_points = [point for point in request.knowledge_points if point.casefold() not in answer_text]
+    reference_coverage = None
+    if request.reference_answer:
+        reference_terms = [term for term in re.findall(r"[\u4e00-\u9fff]{2,}|[A-Za-z]{3,}", request.reference_answer) if len(term) >= 2]
+        reference_coverage = round(sum(term.casefold() in answer_text for term in reference_terms) / len(reference_terms), 2) if reference_terms else 1.0
+    warnings = list(quality["formula"]["issues"])
+    if missing_points:
+        warnings.append("答案未覆盖全部指定知识点。")
+    return {
+        "score": quality["score"],
+        "correctness": quality["score"],
+        "completeness": round(max(0.0, quality["score"] - 0.1 * len(missing_points)), 2),
+        "formula_valid": quality["formula"]["valid"],
+        "logic_valid": bool(quality["checks"].get("has_reasoning") or quality["checks"].get("has_conclusion")),
+        "question_type": quality["question_type"],
+        "level": quality["level"],
+        "checks": quality["checks"],
+        "missing_points": missing_points,
+        "reference_coverage": reference_coverage,
+        "warnings": warnings,
+    }
 
 
 @router.get("/health")
