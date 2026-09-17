@@ -43,15 +43,21 @@ router = APIRouter(
 )
 _answer_cache = {}
 _ANSWER_CACHE_TTL = 300
+_knowledge_version = 0
 
 
 def cached_answer(question: str):
     entry = _answer_cache.get(question.casefold())
-    if entry and time.monotonic() - entry["at"] < _ANSWER_CACHE_TTL:
+    if entry and entry["version"] == _knowledge_version and time.monotonic() - entry["at"] < _ANSWER_CACHE_TTL:
         return entry["value"]
     if entry:
         _answer_cache.pop(question.casefold(), None)
     return None
+
+
+def invalidate_answer_cache():
+    global _knowledge_version
+    _knowledge_version += 1
 
 
 def get_db():
@@ -1273,6 +1279,7 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         record_candidate_event(db, candidate.id, "relation_conflict", conflict)
     record_candidate_event(db, candidate.id, "saved", {"created_concepts": created_concepts, "created_relations": created_relations, "relation_conflicts": len(relation_conflicts)})
     db.commit()
+    invalidate_answer_cache()
     return {"candidate_id": candidate.id, "status": candidate.status, "created_concepts": created_concepts, "created_relations": created_relations}
 
 
@@ -2007,5 +2014,5 @@ def ask(
         }
     }
     result["cache_hit"] = False
-    _answer_cache[question.casefold()] = {"at": time.monotonic(), "value": result}
+    _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
     return result
