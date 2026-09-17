@@ -44,6 +44,7 @@ from app.ai.telemetry import record_request, snapshot
 from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
 from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
+from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
 
 
@@ -2160,6 +2161,7 @@ def _ask_impl(
     # ========================================================
 
     # 非流式请求允许在展示前做一次质量修复；流式响应已经发送过 token，不能重复推送。
+    answer, formula_fixes = repair_formula(answer)
     initial_quality = evaluate_answer(answer, question)
     if stream_callback is None and answer_source in {"deepseek", "deepseek_extended", "backup_model"} and initial_quality["score"] < 0.5:
         try:
@@ -2185,6 +2187,7 @@ def _ask_impl(
         "answer": answer,
         "answer_source": answer_source,
         "answer_quality": evaluate_answer(answer, question),
+        "formula_fixes": formula_fixes,
 
         "concepts": [
             {
