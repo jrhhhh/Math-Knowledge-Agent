@@ -83,6 +83,7 @@ async function ask(event) {
 }
 async function recoverTaskResult(requestId) { if (!requestId) return null; for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 1500)); try { const response = await nativeFetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`); const task = await response.json(); if (!response.ok) return null; $('answerStatus').textContent = task.stage || '恢复任务状态'; if (task.result?.answer) return task.result; if (['failed', 'cancelled'].includes(task.status)) return null; } catch (error) { return null; } } return null; }
 function ensureTaskDetailPanel() { if ($('taskDetail')) return; const panel = document.createElement('details'); panel.id = 'taskDetail'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>任务详情</summary><div class="task-detail-info"><span class="muted">选择一个任务查看详情</span></div>'; $('graph').appendChild(panel); }
+async function retryTask(requestId) { try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/retry`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '重新执行失败'); showMessage(`任务已重新加入队列：${data.job_id}`); $('taskDetail').querySelector('[data-task-retry]')?.remove(); loadTaskHistory(); } catch (error) { showMessage(`重新执行失败：${error.message}`); } }
 function renderTaskDetail(task) { ensureTaskDetailPanel(); const result = task.result || {}; const degradation = (result.degradation || []).join(' → ') || '无'; $('taskDetail').open = true; $('taskDetail').querySelector('.task-detail-info').innerHTML = `<div><b>${escapeHtml(task.status || '未知')}</b> · ${escapeHtml(task.stage || '')}</div><div>请求 ID：<code>${escapeHtml(task.request_id || '')}</code></div><div>更新时间：${escapeHtml(task.updated_at || '—')}</div>${result.generation_elapsed_seconds != null ? `<div>生成耗时：${result.generation_elapsed_seconds}s / 预算 ${result.generation_budget_seconds || '—'}s</div>` : ''}<div>降级链路：${escapeHtml(degradation)}</div>${task.error_detail || task.detail ? `<div class="task-error">错误：${escapeHtml(task.error_detail || task.detail)}</div>` : ''}`; }
 function cancelAsk() { askController?.abort(); }
 function ensureAskCancelButton() { const button = document.createElement('button'); button.type = 'button'; button.id = 'cancelAskButton'; button.className = 'cancel-ask hidden'; button.textContent = '取消推理'; button.addEventListener('click', cancelAsk); $('askButton').parentElement?.appendChild(button); }
@@ -284,6 +285,21 @@ restoreTask = async function (requestId) {
   return restoreTaskBase(requestId);
 };
 ensureTaskDetailPanel();
+const renderTaskDetailBase = renderTaskDetail;
+renderTaskDetail = function (task) {
+  renderTaskDetailBase(task);
+  const detail = $('taskDetail').querySelector('.task-detail-info');
+  detail.querySelector('[data-task-retry]')?.remove();
+  if (['failed', 'cancelled'].includes(task.status)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.taskRetry = task.request_id;
+    button.className = 'task-retry-button';
+    button.textContent = '重新执行';
+    button.onclick = () => retryTask(task.request_id);
+    detail.appendChild(button);
+  }
+};
 
 // 统一将本次问答的追踪 ID 放入查询面板，便于故障后立即定位。
 const originalAsk = ask;

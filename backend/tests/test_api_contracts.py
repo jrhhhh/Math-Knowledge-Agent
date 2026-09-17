@@ -78,6 +78,14 @@ class APIContractTests(unittest.TestCase):
         self.assertIn("items", listing.json())
         cleanup = self.client.post("/ai/tasks/cleanup?older_than_days=3650")
         self.assertEqual(cleanup.status_code, 200)
+        from app.database import SessionLocal
+        from app.models.ai_task_status import AITaskStatus
+        db = SessionLocal()
+        db.add(AITaskStatus(request_id="test-task-conflict", question="测试问题", status="generating", stage="生成中"))
+        db.commit()
+        db.close()
+        retry_conflict = self.client.post("/ai/tasks/test-task-conflict/retry")
+        self.assertEqual(retry_conflict.status_code, 409)
 
     def test_retry_validation_contract(self):
         response = self.client.post("/ai/retry-queue", json={"operation": "unsupported", "question": "x"})
