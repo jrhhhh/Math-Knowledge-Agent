@@ -132,7 +132,19 @@ def ai_health():
     samples = metrics.pop("first_token_samples")
     metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
+    metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
+
+
+def cleanup_request_logs(retention_days: int = 30):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=retention_days)
+    db = SessionLocal()
+    try:
+        deleted = db.query(AIRequestLog).filter(AIRequestLog.created_at < cutoff).delete(synchronize_session=False)
+        db.commit()
+        return deleted
+    finally:
+        db.close()
 
 
 @router.get("/requests/{request_id}")
