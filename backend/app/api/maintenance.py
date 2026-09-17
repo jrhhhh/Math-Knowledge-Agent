@@ -123,6 +123,17 @@ def notify_backup_alert(_: bool = Depends(require_admin)):
         raise HTTPException(status_code=502, detail=f"Webhook 发送失败：{exc}") from exc
     return {"sent": True, "backups_failed": metrics["backups_failed"]}
 
+@router.get("/backup-status")
+def backup_status():
+    path = os.getenv("MATH_AGENT_BACKUP_STATUS_FILE", "backups/backup-status.json")
+    if not os.path.isfile(path):
+        return {"status": "unknown", "path": path}
+    try:
+        with open(path, encoding="utf-8") as stream:
+            return {**json.load(stream), "path": path}
+    except (OSError, json.JSONDecodeError):
+        return {"status": "invalid", "path": path}
+
 @router.post("/integrity/repair/prepare")
 def prepare_integrity_repair(request: RepairRequest, _: bool = Depends(require_admin)):
     if sum(len(values) for key, values in request.model_dump(exclude={"confirmation_token"}).items()) == 0:
