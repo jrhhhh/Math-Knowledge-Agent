@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import asyncio
 import queue
+import csv
+import io
 from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
@@ -145,6 +147,52 @@ def cleanup_request_logs(retention_days: int = 30):
         return deleted
     finally:
         db.close()
+
+
+def _parse_log_datetime(value: str | None):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None) if parsed.tzinfo else parsed
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"无效的时间格式：{value}，请使用 ISO 8601。") from exc
+
+
+def _request_log_query(db: Session, status: str | None, since: str | None, until: str | None):
+    if status and status not in {"succeeded", "failed"}:
+        raise HTTPException(status_code=400, detail="status 只能是 succeeded 或 failed。")
+    query = db.query(AIRequestLog)
+    if status:
+        query = query.filter(AIRequestLog.status == status)
+    start, end = _parse_log_datetime(since), _parse_log_datetime(until)
+    if start:
+        query = query.filter(AIRequestLog.created_at >= start)
+    if end:
+        query = query.filter(AIRequestLog.created_at <= end)
+    return query.order_by(AIRequestLog.created_at.desc())
+
+
+def _request_log_item(log):
+    return {"request_id": log.request_id, "question": log.question, "status": log.status,
+            "duration_seconds": log.duration_seconds, "error_code": log.error_code,
+            "error_detail": log.error_detail, "created_at": log.created_at.isoformat() if log.created_at else None}
+
+
+@router.get("/requests")
+def list_request_logs(status: str | None = Query(default=None), since: str | None = Query(default=None), until: str | None = Query(default=None), limit: int = Query(default=50, ge=1, le=500), db: Session = Depends(get_db)):
+    items = _request_log_query(db, status, since, until).limit(limit).all()
+    return {"items": [_request_log_item(log) for log in items], "total": len(items), "limit": limit}
+
+
+@router.get("/requests/export")
+def export_request_logs(status: str | None = Query(default=None), since: str | None = Query(default=None), until: str | None = Query(default=None), db: Session = Depends(get_db)):
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["request_id", "question", "status", "duration_seconds", "error_code", "error_detail", "created_at"])
+    writer.writeheader()
+    for log in _request_log_query(db, status, since, until).limit(5000).all():
+        writer.writerow(_request_log_item(log))
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": "attachment; filename=ai-request-logs.csv"})
 
 
 @router.get("/requests/{request_id}")
