@@ -43,6 +43,7 @@ from app.ai.concept_matcher import (
 from app.ai.telemetry import record_request, snapshot
 from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
 from app.ai.local_fallback import local_math_answer
+from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
 
 
 router = APIRouter(
@@ -135,6 +136,7 @@ def ai_health():
     samples = metrics.pop("first_token_samples")
     metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
+    metrics["model_circuit"] = circuit_snapshot()
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
 
@@ -382,6 +384,7 @@ def call_deepseek(
     timeout: float | None = None,
     extra_body: dict | None = None,
     on_chunk=None,
+    circuit_enabled: bool = False,
 ):
     """
     调用 DeepSeek API。
@@ -403,6 +406,8 @@ def call_deepseek(
 
     for attempt in range(max_retries):
         try:
+            if circuit_enabled:
+                before_call()
             attempts = attempt + 1
             kwargs = {
                 "model": "deepseek-v4-pro",
@@ -434,6 +439,7 @@ def call_deepseek(
                         text_parts.append(content)
                         on_chunk(content)
                 record_request(True, attempts - 1, duration=time.perf_counter() - request_started, first_token=first_token_at - request_started if first_token_at else None)
+                circuit_success()
                 return "".join(text_parts)
 
             if (
@@ -442,6 +448,7 @@ def call_deepseek(
                 and response.choices[0].message.content
             ):
                 record_request(True, attempts - 1, duration=time.perf_counter() - request_started)
+                circuit_success()
                 return response.choices[0].message.content
 
             raise RuntimeError(
@@ -455,6 +462,7 @@ def call_deepseek(
         ) as exc:
 
             last_error = exc
+            circuit_failure()
 
             if attempt < max_retries - 1:
                 time.sleep(
@@ -467,6 +475,7 @@ def call_deepseek(
         except APIStatusError as exc:
 
             last_error = exc
+            circuit_failure()
 
             # 只有服务器错误才值得重试
             if exc.status_code >= 500:
@@ -481,6 +490,7 @@ def call_deepseek(
         except Exception as exc:
 
             last_error = exc
+            circuit_failure()
 
             # 未知错误不无限重试
             break
@@ -2076,6 +2086,7 @@ def _ask_impl(
             max_tokens=primary_max_tokens,
             timeout=primary_timeout,
             on_chunk=stream_callback,
+            circuit_enabled=True,
             extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
         )
         print("[Timing] final answer: %.2fs" % (time.perf_counter() - started_at))
@@ -2110,6 +2121,7 @@ def _ask_impl(
                 max_tokens=1600,
                 timeout=70.0,
                 on_chunk=stream_callback,
+                circuit_enabled=True,
                 extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
             )
             answer_source = "deepseek_extended"
