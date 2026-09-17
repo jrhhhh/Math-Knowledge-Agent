@@ -163,8 +163,11 @@ def admin_login(request: AdminLoginRequest, http_request: Request):
     return {"access_token": issue_admin_token(configured), "token_type": "bearer", "expires_in": 3600}
 
 @router.get("/security-events")
-def security_events(limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db)):
-    items = db.query(SecurityEvent).order_by(SecurityEvent.created_at.desc()).limit(limit).all()
+def security_events(event: str | None = None, ip: str | None = None, limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db)):
+    query = db.query(SecurityEvent)
+    if event: query = query.filter(SecurityEvent.event == event)
+    if ip: query = query.filter(SecurityEvent.ip_address == ip)
+    items = query.order_by(SecurityEvent.created_at.desc()).limit(limit).all()
     return {"items": [{"id": item.id, "event": item.event, "ip_address": item.ip_address,
                        "path": item.path, "detail": item.detail, "created_at": item.created_at.isoformat()} for item in items], "total": len(items)}
 
