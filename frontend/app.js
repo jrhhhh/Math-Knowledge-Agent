@@ -1,9 +1,13 @@
 const API = window.MATH_AGENT_API || 'http://127.0.0.1:8000';
 const $ = (id) => document.getElementById(id);
+let adminKey = sessionStorage.getItem('math-agent-admin-key') || '';
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => { const method = String(init.method || 'GET').toUpperCase(); if (adminKey && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) { const headers = new Headers(init.headers || {}); headers.set('X-Admin-Key', adminKey); init = { ...init, headers }; } return nativeFetch(input, init); };
 let activeCandidateId = null;
 let askController = null;
 let lastAiErrorCode = null;
 let lastAskResult = null;
+function ensureAdminPanel() { if ($('adminPanel')) return; const panel = document.createElement('details'); panel.id = 'adminPanel'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>管理权限</summary><div class="template-preview"><input id="adminKeyInput" type="password" placeholder="输入管理员密钥（仅当前会话）" aria-label="管理员密钥"><button type="button" id="saveAdminKey">保存</button><button type="button" id="clearAdminKey">清除</button><output id="adminKeyStatus"></output></div>'; $('graph').appendChild(panel); $('adminKeyInput').value = adminKey; $('saveAdminKey').onclick = () => { adminKey = $('adminKeyInput').value.trim(); if (adminKey) sessionStorage.setItem('math-agent-admin-key', adminKey); else sessionStorage.removeItem('math-agent-admin-key'); $('adminKeyStatus').textContent = adminKey ? '已保存到当前会话' : '未设置密钥'; }; $('clearAdminKey').onclick = () => { adminKey = ''; sessionStorage.removeItem('math-agent-admin-key'); $('adminKeyInput').value = ''; $('adminKeyStatus').textContent = '已清除'; }; }
 const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff', method: '#77f2ad' };
 
 function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : lastAiErrorCode; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
@@ -169,6 +173,7 @@ function renderGraph(graph) {
 $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
+ensureAdminPanel();
 $('generateGraphButton').addEventListener('click', generateRelatedGraph);
 $('saveGraphButton').addEventListener('click', validateAndSaveGraph);
 $('applyGraphEdit').addEventListener('click', applyGraphEdit);
