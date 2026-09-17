@@ -55,6 +55,13 @@ def list_templates(enabled: bool | None = Query(default=None), db: Session = Dep
     return {"items": [serialize(item) for item in items], "total": len(items)}
 
 
+@router.get("/stats")
+def template_stats(db: Session = Depends(get_db)):
+    items = db.query(LocalTemplate).all()
+    counts = {status: sum(1 for item in items if item.review_status == status) for status in ("pending", "approved", "rejected")}
+    return {"total": len(items), "enabled": sum(1 for item in items if item.enabled), "by_status": counts}
+
+
 @router.post("", status_code=201)
 def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
     validate_answer_content(request.answer)
