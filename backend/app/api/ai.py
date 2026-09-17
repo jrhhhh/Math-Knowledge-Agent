@@ -143,6 +143,12 @@ def get_request_log(request_id: str, db: Session = Depends(get_db)):
     return {"request_id": request_id, "items": [{"status": log.status, "duration_seconds": log.duration_seconds, "error_code": log.error_code, "error_detail": log.error_detail, "created_at": log.created_at.isoformat() if log.created_at else None} for log in logs]}
 
 
+def log_request_failure(db: Session, request_id: str, question: str, started_at: float, exc):
+    code, detail = ("http_error", str(exc.detail)) if isinstance(exc, HTTPException) else classify_ai_error(exc)
+    db.add(AIRequestLog(request_id=request_id, question=question, status="failed", duration_seconds=round(time.perf_counter() - started_at, 3), error_code=code, error_detail=detail))
+    db.commit()
+
+
 @router.post("/retry-queue")
 def create_retry_job(request: RetryRequest):
     if request.operation != "related_graph" or not request.question.strip() or request.priority not in {0, 10}:
@@ -2108,7 +2114,13 @@ def _ask_impl(
 
 @router.post("/ask")
 def ask(request: AskRequest, db: Session = Depends(get_db)):
-    return _ask_impl(request, db, request_id=uuid4().hex[:12])
+    request_id = uuid4().hex[:12]
+    started_at = time.perf_counter()
+    try:
+        return _ask_impl(request, db, request_id=request_id)
+    except Exception as exc:
+        log_request_failure(db, request_id, request.question.strip(), started_at, exc)
+        raise
 
 
 @router.post("/ask-stream")
@@ -2116,6 +2128,7 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
     """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
     async def events():
         trace_id = request_id or uuid4().hex[:12]
+        started_at = time.perf_counter()
         sequence = 0
         def emit(event, payload):
             nonlocal sequence
@@ -2149,6 +2162,8 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
                 code, detail = "http_error", str(exc.detail)
             else:
                 code, detail = classify_ai_error(exc)
+            if 'db' in locals():
+                log_request_failure(db, trace_id, request.question.strip(), started_at, exc)
             yield emit("error", {"error_code": code, "detail": detail})
         finally:
             if 'db' in locals():
