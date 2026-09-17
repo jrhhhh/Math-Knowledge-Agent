@@ -645,6 +645,16 @@ def list_retry_jobs(limit: int = Query(default=20, ge=1, le=100), db: Session = 
     return {"items": [{"id": job.id, "operation": job.operation, "question": job.question, "status": job.status, "attempts": job.attempts, "max_attempts": job.max_attempts, "error": job.error, "created_at": job.created_at.isoformat() if job.created_at else None, "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
 
 
+@router.get("/retry-alerts")
+def retry_alerts(window_minutes: int = Query(default=60, ge=1, le=10080), db: Session = Depends(get_db)):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=window_minutes)
+    jobs = db.query(AIRetryJob).filter(AIRetryJob.status == "failed", AIRetryJob.updated_at >= cutoff).order_by(AIRetryJob.updated_at.desc()).limit(20).all()
+    return {"window_minutes": window_minutes, "alert": bool(jobs), "failed_count": len(jobs),
+            "items": [{"id": job.id, "question": job.question, "attempts": job.attempts,
+                       "max_attempts": job.max_attempts, "error": job.error,
+                       "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
+
+
 
 
 class AskRequest(BaseModel):

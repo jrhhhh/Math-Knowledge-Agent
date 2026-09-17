@@ -234,6 +234,7 @@ function renderGraph(graph) {
   $('legend').innerHTML = '<span class="legend-concept">概念</span><span class="legend-theorem">定理</span><span class="legend-property">性质</span><span class="legend-method">方法</span><em>悬停节点查看详情</em>';
 }
 
+async function loadRetryAlerts() { let panel = $('retryAlerts'); if (!panel) { panel = document.createElement('details'); panel.id = 'retryAlerts'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>重试失败告警</summary><div class="retry-alert-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/retry-alerts?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); panel.querySelector('.retry-alert-info').innerHTML = data.alert ? `<b class="health-warning">⚠ 最近 1 小时有 ${data.failed_count} 个任务最终失败</b>${(data.items || []).slice(0, 3).map(item => `<div class="retry-alert-item"><span>${escapeHtml(item.question)}</span><small>${escapeHtml(item.error || '未知错误')}</small></div>`).join('')}` : '<span class="muted">最近 1 小时没有最终失败任务</span>'; } catch (error) { panel.querySelector('.retry-alert-info').textContent = '重试告警暂不可用'; } }
 $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
@@ -250,6 +251,7 @@ loadGraph();
 loadCandidateStats();
 loadCandidateHistory();
 loadRetryJobs();
+loadRetryAlerts();
 loadCacheStatus();
 loadHealthMetrics();
 loadTaskHistory();
@@ -275,6 +277,7 @@ ensureAuditExport();
 ensureTemplateAB();
 setInterval(loadHealthMetrics, 30000);
 setInterval(loadTaskHistory, 15000);
+setInterval(loadRetryAlerts, 30000);
 const restoreTaskBase = restoreTask;
 restoreTask = async function (requestId) {
   try {

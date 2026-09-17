@@ -91,6 +91,9 @@ class APIContractTests(unittest.TestCase):
     def test_retry_validation_contract(self):
         response = self.client.post("/ai/retry-queue", json={"operation": "unsupported", "question": "x"})
         self.assertEqual(response.status_code, 422)
+        alerts = self.client.get("/ai/retry-alerts?window_minutes=60")
+        self.assertEqual(alerts.status_code, 200)
+        self.assertIn("failed_count", alerts.json())
         self.assertIn("detail", response.json())
 
     def test_missing_retry_job_contract(self):
