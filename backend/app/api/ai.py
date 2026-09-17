@@ -401,6 +401,9 @@ def prometheus_metrics():
         f"math_agent_cache_entries {len(_answer_cache)}",
         f"math_agent_cache_hits_total {_cache_metrics['hits']}",
         f"math_agent_cache_misses_total {_cache_metrics['misses']}",
+        f"math_agent_backups_succeeded_total {metrics['backups_succeeded']}",
+        f"math_agent_backups_failed_total {metrics['backups_failed']}",
+        f"math_agent_last_backup_timestamp {metrics['last_backup_timestamp']}",
         f"math_agent_success_ratio {metrics['successes'] / total if total else 0:.6f}",
     ]
     for status, count in queue_stats().items():

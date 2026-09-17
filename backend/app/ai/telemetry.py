@@ -5,7 +5,13 @@ from threading import Lock
 
 _lock = Lock()
 _recent_failures = deque(maxlen=50)
-_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0, "slow_requests": 0, "duration_total": 0.0, "first_token_total": 0.0, "first_token_samples": 0}
+_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0, "slow_requests": 0, "duration_total": 0.0, "first_token_total": 0.0, "first_token_samples": 0, "backups_succeeded": 0, "backups_failed": 0, "last_backup_timestamp": 0}
+
+def record_backup(success: bool):
+    with _lock:
+        _metrics["backups_succeeded" if success else "backups_failed"] += 1
+        if success:
+            _metrics["last_backup_timestamp"] = int(datetime.now(timezone.utc).timestamp())
 
 
 def record_request(success: bool, retries: int = 0, error: str | None = None, duration: float | None = None, first_token: float | None = None):

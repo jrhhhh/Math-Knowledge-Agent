@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.ai import get_db
 from app.security import require_admin, record_security_event
 from app.database import engine
+from app.ai.telemetry import record_backup
 
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
 
@@ -64,6 +65,10 @@ def repair_integrity(request: RepairRequest, http_request: Request, db: Session 
     try:
         source.driver_connection.backup(destination)
         destination.commit()
+        record_backup(True)
+    except Exception:
+        record_backup(False)
+        raise
     finally:
         destination.close(); source.close()
     deleted = {"orphan_problem_concepts": 0, "orphan_relations": 0, "duplicate_relations": 0}

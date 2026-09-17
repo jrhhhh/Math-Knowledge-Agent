@@ -76,6 +76,7 @@ GitHub Actions 会在 push 和 pull request 时自动执行编译、后端测试
 管理员先调用 `POST /maintenance/integrity/repair/prepare` 获取 10 分钟一次性确认令牌，再调用 `POST /maintenance/integrity/repair` 并携带令牌和同一组记录 ID；接口会先生成 `math_agent-before-repair-时间.db` 备份，再执行精确删除。
 可用 `./scripts/rehearse_restore.sh backups/xxx.db` 做恢复演练；它只恢复到临时目录并检查关键表，不会覆盖生产数据库。
 运维控制台也提供管理员保护的 `POST /maintenance/backup` 手动备份和 `GET /maintenance/backups` 备份列表接口；网页不会直接执行恢复。
+Prometheus 指标还包含备份成功/失败次数及最后备份时间戳，可据此配置备份失败或长期未备份告警。
 CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结果。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
