@@ -48,6 +48,14 @@ jobs:
         working-directory: backend
       - name: Run smoke test
         run: ./scripts/smoke_test.sh
+      - name: Validate monitoring metrics and alert rules
+        run: |
+          curl --fail --silent http://127.0.0.1:8000/ai/metrics > /tmp/math-agent-metrics.txt
+          grep -q 'math_agent_requests_total' /tmp/math-agent-metrics.txt
+          grep -q 'math_agent_automated_backup_timestamp' /tmp/math-agent-metrics.txt
+          grep -q 'MathAgentBackupFailed' prometheus-alerts.yml
+          grep -q 'MathAgentBackupStale' prometheus-alerts.yml
+          grep -q 'MathAgentAutomatedBackupFailed' prometheus-alerts.yml
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
