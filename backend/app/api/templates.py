@@ -31,6 +31,10 @@ class TemplatePreview(BaseModel):
 class TemplateImport(BaseModel):
     items: list[TemplateRequest] = Field(min_length=1, max_length=500)
 
+class TemplateABTest(BaseModel):
+    template_ids: list[str] = Field(min_length=2, max_length=2)
+    questions: list[str] = Field(min_length=1, max_length=1000)
+
 
 def serialize(item):
     return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "review_status": item.review_status, "hit_count": item.hit_count, "last_hit_at": item.last_hit_at.isoformat() if item.last_hit_at else None, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
@@ -53,6 +57,19 @@ def template_recommendations(db: Session = Depends(get_db)):
         elif item.review_status == "approved" and item.hit_count == 0:
             recommendations.append({"template_id": item.template_id, "reason": "尚未命中，建议用典型问题测试正则。"})
     return {"items": recommendations, "total": len(recommendations)}
+
+
+@router.post("/ab-test")
+def template_ab_test(request: TemplateABTest, db: Session = Depends(get_db)):
+    templates = {item.template_id: item for item in db.query(LocalTemplate).filter(LocalTemplate.template_id.in_(request.template_ids), LocalTemplate.enabled.is_(True), LocalTemplate.review_status == "approved").all()}
+    if len(templates) != 2:
+        raise HTTPException(status_code=404, detail="两个模板都必须存在、启用且已通过审核。")
+    results = []
+    for template_id in request.template_ids:
+        item = templates[template_id]
+        matches = [question for question in request.questions if re.search(item.pattern, question, re.I)]
+        results.append({"template_id": template_id, "matches": len(matches), "total": len(request.questions), "hit_rate": round(len(matches) / len(request.questions), 4), "matched_questions": matches})
+    return {"results": results, "winner": max(results, key=lambda result: result["hit_rate"])["template_id"]}
 
 def audit(db, template_id, action, detail="", snapshot=None):
     db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))
