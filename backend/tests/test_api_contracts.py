@@ -69,6 +69,8 @@ class APIContractTests(unittest.TestCase):
         recovered = self.client.get("/ai/tasks/test-task-status")
         self.assertEqual(recovered.json()["result"]["answer"], "恢复答案")
         _stream_results.pop("test-task-status", None)
+        persisted = self.client.get("/ai/tasks/test-task-status")
+        self.assertEqual(persisted.json()["status"], "generating")
         missing = self.client.get("/ai/tasks/not-found-task")
         self.assertEqual(missing.status_code, 404)
 

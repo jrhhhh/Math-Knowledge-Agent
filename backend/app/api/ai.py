@@ -43,6 +43,7 @@ from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
+from app.models.ai_task_status import AITaskStatus
 
 from app.ai.analyzer import client, backup_client, backup_model, primary_api_key, primary_base_url, primary_model, primary_timeout
 from app.ai.concept_matcher import (
@@ -97,7 +98,8 @@ def check_request_cancelled(cancel_event):
         raise RequestCancelledError("客户端已断开，已取消本次问答收尾。")
 
 
-def set_task_status(request_id: str | None, status: str, stage: str, detail: str | None = None):
+def set_task_status(request_id: str | None, status: str, stage: str, detail: str | None = None, db: Session | None = None, question: str = ""):
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if not request_id:
         return
     with _task_status_lock:
@@ -106,8 +108,16 @@ def set_task_status(request_id: str | None, status: str, stage: str, detail: str
             "status": status,
             "stage": stage,
             "detail": detail,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": now.isoformat(),
         }
+    if db is not None:
+        item = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
+        if item is None:
+            item = AITaskStatus(request_id=request_id, question=question, status=status, stage=stage, detail=detail, updated_at=now)
+            db.add(item)
+        else:
+            item.status, item.stage, item.detail, item.updated_at = status, stage, detail, now
+        db.commit()
 
 
 def classify_ai_error(exc):
@@ -433,6 +443,11 @@ def task_status(request_id: str, db: Session = Depends(get_db)):
     """Return the live in-process state plus the durable request-log result."""
     with _task_status_lock:
         live = dict(_task_status.get(request_id, {}))
+    persisted = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
+    if persisted:
+        live.update({"request_id": persisted.request_id, "status": persisted.status, "stage": persisted.stage,
+                     "detail": persisted.detail, "question": persisted.question,
+                     "updated_at": persisted.updated_at.isoformat() if persisted.updated_at else live.get("updated_at")})
     log = db.query(AIRequestLog).filter(AIRequestLog.request_id == request_id).order_by(AIRequestLog.id.desc()).first()
     if log:
         live.update({
@@ -2154,7 +2169,7 @@ def _ask_impl(
     deadline = started_at + REQUEST_BUDGET_SECONDS
     degradation = []
     question = request.question.strip()
-    set_task_status(request_id, "queued", "准备问答")
+    set_task_status(request_id, "queued", "准备问答", db=db, question=question)
     check_request_cancelled(cancel_event)
 
     if not question:
@@ -2171,7 +2186,7 @@ def _ask_impl(
         cached = dict(cached)
         cached["request_id"] = request_id
         cached["cache_hit"] = True
-        set_task_status(request_id, "succeeded", "缓存命中")
+        set_task_status(request_id, "succeeded", "缓存命中", db=db, question=question)
         return cached
 
     # ========================================================
@@ -2184,7 +2199,7 @@ def _ask_impl(
             question
         )
     )
-    set_task_status(request_id, "retrieving", "检索知识点")
+    set_task_status(request_id, "retrieving", "检索知识点", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2216,7 +2231,7 @@ def _ask_impl(
             limit=10
         )
     )
-    set_task_status(request_id, "retrieving", "召回历史题目")
+    set_task_status(request_id, "retrieving", "召回历史题目", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] historical retrieval: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2231,7 +2246,7 @@ def _ask_impl(
             concept_ids=concept_ids
         )
     )
-    set_task_status(request_id, "retrieving", "检索相似题目")
+    set_task_status(request_id, "retrieving", "检索相似题目", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] similar problems: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2246,7 +2261,7 @@ def _ask_impl(
         db,
         matched_concepts
     )
-    set_task_status(request_id, "generating", "构建知识图谱")
+    set_task_status(request_id, "generating", "构建知识图谱", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] graph build: %.2fs" % (time.perf_counter() - started_at))
 
@@ -2463,7 +2478,7 @@ def _ask_impl(
             repr(exc)
         )
         degradation.append("primary_failed")
-        set_task_status(request_id, "degraded", "主模型失败，执行降级", repr(exc))
+        set_task_status(request_id, "degraded", "主模型失败，执行降级", repr(exc), db=db, question=question)
 
         # 若配置了备用 OpenAI 兼容服务，先切换供应商，避免再次消耗主服务超时。
         if backup_client is not None:
@@ -2477,7 +2492,7 @@ def _ask_impl(
                 )
                 answer_source = "backup_model"
                 degradation.append("backup_model")
-                set_task_status(request_id, "generating", "备用模型生成")
+                set_task_status(request_id, "generating", "备用模型生成", db=db, question=question)
                 print("[AI] backup model answered")
             except Exception as backup_exc:
                 print("[AI] backup model failed:", repr(backup_exc))
@@ -2514,14 +2529,14 @@ def _ask_impl(
             )
             answer_source = "deepseek_extended"
             degradation.append("extended_primary")
-            set_task_status(request_id, "generating", "延长生成")
+            set_task_status(request_id, "generating", "延长生成", db=db, question=question)
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
           except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
             answer = local_math_answer(question, db)
             answer_source = "local_fallback"
             degradation.append("local_fallback")
-            set_task_status(request_id, "degraded", "本地数学兜底")
+            set_task_status(request_id, "degraded", "本地数学兜底", db=db, question=question)
             print("[AI] using deterministic local fallback")
 
     # ========================================================
@@ -2613,7 +2628,7 @@ def _ask_impl(
     db.commit()
     db.refresh(answer_record)
     result["answer_id"] = answer_record.id
-    set_task_status(request_id, "succeeded", "回答完成")
+    set_task_status(request_id, "succeeded", "回答完成", db=db, question=question)
     return result
 
 
@@ -2667,9 +2682,9 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
             yield emit("result", result)
         except Exception as exc:
             if isinstance(exc, RequestCancelledError):
-                set_task_status(trace_id, "cancelled", "客户端已断开", str(exc))
+                set_task_status(trace_id, "cancelled", "客户端已断开", str(exc), db=db if 'db' in locals() else None, question=request.question.strip())
             else:
-                set_task_status(trace_id, "failed", "问答失败", str(exc))
+                set_task_status(trace_id, "failed", "问答失败", str(exc), db=db if 'db' in locals() else None, question=request.question.strip())
             if isinstance(exc, HTTPException):
                 code, detail = "http_error", str(exc.detail)
             else:
