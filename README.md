@@ -61,6 +61,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 可选备用模型：设置 `MATH_AGENT_BACKUP_API_KEY`、`MATH_AGENT_BACKUP_BASE_URL` 和可选的 `MATH_AGENT_BACKUP_MODEL`（OpenAI 兼容接口）。主模型失败后会优先切换备用模型，再进入本地兜底；是否配置可通过 `/ai/health` 的 `backup_model_configured` 查看。
 主模型可通过 `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` 和 `DEEPSEEK_TIMEOUT_SECONDS` 配置；其中后三项分别默认为 `https://api.deepseek.com`、`deepseek-v4-pro` 和 `20` 秒。修改环境变量后需重启后端进程。
 单次问答总生成预算默认是 85 秒，可通过 `MATH_AGENT_REQUEST_BUDGET_SECONDS` 调整；主模型、备用模型和延长生成会共享这段预算，超出后自动进入本地兜底。`/ask` 返回 `generation_elapsed_seconds` 和 `degradation` 便于定位降级过程。
+流式 `/ai/ask-stream` 在客户端断开后会设置取消信号，并在检索、生成和入库前检查；正在进行的供应商网络调用无法被 SDK 强制打断，但返回后不会继续写入答案记录，数据库会话会等工作线程结束后再关闭。
 管理写操作可设置 `MATH_AGENT_ADMIN_KEY`；配置后，答案复核和审计归档接口必须携带请求头 `X-Admin-Key: <密钥>`，未配置时保持本地开发兼容。
 可选安全告警 Webhook：设置 `MATH_AGENT_ALERT_WEBHOOK` 后，管理员携带 Bearer token 调用 `POST /ai/security-alerts/notify` 才会发送当前高危告警；系统不会在后台自动向外部地址发送数据。
 日志默认写入 `backend/math_agent.log`，单文件 5 MB、保留 3 个轮转文件；可通过 `MATH_AGENT_LOG_FILE` 和 `MATH_AGENT_LOG_LEVEL` 调整路径与级别。安全事件仍同步写入 SQLite。

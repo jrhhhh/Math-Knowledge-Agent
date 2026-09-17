@@ -12,6 +12,7 @@ import hmac
 import urllib.request
 from uuid import uuid4
 import time
+import threading
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -83,6 +84,15 @@ def remaining_generation_timeout(deadline: float, requested: float) -> float:
     if remaining < 1.0:
         raise TimeoutError("本次问答已达到总时间预算。")
     return min(requested, remaining)
+
+
+class RequestCancelledError(RuntimeError):
+    """Raised at safe boundaries when a streaming client disconnects."""
+
+
+def check_request_cancelled(cancel_event):
+    if cancel_event is not None and cancel_event.is_set():
+        raise RequestCancelledError("客户端已断开，已取消本次问答收尾。")
 
 
 def classify_ai_error(exc):
@@ -2101,11 +2111,13 @@ def _ask_impl(
     db: Session = Depends(get_db),
     stream_callback=None,
     request_id: str | None = None,
+    cancel_event=None,
 ):
     started_at = time.perf_counter()
     deadline = started_at + REQUEST_BUDGET_SECONDS
     degradation = []
     question = request.question.strip()
+    check_request_cancelled(cancel_event)
 
     if not question:
         raise HTTPException(
@@ -2133,6 +2145,7 @@ def _ask_impl(
             question
         )
     )
+    check_request_cancelled(cancel_event)
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
 
     # --------------------------------------------------------
@@ -2163,6 +2176,7 @@ def _ask_impl(
             limit=10
         )
     )
+    check_request_cancelled(cancel_event)
     print("[Timing] historical retrieval: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
@@ -2176,6 +2190,7 @@ def _ask_impl(
             concept_ids=concept_ids
         )
     )
+    check_request_cancelled(cancel_event)
     print("[Timing] similar problems: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
@@ -2189,6 +2204,7 @@ def _ask_impl(
         db,
         matched_concepts
     )
+    check_request_cancelled(cancel_event)
     print("[Timing] graph build: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
@@ -2467,6 +2483,7 @@ def _ask_impl(
 
     # 非流式请求允许在展示前做一次质量修复；流式响应已经发送过 token，不能重复推送。
     answer, formula_fixes = repair_formula(answer)
+    check_request_cancelled(cancel_event)
     initial_quality = evaluate_answer(answer, question)
     if stream_callback is None and answer_source in {"deepseek", "deepseek_extended", "backup_model"} and initial_quality["score"] < 0.5:
         try:
@@ -2541,6 +2558,7 @@ def _ask_impl(
                                  answer_source=answer_source, quality_score=quality.get("score"),
                                  duration_seconds=round(time.perf_counter() - started_at, 3))
     db.add(answer_record)
+    check_request_cancelled(cancel_event)
     db.flush()
     if (quality.get("score") or 0.0) < 0.5:
         db.add(AnswerReview(answer_id=answer_record.id, note="自动质量评估为低质量，建议人工核对。"))
@@ -2579,9 +2597,11 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
             return
         yield emit("progress", {"stage": "检索知识点"})
         chunks = queue.Queue()
+        cancel_event = threading.Event()
+        task = None
         try:
             db = SessionLocal()
-            task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put, request_id=trace_id))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put, request_id=trace_id, cancel_event=cancel_event))
             yield emit("progress", {"stage": "召回历史题目"})
             yield emit("progress", {"stage": "生成数学解答"})
             while not task.done():
@@ -2605,6 +2625,17 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
                 log_request_failure(db, trace_id, request.question.strip(), started_at, exc)
             yield emit("error", {"error_code": code, "detail": detail})
         finally:
-            if 'db' in locals():
-                db.close()
+            cancel_event.set()
+            if task is None or task.done():
+                if 'db' in locals():
+                    db.close()
+            elif 'db' in locals():
+                async def close_after_task():
+                    try:
+                        await asyncio.shield(task)
+                    except BaseException:
+                        pass
+                    finally:
+                        db.close()
+                asyncio.create_task(close_after_task())
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

@@ -1,6 +1,6 @@
 import unittest
 
-from app.api.ai import classify_ai_error, remaining_generation_timeout
+from app.api.ai import classify_ai_error, remaining_generation_timeout, check_request_cancelled, RequestCancelledError
 from openai import APIConnectionError
 
 
@@ -19,6 +19,14 @@ class AIErrorMappingTests(unittest.TestCase):
         self.assertLessEqual(remaining_generation_timeout(deadline, 70), 8)
         with self.assertRaises(TimeoutError):
             remaining_generation_timeout(time.perf_counter() - 1, 70)
+
+    def test_cancel_signal_is_checked_at_safe_boundary(self):
+        import threading
+        event = threading.Event()
+        check_request_cancelled(event)
+        event.set()
+        with self.assertRaises(RequestCancelledError):
+            check_request_cancelled(event)
 
 
 if __name__ == "__main__":
