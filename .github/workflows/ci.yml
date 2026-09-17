@@ -30,6 +30,14 @@ jobs:
           backup=$(find /tmp/math-agent-backups -name 'math_agent-*.db' -print -quit)
           ./scripts/check_backup.sh "$backup"
           ./scripts/rehearse_restore.sh "$backup"
+      - name: Verify backup failure status
+        run: |
+          set +e
+          MATH_AGENT_DB_PATH=/tmp/math-agent-missing.db MATH_AGENT_BACKUP_STATUS_FILE=/tmp/math-agent-backup-failure.json ./scripts/backup_and_alert.sh
+          code=$?
+          set -e
+          test "$code" -ne 0
+          grep -q '"status":"failed"' /tmp/math-agent-backup-failure.json
       - name: Check frontend JavaScript
         run: node --check frontend/app.js
       - name: Start services
