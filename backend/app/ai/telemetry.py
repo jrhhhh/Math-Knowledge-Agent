@@ -5,7 +5,7 @@ from threading import Lock
 
 _lock = Lock()
 _recent_failures = deque(maxlen=50)
-_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0, "duration_total": 0.0, "first_token_total": 0.0, "first_token_samples": 0}
+_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0, "slow_requests": 0, "duration_total": 0.0, "first_token_total": 0.0, "first_token_samples": 0}
 
 
 def record_request(success: bool, retries: int = 0, error: str | None = None, duration: float | None = None, first_token: float | None = None):
@@ -13,6 +13,8 @@ def record_request(success: bool, retries: int = 0, error: str | None = None, du
         _metrics["requests"] += 1
         _metrics["retries"] += retries
         _metrics["successes" if success else "failures"] += 1
+        if duration is not None and duration >= 20:
+            _metrics["slow_requests"] += 1
         if duration is not None:
             _metrics["duration_total"] += duration
         if first_token is not None:
