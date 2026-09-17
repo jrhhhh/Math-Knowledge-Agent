@@ -2,9 +2,10 @@ const API = window.MATH_AGENT_API || 'http://127.0.0.1:8000';
 const $ = (id) => document.getElementById(id);
 let activeCandidateId = null;
 let askController = null;
+let lastAiErrorCode = null;
 const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff', method: '#77f2ad' };
 
-function showMessage(text) { $('message').textContent = text; $('message').classList.remove('hidden'); }
+function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : lastAiErrorCode; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
 function clearMessage() { $('message').classList.add('hidden'); }
 function typesetMath(element) { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([element]).catch(() => {}); }
 function escapeHtml(s = '') { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
