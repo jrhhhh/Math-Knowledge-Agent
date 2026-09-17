@@ -8,6 +8,7 @@ from app.models.concept import Concept
 from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
 from app.models.concept_relation import ConceptRelation
+from app.models.concept_alias import ConceptAlias
 
 from app.ai.analyzer import client
 
@@ -127,6 +128,22 @@ def _normalize_text(text: str) -> str:
         text = text.replace(old, new)
 
     return text
+
+
+def find_concept_by_name_or_alias(db: Session, name: str):
+    """按标准名称或别名解析概念，返回 (Concept, match_kind) 或 (None, None)。"""
+    normalized = _normalize_text(name)
+    if not normalized:
+        return None, None
+    for concept in db.query(Concept).all():
+        if _normalize_text(concept.name) == normalized:
+            return concept, "name"
+    for alias in db.query(ConceptAlias).all():
+        if _normalize_text(alias.alias) == normalized:
+            concept = db.query(Concept).filter(Concept.id == alias.concept_id).first()
+            if concept is not None:
+                return concept, "alias"
+    return None, None
 
 
 def _safe_float(value, default=0.0):
