@@ -71,6 +71,7 @@ GitHub Actions 会在 push 和 pull request 时自动执行编译、后端测试
 可选监控部署：`docker compose -f docker-compose.monitoring.yml up --build` 会启动后端、Prometheus（9090）和 Grafana（3000）；Prometheus 抓取 `/ai/metrics` 并加载告警规则，Grafana 自动加载 Dashboard，本地直接运行方式不受影响。
 数据库备份：执行 `./scripts/backup_db.sh` 使用 SQLite 在线备份生成 `backups/math_agent-时间.db`，默认保留 14 天（可用 `MATH_AGENT_BACKUP_RETENTION_DAYS` 调整）；可用 `./scripts/check_backup.sh backups/xxx.db` 做无写入完整性检查。恢复前请停止后端，执行 `./scripts/restore_db.sh backups/xxx.db`，脚本会先执行 `PRAGMA integrity_check`。可用 cron 每日执行，例如 `0 3 * * * cd /path/to/Math-Agent && ./scripts/backup_db.sh >> /tmp/math-agent-backup.log 2>&1`。
 启动迁移会在 `schema_versions` 表记录当前版本，并以增量方式补齐旧数据库字段；不会重建或删除已有数据。
+只读数据巡检接口：`GET /maintenance/integrity` 检查孤立题目关联、孤立关系端点、重复关系和重复概念名称，不会自动修改数据。
 可用 `./scripts/rehearse_restore.sh backups/xxx.db` 做恢复演练；它只恢复到临时目录并检查关键表，不会覆盖生产数据库。
 CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结果。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列

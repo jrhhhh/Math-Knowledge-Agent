@@ -13,6 +13,11 @@ class APIContractTests(unittest.TestCase):
         from app.database import engine
         inspector = inspect(engine)
         self.assertIn("schema_versions", inspector.get_table_names())
+
+    def test_integrity_report_contract(self):
+        response = self.client.get("/maintenance/integrity")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("checks", response.json())
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)

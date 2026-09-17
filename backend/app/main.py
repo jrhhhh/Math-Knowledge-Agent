@@ -33,6 +33,7 @@ from app.api.concepts import router
 from app.api.problems import router as problem_router
 from app.api.problem_concepts import router as problem_concept_router
 from app.api.templates import router as template_router
+from app.api.maintenance import router as maintenance_router
 
 
 Base.metadata.create_all(
@@ -64,6 +65,7 @@ app.include_router(router)
 app.include_router(problem_router)
 app.include_router(problem_concept_router)
 app.include_router(template_router)
+app.include_router(maintenance_router)
 
 
 @app.get("/")
