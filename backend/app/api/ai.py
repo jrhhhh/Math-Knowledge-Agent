@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import asyncio
 import queue
+from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -1710,6 +1711,7 @@ def _ask_impl(
     request: AskRequest,
     db: Session = Depends(get_db),
     stream_callback=None,
+    request_id: str | None = None,
 ):
     started_at = time.perf_counter()
     question = request.question.strip()
@@ -1723,6 +1725,7 @@ def _ask_impl(
     cached = cached_answer(question)
     if cached is not None:
         cached = dict(cached)
+        cached["request_id"] = request_id
         cached["cache_hit"] = True
         return cached
 
@@ -2044,8 +2047,9 @@ def _ask_impl(
     # 8. 返回完整结果
     # ========================================================
 
-    print("[Timing] total ask: %.2fs" % (time.perf_counter() - started_at))
+    print("[Timing] request=%s total ask: %.2fs" % (request_id, time.perf_counter() - started_at))
     result = {
+        "request_id": request_id,
         "question": question,
 
         "answer": answer,
@@ -2093,13 +2097,14 @@ def _ask_impl(
 
 @router.post("/ask")
 def ask(request: AskRequest, db: Session = Depends(get_db)):
-    return _ask_impl(request, db)
+    return _ask_impl(request, db, request_id=uuid4().hex[:12])
 
 
 @router.post("/ask-stream")
 async def ask_stream(request: AskRequest, request_id: str | None = None):
     """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
     async def events():
+        trace_id = request_id or uuid4().hex[:12]
         sequence = 0
         def emit(event, payload):
             nonlocal sequence
@@ -2113,7 +2118,7 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
         chunks = queue.Queue()
         try:
             db = SessionLocal()
-            task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put, request_id=trace_id))
             yield emit("progress", {"stage": "召回历史题目"})
             yield emit("progress", {"stage": "生成数学解答"})
             while not task.done():
