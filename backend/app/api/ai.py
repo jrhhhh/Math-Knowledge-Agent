@@ -147,12 +147,33 @@ class EvaluateRequest(BaseModel):
 
 
 @router.get("/answers")
-def list_answers(limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
-    items = db.query(AnswerRecord).order_by(AnswerRecord.created_at.desc()).limit(limit).all()
+def list_answers(source: str | None = None, level: str | None = None, offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+    query = db.query(AnswerRecord)
+    if source:
+        query = query.filter(AnswerRecord.answer_source == source)
+    if level == "good":
+        query = query.filter(AnswerRecord.quality_score >= .75)
+    elif level == "partial":
+        query = query.filter(AnswerRecord.quality_score >= .5, AnswerRecord.quality_score < .75)
+    elif level == "weak":
+        query = query.filter(AnswerRecord.quality_score < .5)
+    total = query.count()
+    items = query.order_by(AnswerRecord.created_at.desc()).offset(offset).limit(limit).all()
     return {"items": [{"id": item.id, "request_id": item.request_id, "question": item.question,
                        "answer_source": item.answer_source, "quality_score": item.quality_score,
                        "duration_seconds": item.duration_seconds, "created_at": item.created_at.isoformat()}
-                      for item in items], "total": len(items)}
+                      for item in items], "total": total, "offset": offset, "limit": limit}
+
+
+@router.get("/answers/export")
+def export_answers(source: str | None = None, level: str | None = None, db: Session = Depends(get_db)):
+    data = list_answers(source=source, level=level, offset=0, limit=200, db=db)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "question", "answer_source", "quality_score", "duration_seconds", "created_at"])
+    for item in data["items"]:
+        writer.writerow([item["id"], item["question"], item["answer_source"], item["quality_score"], item["duration_seconds"], item["created_at"]])
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": "attachment; filename=answer-history.csv"})
 
 
 @router.get("/answers/stats")

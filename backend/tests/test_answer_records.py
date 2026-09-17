@@ -16,6 +16,11 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertIn("quality_levels", stats.json())
         missing = self.client.get("/ai/answers/999999")
         self.assertEqual(missing.status_code, 404)
+        filtered = self.client.get("/ai/answers?level=weak&offset=0&limit=1")
+        self.assertEqual(filtered.status_code, 200)
+        exported = self.client.get("/ai/answers/export?level=weak")
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("text/csv", exported.headers.get("content-type", ""))
 
     def test_feedback_contract_for_saved_answer(self):
         from app.database import SessionLocal
