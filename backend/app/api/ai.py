@@ -33,6 +33,7 @@ from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 from app.models.question_sample import QuestionSample
+from app.models.answer_record import AnswerRecord, AnswerFeedback
 
 from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
@@ -54,6 +55,7 @@ router = APIRouter(
     prefix="/ai",
     tags=["AI"]
 )
+
 _answer_cache = {}
 _ANSWER_CACHE_TTL = 300
 _knowledge_version = 0
@@ -128,6 +130,34 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+class FeedbackRequest(BaseModel):
+    rating: int
+    feedback: str | None = None
+
+
+@router.get("/answers")
+def list_answers(limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+    items = db.query(AnswerRecord).order_by(AnswerRecord.created_at.desc()).limit(limit).all()
+    return {"items": [{"id": item.id, "request_id": item.request_id, "question": item.question,
+                       "answer_source": item.answer_source, "quality_score": item.quality_score,
+                       "duration_seconds": item.duration_seconds, "created_at": item.created_at.isoformat()}
+                      for item in items], "total": len(items)}
+
+
+@router.post("/answers/{answer_id}/feedback", status_code=201)
+def submit_answer_feedback(answer_id: int, request: FeedbackRequest, db: Session = Depends(get_db)):
+    if request.rating not in (1, 2, 3, 4, 5):
+        raise HTTPException(status_code=422, detail="rating 必须是 1 到 5。")
+    answer = db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first()
+    if answer is None:
+        raise HTTPException(status_code=404, detail="回答记录不存在。")
+    item = AnswerFeedback(answer_id=answer_id, rating=request.rating, feedback=request.feedback)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "answer_id": item.answer_id, "rating": item.rating, "feedback": item.feedback}
 
 
 @router.get("/health")
@@ -2231,6 +2261,10 @@ def _ask_impl(
     }
     result["cache_hit"] = False
     _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
+    quality = result["answer_quality"]
+    db.add(AnswerRecord(request_id=request_id or "unknown", question=question, answer=answer,
+                        answer_source=answer_source, quality_score=quality.get("score"),
+                        duration_seconds=round(time.perf_counter() - started_at, 3)))
     db.add(AIRequestLog(request_id=request_id or "unknown", question=question, status="succeeded", duration_seconds=round(time.perf_counter() - started_at, 3)))
     db.commit()
     return result

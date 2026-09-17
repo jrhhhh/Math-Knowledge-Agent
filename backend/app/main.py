@@ -19,6 +19,8 @@ from app.models.local_template import LocalTemplate
 from app.models.local_template_event import LocalTemplateEvent
 from app.models.question_sample import QuestionSample
 from app.models.template_audit_log import TemplateAuditLog
+from app.models.template_audit_archive import TemplateAuditArchive
+from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.ai.retry_queue import resume_pending_jobs
 from sqlalchemy import inspect, text
 

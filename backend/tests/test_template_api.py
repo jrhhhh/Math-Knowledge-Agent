@@ -62,6 +62,9 @@ class TemplateAPIContractTests(unittest.TestCase):
         exported = self.client.get("/local-templates/audit-log/export")
         self.assertEqual(exported.status_code, 200)
         self.assertIn("text/csv", exported.headers.get("content-type", ""))
+        archived = self.client.post("/local-templates/audit-log/archive?retention_days=3650")
+        self.assertEqual(archived.status_code, 200)
+        self.assertIn("archived", archived.json())
         filtered = self.client.get("/local-templates/audit-log?since=2000-01-01T00:00:00")
         self.assertEqual(filtered.status_code, 200)
 
