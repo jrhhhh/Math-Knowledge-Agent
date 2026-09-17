@@ -37,6 +37,7 @@ from app.models.ai_request_log import AIRequestLog
 from app.models.question_sample import QuestionSample
 from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.models.answer_review import AnswerReview
+from app.models.answer_review_event import AnswerReviewEvent
 
 from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
@@ -253,7 +254,19 @@ def review_answer(answer_id: int, request: ReviewRequest, db: Session = Depends(
     item.status, item.note = request.status, request.note
     item.reviewed_at = datetime.now(timezone.utc).replace(tzinfo=None) if request.status != "pending" else None
     db.commit()
+    db.refresh(item)
+    db.add(AnswerReviewEvent(answer_id=answer_id, review_id=item.id, action=request.status, note=request.note))
+    db.commit()
     return {"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note}
+
+
+@router.get("/answers/{answer_id}/review-events")
+def answer_review_events(answer_id: int, db: Session = Depends(get_db)):
+    if db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first() is None:
+        raise HTTPException(status_code=404, detail="回答记录不存在。")
+    items = db.query(AnswerReviewEvent).filter(AnswerReviewEvent.answer_id == answer_id).order_by(AnswerReviewEvent.created_at.desc()).all()
+    return {"items": [{"id": item.id, "review_id": item.review_id, "action": item.action, "note": item.note,
+                       "created_at": item.created_at.isoformat()} for item in items], "total": len(items)}
 
 
 @router.post("/evaluate")

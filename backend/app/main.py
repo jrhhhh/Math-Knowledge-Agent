@@ -22,6 +22,7 @@ from app.models.template_audit_log import TemplateAuditLog
 from app.models.template_audit_archive import TemplateAuditArchive
 from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.models.answer_review import AnswerReview
+from app.models.answer_review_event import AnswerReviewEvent
 from app.ai.retry_queue import resume_pending_jobs
 from sqlalchemy import inspect, text
 

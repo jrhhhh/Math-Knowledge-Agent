@@ -39,6 +39,9 @@ class AnswerRecordContractTests(unittest.TestCase):
             reviewed = self.client.post(f"/ai/answers/{item.id}/review", json={"status": "false_positive", "note": "已核对"})
             self.assertEqual(reviewed.status_code, 200)
             self.assertEqual(reviewed.json()["status"], "false_positive")
+            events = self.client.get(f"/ai/answers/{item.id}/review-events")
+            self.assertEqual(events.status_code, 200)
+            self.assertEqual(events.json()["total"], 1)
         finally:
             db.close()
 
