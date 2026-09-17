@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from openai import (
     APIConnectionError,
@@ -152,6 +153,38 @@ def list_answers(limit: int = Query(default=50, ge=1, le=200), db: Session = Dep
                        "answer_source": item.answer_source, "quality_score": item.quality_score,
                        "duration_seconds": item.duration_seconds, "created_at": item.created_at.isoformat()}
                       for item in items], "total": len(items)}
+
+
+@router.get("/answers/stats")
+def answer_stats(db: Session = Depends(get_db)):
+    records = db.query(AnswerRecord).all()
+    feedback = db.query(AnswerFeedback).all()
+    by_source = {}
+    for item in records:
+        bucket = by_source.setdefault(item.answer_source, {"count": 0, "average_quality": 0.0})
+        bucket["count"] += 1
+        bucket["average_quality"] += item.quality_score or 0.0
+    for bucket in by_source.values():
+        bucket["average_quality"] = round(bucket["average_quality"] / bucket["count"], 3) if bucket["count"] else 0.0
+    return {"total": len(records), "feedback_count": len(feedback),
+            "average_rating": round(sum(item.rating for item in feedback) / len(feedback), 2) if feedback else None,
+            "by_source": by_source,
+            "quality_levels": {"good": sum(1 for item in records if (item.quality_score or 0) >= .75),
+                                "partial": sum(1 for item in records if .5 <= (item.quality_score or 0) < .75),
+                                "weak": sum(1 for item in records if (item.quality_score or 0) < .5)}}
+
+
+@router.get("/answers/{answer_id}")
+def get_answer(answer_id: int, db: Session = Depends(get_db)):
+    item = db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="回答记录不存在。")
+    feedback = db.query(AnswerFeedback).filter(AnswerFeedback.answer_id == answer_id).order_by(AnswerFeedback.created_at.desc()).all()
+    return {"id": item.id, "request_id": item.request_id, "question": item.question, "answer": item.answer,
+            "answer_source": item.answer_source, "quality_score": item.quality_score,
+            "duration_seconds": item.duration_seconds, "created_at": item.created_at.isoformat(),
+            "feedback": [{"id": entry.id, "rating": entry.rating, "feedback": entry.feedback,
+                          "created_at": entry.created_at.isoformat()} for entry in feedback]}
 
 
 @router.post("/answers/{answer_id}/feedback", status_code=201)
