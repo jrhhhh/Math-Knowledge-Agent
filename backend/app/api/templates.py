@@ -33,7 +33,7 @@ class TemplateImport(BaseModel):
 
 
 def serialize(item):
-    return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
+    return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "review_status": item.review_status, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
 
 def audit(db, template_id, action, detail="", snapshot=None):
     db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))
@@ -62,7 +62,7 @@ def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
     except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
     if db.query(LocalTemplate).filter(LocalTemplate.template_id == request.template_id).first():
         raise HTTPException(status_code=409, detail="模板 ID 已存在。")
-    item = LocalTemplate(**request.model_dump())
+    item = LocalTemplate(**request.model_dump(), review_status="pending")
     db.add(item); audit(db, request.template_id, "created"); db.commit(); db.refresh(item)
     return serialize(item)
 
@@ -97,7 +97,7 @@ def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
         except re.error as exc: raise HTTPException(status_code=422, detail=f"模板 {incoming.template_id} 的正则无效：{exc}") from exc
         item = db.query(LocalTemplate).filter(LocalTemplate.template_id == incoming.template_id).first()
         if item is None:
-            item = LocalTemplate(**incoming.model_dump()); db.add(item); audit(db, incoming.template_id, "imported"); created += 1
+            item = LocalTemplate(**incoming.model_dump(), review_status="pending"); db.add(item); audit(db, incoming.template_id, "imported"); created += 1
         else:
             before = snapshot_of(item)
             item.pattern, item.answer, item.enabled = incoming.pattern, incoming.answer, incoming.enabled
@@ -120,6 +120,15 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
     audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys()), before); db.commit(); db.refresh(item)
+    return serialize(item)
+
+
+@router.post("/{template_id}/review")
+def review_template(template_id: str, status: str = Query(..., pattern="^(approved|rejected|pending)$"), db: Session = Depends(get_db)):
+    item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
+    if item is None: raise HTTPException(status_code=404, detail="模板不存在。")
+    item.review_status = status
+    audit(db, template_id, "reviewed", status); db.commit(); db.refresh(item)
     return serialize(item)
 
 

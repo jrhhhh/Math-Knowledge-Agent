@@ -17,7 +17,7 @@ def match_local_template(question: str, db=None):
     text = question.strip()
     if db is not None:
         from app.models.local_template import LocalTemplate
-        for item in db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True)).order_by(LocalTemplate.id.asc()).all():
+        for item in db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True), LocalTemplate.review_status == "approved").order_by(LocalTemplate.id.asc()).all():
             try:
                 if re.search(item.pattern, text, re.I):
                     return {"id": item.template_id, "answer": item.answer}

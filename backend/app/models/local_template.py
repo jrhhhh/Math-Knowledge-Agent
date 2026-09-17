@@ -13,5 +13,6 @@ class LocalTemplate(Base):
     pattern = Column(String(500), nullable=False)
     answer = Column(Text, nullable=False)
     enabled = Column(Boolean, nullable=False, default=True)
+    review_status = Column(String(20), nullable=False, default="approved")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)

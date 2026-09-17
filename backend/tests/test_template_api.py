@@ -35,6 +35,10 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(imported.json()["total"], 1)
         self.assertEqual(imported.json()["created"] + imported.json()["updated"], 1)
 
+    def test_review_endpoint_contract(self):
+        response = self.client.post("/local-templates/ci-template/review?status=approved")
+        self.assertIn(response.status_code, (200, 404))
+
     def test_template_events_contract(self):
         response = self.client.get("/local-templates/not-found/events")
         self.assertEqual(response.status_code, 200)

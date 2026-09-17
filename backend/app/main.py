@@ -36,6 +36,9 @@ with engine.begin() as connection:
     columns = {column["name"] for column in inspect(connection).get_columns("local_answer_template_events")}
     if "snapshot" not in columns:
         connection.execute(text("ALTER TABLE local_answer_template_events ADD COLUMN snapshot TEXT"))
+    template_columns = {column["name"] for column in inspect(connection).get_columns("local_answer_templates")}
+    if "review_status" not in template_columns:
+        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN review_status VARCHAR(20) NOT NULL DEFAULT 'approved'"))
 resume_pending_jobs()
 
 
