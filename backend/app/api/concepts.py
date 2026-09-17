@@ -79,6 +79,20 @@ def add_concept_alias(concept_id: int, request: AliasRequest, db: Session = Depe
     db.commit()
     db.refresh(item)
     return {"id": item.id, "concept_id": item.concept_id, "alias": item.alias}
+
+
+@router.get("/{concept_id}/aliases")
+def get_concept_aliases(concept_id: int, db: Session = Depends(get_db)):
+    concept = db.query(Concept).filter(Concept.id == concept_id).first()
+    if concept is None:
+        raise HTTPException(status_code=404, detail="Concept not found")
+    return {
+        "concept": {"id": concept.id, "name": concept.name},
+        "aliases": [
+            {"id": item.id, "alias": item.alias}
+            for item in db.query(ConceptAlias).filter(ConceptAlias.concept_id == concept_id).all()
+        ],
+    }
 @router.delete("/{concept_id}")
 def delete_concept(
     concept_id: int,
