@@ -172,7 +172,7 @@ ask = async function (event) {
   await originalAsk(event);
   const answer = $('answer');
   const requestId = answer.dataset.requestId;
-  if (requestId && $('traceRequestId')) $('traceRequestId').value = requestId;
+  if (requestId && $('traceRequestId')) { $('traceRequestId').value = requestId; $('tracePanel').open = true; lookupRequestTrace(); }
 };
 $('askForm').removeEventListener('submit', originalAsk);
 $('askForm').addEventListener('submit', ask);
