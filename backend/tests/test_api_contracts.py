@@ -1,4 +1,5 @@
 import unittest
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
@@ -60,29 +61,30 @@ class APIContractTests(unittest.TestCase):
 
     def test_task_status_contract(self):
         from app.api.ai import set_task_status, _stream_results
-        set_task_status("test-task-status", "generating", "测试阶段")
-        response = self.client.get("/ai/tasks/test-task-status")
+        request_id = f"test-task-status-{uuid.uuid4()}"
+        set_task_status(request_id, "generating", "测试阶段")
+        response = self.client.get(f"/ai/tasks/{request_id}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "generating")
         self.assertEqual(response.json()["stage"], "测试阶段")
-        _stream_results["test-task-status"] = {"value": {"answer": "恢复答案"}}
-        recovered = self.client.get("/ai/tasks/test-task-status")
+        _stream_results[request_id] = {"value": {"answer": "恢复答案"}}
+        recovered = self.client.get(f"/ai/tasks/{request_id}")
         self.assertEqual(recovered.json()["result"]["answer"], "恢复答案")
-        _stream_results.pop("test-task-status", None)
-        persisted = self.client.get("/ai/tasks/test-task-status")
+        _stream_results.pop(request_id, None)
+        persisted = self.client.get(f"/ai/tasks/{request_id}")
         self.assertEqual(persisted.json()["status"], "generating")
         from app.database import SessionLocal
         from app.models.ai_task_status import AITaskStatus
         db = SessionLocal()
-        stored = db.query(AITaskStatus).filter(AITaskStatus.request_id == "test-task-status").first()
+        stored = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
         if stored is None:
-            stored = AITaskStatus(request_id="test-task-status", question="测试", status="succeeded", stage="完成", result_json='{"answer":"持久化答案"}')
+            stored = AITaskStatus(request_id=request_id, question="测试", status="succeeded", stage="完成", result_json='{"answer":"持久化答案"}')
             db.add(stored)
         else:
             stored.status, stored.stage, stored.result_json = "succeeded", "完成", '{"answer":"持久化答案"}'
         db.commit()
         db.close()
-        persisted_result = self.client.get("/ai/tasks/test-task-status")
+        persisted_result = self.client.get(f"/ai/tasks/{request_id}")
         self.assertEqual(persisted_result.json()["result"]["answer"], "持久化答案")
         missing = self.client.get("/ai/tasks/not-found-task")
         self.assertEqual(missing.status_code, 404)
