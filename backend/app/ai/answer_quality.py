@@ -1,5 +1,6 @@
 """Fast heuristic quality signals for generated mathematical answers."""
 import re
+from app.ai.formula_validator import validate_formula
 
 
 def evaluate_answer(answer: str, question: str = "") -> dict:
@@ -17,7 +18,10 @@ def evaluate_answer(answer: str, question: str = "") -> dict:
             "has_derivation": bool(re.search(r"于是|从而|因此|可得|整理", text)),
         })
     score = round(sum(checks.values()) / len(checks), 2)
-    return {"score": score, "checks": checks, "question_type": "proof" if is_proof else "general", "level": "good" if score >= 0.75 else ("partial" if score >= 0.5 else "weak")}
+    formula = validate_formula(text)
+    if not formula["valid"] and checks["has_formula"]:
+        score = round(max(0.0, score - 0.25), 2)
+    return {"score": score, "checks": checks, "formula": formula, "question_type": "proof" if is_proof else "general", "level": "good" if score >= 0.75 else ("partial" if score >= 0.5 else "weak")}
 
 
 def quality_retry_instruction(quality: dict) -> str:
