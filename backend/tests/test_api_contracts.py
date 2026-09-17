@@ -51,6 +51,7 @@ class APIContractTests(unittest.TestCase):
         self.assertIn("primary_model", health)
         self.assertIn("primary_base_url", health)
         self.assertIn("primary_timeout_seconds", health)
+        self.assertIn("request_budget_seconds", health)
         self.assertIn("providers", health)
         self.assertIn("primary", health["providers"])
         self.assertIn("backup", health["providers"])

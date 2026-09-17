@@ -71,6 +71,18 @@ _knowledge_version = 0
 _cache_metrics = {"hits": 0, "misses": 0}
 _stream_results = {}
 _STREAM_RESULT_TTL = 600
+try:
+    REQUEST_BUDGET_SECONDS = max(10.0, float(os.getenv("MATH_AGENT_REQUEST_BUDGET_SECONDS", "85")))
+except (TypeError, ValueError):
+    REQUEST_BUDGET_SECONDS = 85.0
+
+
+def remaining_generation_timeout(deadline: float, requested: float) -> float:
+    """Return a provider timeout that cannot exceed the request's remaining budget."""
+    remaining = deadline - time.perf_counter() - 0.5
+    if remaining < 1.0:
+        raise TimeoutError("本次问答已达到总时间预算。")
+    return min(requested, remaining)
 
 
 def classify_ai_error(exc):
@@ -385,6 +397,7 @@ def ai_health():
     metrics["primary_model"] = primary_model
     metrics["primary_base_url"] = primary_base_url
     metrics["primary_timeout_seconds"] = primary_timeout
+    metrics["request_budget_seconds"] = REQUEST_BUDGET_SECONDS
     metrics["backup_model_configured"] = backup_client is not None
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
@@ -2090,6 +2103,8 @@ def _ask_impl(
     request_id: str | None = None,
 ):
     started_at = time.perf_counter()
+    deadline = started_at + REQUEST_BUDGET_SECONDS
+    degradation = []
     question = request.question.strip()
 
     if not question:
@@ -2375,7 +2390,7 @@ def _ask_impl(
             ],
             max_retries=1,
             max_tokens=primary_max_tokens,
-            timeout=primary_timeout,
+            timeout=remaining_generation_timeout(deadline, primary_timeout),
             on_chunk=stream_callback,
             circuit_enabled=True,
             extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
@@ -2388,18 +2403,20 @@ def _ask_impl(
             "[AI] final answer generation failed:",
             repr(exc)
         )
+        degradation.append("primary_failed")
 
         # 若配置了备用 OpenAI 兼容服务，先切换供应商，避免再次消耗主服务超时。
         if backup_client is not None:
             try:
                 answer = call_deepseek(
                     messages=[{"role": "system", "content": "你是一名严谨的中文数学教师，直接给出可靠答案。"}, {"role": "user", "content": question}],
-                    max_retries=1, max_tokens=primary_max_tokens, timeout=30.0,
+                    max_retries=1, max_tokens=primary_max_tokens, timeout=remaining_generation_timeout(deadline, 30.0),
                     on_chunk=stream_callback,
                     extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
                     provider_client=backup_client, model=backup_model,
                 )
                 answer_source = "backup_model"
+                degradation.append("backup_model")
                 print("[AI] backup model answered")
             except Exception as backup_exc:
                 print("[AI] backup model failed:", repr(backup_exc))
@@ -2429,17 +2446,19 @@ def _ask_impl(
                 ],
                 max_retries=1,
                 max_tokens=1600,
-                timeout=70.0,
+                timeout=remaining_generation_timeout(deadline, 70.0),
                 on_chunk=stream_callback,
                 circuit_enabled=True,
                 extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
             )
             answer_source = "deepseek_extended"
+            degradation.append("extended_primary")
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
           except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
             answer = local_math_answer(question, db)
             answer_source = "local_fallback"
+            degradation.append("local_fallback")
             print("[AI] using deterministic local fallback")
 
     # ========================================================
@@ -2456,7 +2475,7 @@ def _ask_impl(
                     {"role": "system", "content": "你是严谨的中文数学教师。必须写出结论、全部条件、关键推导和最终结论；不要讨论系统状态。"},
                     {"role": "user", "content": f"请修正并完整回答：{question}\n{quality_retry_instruction(initial_quality)}\n\n原回答：{answer}"},
                 ],
-                max_retries=1, max_tokens=1800, timeout=70.0, circuit_enabled=True,
+                max_retries=1, max_tokens=1800, timeout=remaining_generation_timeout(deadline, 70.0), circuit_enabled=True,
             )
             repaired_quality = evaluate_answer(repaired, question)
             if repaired_quality["score"] >= initial_quality["score"]:
@@ -2474,6 +2493,9 @@ def _ask_impl(
         "answer_source": answer_source,
         "answer_quality": evaluate_answer(answer, question),
         "formula_fixes": formula_fixes,
+        "generation_budget_seconds": REQUEST_BUDGET_SECONDS,
+        "generation_elapsed_seconds": round(time.perf_counter() - started_at, 3),
+        "degradation": degradation,
 
         "concepts": [
             {
