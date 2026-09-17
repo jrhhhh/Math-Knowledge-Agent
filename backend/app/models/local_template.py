@@ -14,5 +14,7 @@ class LocalTemplate(Base):
     answer = Column(Text, nullable=False)
     enabled = Column(Boolean, nullable=False, default=True)
     review_status = Column(String(20), nullable=False, default="approved")
+    hit_count = Column(Integer, nullable=False, default=0)
+    last_hit_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)

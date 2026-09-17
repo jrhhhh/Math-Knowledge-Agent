@@ -26,6 +26,11 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("by_status", response.json())
 
+    def test_template_usage_contract(self):
+        response = self.client.get("/local-templates/usage")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("total_hits", response.json())
+
     def test_template_preview_contract(self):
         response = self.client.post("/local-templates/preview", json={"question": "不存在的模板问题"})
         self.assertEqual(response.status_code, 200)

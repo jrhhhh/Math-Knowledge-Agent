@@ -33,7 +33,12 @@ class TemplateImport(BaseModel):
 
 
 def serialize(item):
-    return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "review_status": item.review_status, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
+    return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "review_status": item.review_status, "hit_count": item.hit_count, "last_hit_at": item.last_hit_at.isoformat() if item.last_hit_at else None, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
+
+@router.get("/usage")
+def template_usage(db: Session = Depends(get_db)):
+    items = db.query(LocalTemplate).order_by(LocalTemplate.hit_count.desc(), LocalTemplate.id.asc()).all()
+    return {"total_hits": sum(item.hit_count for item in items), "items": [{"template_id": item.template_id, "hit_count": item.hit_count, "last_hit_at": item.last_hit_at.isoformat() if item.last_hit_at else None} for item in items]}
 
 def audit(db, template_id, action, detail="", snapshot=None):
     db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))

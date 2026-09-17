@@ -39,6 +39,11 @@ with engine.begin() as connection:
     template_columns = {column["name"] for column in inspect(connection).get_columns("local_answer_templates")}
     if "review_status" not in template_columns:
         connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN review_status VARCHAR(20) NOT NULL DEFAULT 'approved'"))
+    template_columns = {column["name"] for column in inspect(connection).get_columns("local_answer_templates")}
+    if "hit_count" not in template_columns:
+        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN hit_count INTEGER NOT NULL DEFAULT 0"))
+    if "last_hit_at" not in template_columns:
+        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN last_hit_at DATETIME"))
 resume_pending_jobs()
 
 

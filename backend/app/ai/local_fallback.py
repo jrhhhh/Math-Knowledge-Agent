@@ -1,5 +1,6 @@
 """可扩展的确定性数学回答模板；模型不可用时提供可靠的基础答案。"""
 import re
+from datetime import datetime, timezone
 
 LOCAL_TEMPLATES = (
     ("cauchy_mean_value", re.compile(r"柯西中值定理"), "结论：若 f,g 在 [a,b] 上连续、在 (a,b) 内可导，且 g'(x) 不恒为 0，则存在 ξ∈(a,b) 使 (f(b)-f(a))g'(ξ)=(g(b)-g(a))f'(ξ)。证明：令 F(x)=(f(b)-f(a))g(x)-(g(b)-g(a))f(x)，由条件 F(a)=F(b)，罗尔定理给出 F'(ξ)=0，整理即得结论。"),
@@ -20,6 +21,9 @@ def match_local_template(question: str, db=None):
         for item in db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True), LocalTemplate.review_status == "approved").order_by(LocalTemplate.id.asc()).all():
             try:
                 if re.search(item.pattern, text, re.I):
+                    item.hit_count += 1
+                    item.last_hit_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    db.commit()
                     return {"id": item.template_id, "answer": item.answer}
             except re.error:
                 continue
