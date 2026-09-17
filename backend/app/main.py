@@ -13,6 +13,8 @@ from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
+from app.models.ai_retry_job import AIRetryJob
+from app.ai.retry_queue import resume_pending_jobs
 
 
 from app.api.concepts import router
@@ -23,6 +25,7 @@ from app.api.problem_concepts import router as problem_concept_router
 Base.metadata.create_all(
     bind=engine
 )
+resume_pending_jobs()
 
 
 app = FastAPI(

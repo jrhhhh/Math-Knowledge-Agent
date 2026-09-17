@@ -2,6 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from threading import Lock
 from uuid import uuid4
+import json
+
+from app.database import SessionLocal
+from app.models.ai_retry_job import AIRetryJob
 
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="math-agent-retry")
@@ -18,11 +22,24 @@ def enqueue(operation: str, question: str, max_attempts: int = 3):
     job = {"id": job_id, "operation": operation, "question": question, "status": "queued", "attempts": 0, "max_attempts": max_attempts, "error": None, "result": None, "created_at": _now(), "updated_at": _now()}
     with _lock:
         _jobs[job_id] = job
+    db = SessionLocal()
+    try:
+        db.add(AIRetryJob(id=job_id, operation=operation, question=question, max_attempts=max_attempts))
+        db.commit()
+    finally:
+        db.close()
     _executor.submit(_run, job_id)
     return job.copy()
 
 
 def get_job(job_id: str):
+    db = SessionLocal()
+    try:
+        stored = db.query(AIRetryJob).filter(AIRetryJob.id == job_id).first()
+        if stored:
+            return {"id": stored.id, "operation": stored.operation, "question": stored.question, "status": stored.status, "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": json.loads(stored.result_json) if stored.result_json else None, "created_at": stored.created_at.isoformat() if stored.created_at else None, "updated_at": stored.updated_at.isoformat() if stored.updated_at else None}
+    finally:
+        db.close()
     with _lock:
         job = _jobs.get(job_id)
         return job.copy() if job else None
@@ -39,6 +56,7 @@ def _run(job_id: str):
             return
         job["status"] = "running"
         job["updated_at"] = _now()
+    _persist(job)
     while job["attempts"] < job["max_attempts"]:
         job["attempts"] += 1
         db = SessionLocal()
@@ -56,6 +74,33 @@ def _run(job_id: str):
         finally:
             db.close()
             job["updated_at"] = _now()
+        _persist(job)
+
+
+def _persist(job):
+    db = SessionLocal()
+    try:
+        stored = db.query(AIRetryJob).filter(AIRetryJob.id == job["id"]).first()
+        if stored:
+            stored.status = job["status"]
+            stored.attempts = job["attempts"]
+            stored.error = job["error"]
+            stored.result_json = json.dumps(job["result"], ensure_ascii=False) if job["result"] else None
+            db.commit()
+    finally:
+        db.close()
+
+
+def resume_pending_jobs():
+    db = SessionLocal()
+    try:
+        jobs = db.query(AIRetryJob).filter(AIRetryJob.status.in_(["queued", "running", "retrying"])).all()
+        for stored in jobs:
+            with _lock:
+                _jobs[stored.id] = {"id": stored.id, "operation": stored.operation, "question": stored.question, "status": "queued", "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": None, "created_at": stored.created_at.isoformat() if stored.created_at else _now(), "updated_at": _now()}
+            _executor.submit(_run, stored.id)
+    finally:
+        db.close()
 
 
 def snapshot():
