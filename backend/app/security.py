@@ -5,7 +5,9 @@ import hmac
 import json
 import time
 from threading import Lock
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
+from app.database import SessionLocal
+from app.models.security_event import SecurityEvent
 
 _login_failures = {}
 _login_lock = Lock()
@@ -31,6 +33,15 @@ def clear_login_failures(identity: str):
     with _login_lock:
         _login_failures.pop(identity, None)
 
+def record_security_event(event: str, request: Request | None = None, detail: str = ""):
+    db = SessionLocal()
+    try:
+        db.add(SecurityEvent(event=event, ip_address=request.client.host if request and request.client else None,
+                             path=str(request.url.path) if request else None, detail=detail))
+        db.commit()
+    finally:
+        db.close()
+
 def issue_admin_token(key: str):
     payload = {"sub": "admin", "exp": int(time.time()) + 3600}
     body = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
@@ -46,9 +57,10 @@ def _valid_token(token: str, key: str):
     except (ValueError, json.JSONDecodeError, TypeError):
         return False
 
-def require_admin(x_admin_key: str | None = Header(default=None), authorization: str | None = Header(default=None)):
+def require_admin(request: Request, x_admin_key: str | None = Header(default=None), authorization: str | None = Header(default=None)):
     configured = os.getenv("MATH_AGENT_ADMIN_KEY", "").strip()
     bearer = authorization.removeprefix("Bearer ").strip() if authorization else ""
     if configured and x_admin_key != configured and not _valid_token(bearer, configured):
+        record_security_event("admin_denied", request, "invalid credentials")
         raise HTTPException(status_code=403, detail="需要有效的管理员密钥。")
     return True

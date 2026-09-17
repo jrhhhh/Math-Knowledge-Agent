@@ -72,6 +72,9 @@ class AnswerRecordContractTests(unittest.TestCase):
                 self.assertEqual(self.client.post("/ai/auth/login", json={"key": "wrong"}).status_code, 401)
             limited = self.client.post("/ai/auth/login", json={"key": "wrong"})
             self.assertEqual(limited.status_code, 429)
+            events = self.client.get("/ai/security-events?limit=5")
+            self.assertEqual(events.status_code, 200)
+            self.assertIn("items", events.json())
 
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})

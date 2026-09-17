@@ -40,6 +40,7 @@ from app.models.question_sample import QuestionSample
 from app.models.answer_record import AnswerRecord, AnswerFeedback
 from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
+from app.models.security_event import SecurityEvent
 
 from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
@@ -55,7 +56,7 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
-from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, _LOCKOUT_SECONDS
+from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, record_security_event, _LOCKOUT_SECONDS
 
 
 router = APIRouter(
@@ -150,13 +151,22 @@ class AdminLoginRequest(BaseModel):
 def admin_login(request: AdminLoginRequest, http_request: Request):
     identity = http_request.client.host if http_request.client else "unknown"
     if not login_allowed(identity):
+        record_security_event("login_rate_limited", http_request, "too many failures")
         raise HTTPException(status_code=429, detail="登录失败次数过多，请 5 分钟后重试。", headers={"Retry-After": str(_LOCKOUT_SECONDS)})
     configured = os.getenv("MATH_AGENT_ADMIN_KEY", "").strip()
     if not configured or not hmac.compare_digest(request.key, configured):
         record_login_failure(identity)
+        record_security_event("login_failed", http_request, "invalid key")
         raise HTTPException(status_code=401, detail="管理员密钥无效。")
     clear_login_failures(identity)
+    record_security_event("login_succeeded", http_request)
     return {"access_token": issue_admin_token(configured), "token_type": "bearer", "expires_in": 3600}
+
+@router.get("/security-events")
+def security_events(limit: int = Query(default=100, ge=1, le=500), db: Session = Depends(get_db)):
+    items = db.query(SecurityEvent).order_by(SecurityEvent.created_at.desc()).limit(limit).all()
+    return {"items": [{"id": item.id, "event": item.event, "ip_address": item.ip_address,
+                       "path": item.path, "detail": item.detail, "created_at": item.created_at.isoformat()} for item in items], "total": len(items)}
 
 class ReviewRequest(BaseModel):
     status: str
