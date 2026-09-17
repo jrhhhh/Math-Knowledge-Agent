@@ -1,4 +1,5 @@
 import unittest
+import os
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -44,6 +45,12 @@ class AnswerRecordContractTests(unittest.TestCase):
             self.assertEqual(events.json()["total"], 1)
         finally:
             db.close()
+
+    def test_admin_key_protects_review(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"MATH_AGENT_ADMIN_KEY": "test-secret"}):
+            denied = self.client.post("/ai/answers/999999/review", json={"status": "fixed"})
+            self.assertEqual(denied.status_code, 403)
 
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})

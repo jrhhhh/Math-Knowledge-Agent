@@ -14,6 +14,7 @@ from app.models.local_template_event import LocalTemplateEvent
 from app.models.question_sample import QuestionSample
 from app.models.template_audit_log import TemplateAuditLog
 from app.models.template_audit_archive import TemplateAuditArchive
+from app.security import require_admin
 
 router = APIRouter(prefix="/local-templates", tags=["Local answer templates"])
 
@@ -109,7 +110,7 @@ def export_audit_log(action: str | None = None, since: str | None = None, until:
 
 
 @router.post("/audit-log/archive")
-def archive_audit_log(retention_days: int = Query(default=365, ge=1, le=3650), db: Session = Depends(get_db)):
+def archive_audit_log(retention_days: int = Query(default=365, ge=1, le=3650), db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=retention_days)
     items = db.query(TemplateAuditLog).filter(TemplateAuditLog.created_at < cutoff).all()
     for item in items:

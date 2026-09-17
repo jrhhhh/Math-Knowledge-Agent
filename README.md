@@ -59,6 +59,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 `GET /ai/requests/{request_id}` 可查询本地请求成功记录、耗时和错误信息；`GET /ai/requests` 支持按 `status`、`since`、`until` 筛选最近日志，`GET /ai/requests/export` 可导出 CSV（最多 5000 条），便于分析慢请求趋势。
 
 可选备用模型：设置 `MATH_AGENT_BACKUP_API_KEY`、`MATH_AGENT_BACKUP_BASE_URL` 和可选的 `MATH_AGENT_BACKUP_MODEL`（OpenAI 兼容接口）。主模型失败后会优先切换备用模型，再进入本地兜底；是否配置可通过 `/ai/health` 的 `backup_model_configured` 查看。
+管理写操作可设置 `MATH_AGENT_ADMIN_KEY`；配置后，答案复核和审计归档接口必须携带请求头 `X-Admin-Key: <密钥>`，未配置时保持本地开发兼容。
 本地模板变更可通过 `GET /local-templates/{template_id}/events` 查询审计记录。
 匿名样本默认不自动删除，可由管理员调用 `DELETE /local-templates/samples?retention_days=90` 清理过期哈希样本。
 

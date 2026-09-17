@@ -53,6 +53,7 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
+from app.security import require_admin
 
 
 router = APIRouter(
@@ -242,7 +243,7 @@ def list_answer_reviews(status: str = Query(default="pending"), limit: int = Que
 
 
 @router.post("/answers/{answer_id}/review")
-def review_answer(answer_id: int, request: ReviewRequest, db: Session = Depends(get_db)):
+def review_answer(answer_id: int, request: ReviewRequest, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     if request.status not in {"pending", "fixed", "false_positive"}:
         raise HTTPException(status_code=422, detail="status 必须是 pending、fixed 或 false_positive。")
     if db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first() is None:
