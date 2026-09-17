@@ -34,7 +34,7 @@ from app.ai.concept_matcher import (
     RELATION_PRIORITY,
 )
 from app.ai.telemetry import record_request, snapshot
-from app.ai.retry_queue import enqueue, get_job
+from app.ai.retry_queue import enqueue, get_job, queue_stats
 
 
 router = APIRouter(
@@ -57,6 +57,7 @@ def ai_health():
     metrics = snapshot()
     total = metrics["requests"]
     metrics["success_rate"] = round(metrics["successes"] / total, 4) if total else None
+    metrics["retry_queue"] = queue_stats()
     return metrics
 
 

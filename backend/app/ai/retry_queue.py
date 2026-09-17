@@ -3,14 +3,16 @@ from datetime import datetime, timezone
 from threading import Lock
 from uuid import uuid4
 import json
+import time
 
 from app.database import SessionLocal
 from app.models.ai_retry_job import AIRetryJob
 
 
-_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="math-agent-retry")
+_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="math-agent-retry")
 _lock = Lock()
 _jobs = {}
+_last_attempt = 0.0
 
 
 def _now():
@@ -57,8 +59,13 @@ def _run(job_id: str):
         job["status"] = "running"
         job["updated_at"] = _now()
     _persist(job)
+    global _last_attempt
     while job["attempts"] < job["max_attempts"]:
         job["attempts"] += 1
+        wait_for = max(0.0, 1.5 - (time.monotonic() - _last_attempt))
+        if wait_for:
+            time.sleep(wait_for)
+        _last_attempt = time.monotonic()
         db = SessionLocal()
         try:
             if job["operation"] != "related_graph":
@@ -106,3 +113,11 @@ def resume_pending_jobs():
 def snapshot():
     with _lock:
         return [job.copy() for job in _jobs.values()]
+
+
+def queue_stats():
+    with _lock:
+        counts = {}
+        for job in _jobs.values():
+            counts[job["status"]] = counts.get(job["status"], 0) + 1
+        return counts
