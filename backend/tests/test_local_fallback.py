@@ -19,6 +19,10 @@ class LocalFallbackTests(unittest.TestCase):
         answer = local_math_answer("一个非常特殊的问题")
         self.assertIn("模型暂不可用", answer)
 
+    def test_common_analysis_templates(self):
+        self.assertIn("紧集", local_math_answer("连续函数在紧集上有界的原因"))
+        self.assertIn("介值定理", local_math_answer("证明介值定理"))
+
 
 if __name__ == "__main__":
     unittest.main()
