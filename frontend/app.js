@@ -8,7 +8,15 @@ let activeCandidateId = null;
 let askController = null;
 let lastAiErrorCode = null;
 let lastAskResult = null;
+let lastAskRequestId = null;
 let lastSecurityAlertSignature = '';
+const trackedFetch = window.fetch;
+window.fetch = (input, init = {}) => {
+  const url = typeof input === 'string' ? input : input?.url || '';
+  const match = url.match(/\/ai\/ask-stream\?request_id=([^&]+)/);
+  if (match) lastAskRequestId = decodeURIComponent(match[1]);
+  return trackedFetch(input, init);
+};
 function notifySecurityAlerts(alerts) { if (!alerts?.length || !window.Notification || Notification.permission !== 'granted') return; const signature = alerts.map(item => `${item.type}:${item.ip_address || ''}:${item.count}`).join('|'); if (signature === lastSecurityAlertSignature) return; lastSecurityAlertSignature = signature; new Notification('Math Agent 安全告警', { body: alerts.map(item => item.message).join('；') }); }
 function ensureAdminPanel() { if ($('adminPanel')) return; const panel = document.createElement('details'); panel.id = 'adminPanel'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>管理权限</summary><div class="template-preview"><input id="adminKeyInput" type="password" placeholder="输入管理员密钥（仅当前会话）" aria-label="管理员密钥"><button type="button" id="saveAdminKey">登录</button><button type="button" id="clearAdminKey">清除</button><output id="adminKeyStatus"></output></div>'; $('graph').appendChild(panel); $('adminKeyInput').value = adminKey; $('saveAdminKey').onclick = async () => { const key = $('adminKeyInput').value.trim(); if (!key) { $('adminKeyStatus').textContent = '请输入密钥'; return; } try { const response = await nativeFetch(`${API}/ai/auth/login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key})}); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '登录失败'); adminKey = key; adminToken = data.access_token; sessionStorage.setItem('math-agent-admin-key', adminKey); sessionStorage.setItem('math-agent-admin-token', adminToken); $('adminKeyStatus').textContent = '登录成功，token 有效 1 小时'; } catch (error) { adminToken = ''; sessionStorage.removeItem('math-agent-admin-token'); $('adminKeyStatus').textContent = error.message; } }; $('clearAdminKey').onclick = () => { adminKey = ''; adminToken = ''; sessionStorage.removeItem('math-agent-admin-key'); sessionStorage.removeItem('math-agent-admin-token'); $('adminKeyInput').value = ''; $('adminKeyStatus').textContent = '已清除'; }; }
 const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff', method: '#77f2ad' };
@@ -27,7 +35,53 @@ function renderProof(data) { const status = data.valid ? '通过' : '需要修�
 async function requestAskStream(question, signal) { const response = await fetch(`${API}/ai/ask-stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }), signal }); if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); } const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '', result = null; $('answer').classList.remove('empty-state'); $('answer').textContent = ''; while (true) { const chunk = await reader.read(); if (chunk.done) break; buffer += decoder.decode(chunk.value, { stream: true }); const frames = buffer.split('\n\n'); buffer = frames.pop(); for (const frame of frames) { const dataLine = frame.split('\n').find(line => line.startsWith('data: ')); if (!dataLine) continue; const data = JSON.parse(dataLine.slice(6)); const eventId = frame.split('\n').find(line => line.startsWith('id: ')); if (eventId) $('answer').dataset.lastEventId = eventId.slice(4); if (frame.includes('event: progress')) $('answerStatus').textContent = data.stage; if (frame.includes('event: token')) { $('answer').textContent += data.text || ''; $('answerStatus').textContent = '正在输出'; } if (frame.includes('event: error')) throw new Error(data.detail || '生成失败'); if (frame.includes('event: result')) result = data; } } if (!result) throw new Error('未收到完整回答'); return result; }
 async function requestAskStream(question, signal, requestId = crypto.randomUUID()) { let lastError; for (let attempt = 0; attempt < 2; attempt += 1) { try { const response = await fetch(`${API}/ai/ask-stream?request_id=${encodeURIComponent(requestId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }), signal }); if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); } const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '', result = null; $('answer').classList.remove('empty-state'); if (attempt === 0) $('answer').textContent = ''; while (true) { const chunk = await reader.read(); if (chunk.done) break; buffer += decoder.decode(chunk.value, { stream: true }); const frames = buffer.split('\n\n'); buffer = frames.pop(); for (const frame of frames) { const dataLine = frame.split('\n').find(line => line.startsWith('data: ')); if (!dataLine) continue; const data = JSON.parse(dataLine.slice(6)); const eventId = frame.split('\n').find(line => line.startsWith('id: ')); if (eventId) $('answer').dataset.lastEventId = eventId.slice(4); if (frame.includes('event: progress')) $('answerStatus').textContent = data.stage; if (frame.includes('event: token')) { $('answer').textContent += data.text || ''; $('answerStatus').textContent = '正在输出'; } if (frame.includes('event: error')) throw new Error(data.detail || '生成失败'); if (frame.includes('event: result')) result = data; } } if (result) return result; throw new Error('流式连接中断'); } catch (error) { if (error.name === 'AbortError' || attempt === 1) throw error; lastError = error; $('answerStatus').textContent = '连接中断，正在恢复…'; await new Promise(resolve => setTimeout(resolve, 800)); } } throw lastError || new Error('流式连接失败'); }
 
-async function ask(event) { event.preventDefault(); const question = $('question').value.trim(); if (!question) return; clearMessage(); askController = new AbortController(); const timeout = setTimeout(() => askController.abort(), 90000); $('askButton').disabled = true; $('askButton').innerHTML = '正在推理…'; $('cancelAskButton').classList.remove('hidden'); $('answerStatus').textContent = '生成中'; try { const data = await requestAskStream(question, askController.signal); renderAnswer(data.answer); renderConcepts(data.concepts); const sourceNames = { deepseek_extended: '深入生成完成', backup_model: '备用模型生成完成', local_fallback: '本地兜底生成完成' }; const quality = data.answer_quality; const qualityLabel = quality && quality.level === 'weak' ? ' · 需人工核对' : ''; $('answerStatus').textContent = (sourceNames[data.answer_source] || (data.cache_hit ? '缓存命中' : '已完成')) + qualityLabel; if (data.knowledge_graph) renderGraph(data.knowledge_graph); } catch (error) { if (error.name === 'AbortError') { showMessage('推理已取消或超过 90 秒，当前连接已释放。'); $('answerStatus').textContent = '已取消'; } else { showMessage(`暂时无法连接 Math Agent：${error.message}`); $('answerStatus').textContent = '连接失败'; } } finally { clearTimeout(timeout); askController = null; $('askButton').disabled = false; $('askButton').innerHTML = '开始推理 <span>→</span>'; $('cancelAskButton').classList.add('hidden'); } }
+async function ask(event) {
+  event.preventDefault();
+  const question = $('question').value.trim();
+  if (!question) return;
+  clearMessage();
+  askController = new AbortController();
+  const timeout = setTimeout(() => askController.abort(), 90000);
+  $('askButton').disabled = true;
+  $('askButton').innerHTML = '正在推理…';
+  $('cancelAskButton').classList.remove('hidden');
+  $('answerStatus').textContent = '生成中';
+  try {
+    const data = await requestAskStream(question, askController.signal);
+    renderAnswer(data.answer);
+    renderConcepts(data.concepts);
+    const sourceNames = { deepseek_extended: '深入生成完成', backup_model: '备用模型生成完成', local_fallback: '本地兜底生成完成' };
+    const quality = data.answer_quality;
+    const qualityLabel = quality && quality.level === 'weak' ? ' · 需人工核对' : '';
+    $('answerStatus').textContent = (sourceNames[data.answer_source] || (data.cache_hit ? '缓存命中' : '已完成')) + qualityLabel;
+    if (data.knowledge_graph) renderGraph(data.knowledge_graph);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      showMessage('推理已取消或超过 90 秒，当前连接已释放。');
+      $('answerStatus').textContent = '已取消';
+    } else {
+      $('answerStatus').textContent = '连接中断，正在恢复任务…';
+      const recovered = await recoverTaskResult(lastAskRequestId);
+      if (recovered) {
+        lastAskResult = recovered;
+        renderAnswer(recovered.answer);
+        renderConcepts(recovered.concepts);
+        if (recovered.knowledge_graph) renderGraph(recovered.knowledge_graph);
+        $('answerStatus').textContent = recovered.answer_source === 'local_fallback' ? '本地兜底生成完成' : '断线后已恢复回答';
+      } else {
+        showMessage(`暂时无法连接 Math Agent：${error.message}`);
+        $('answerStatus').textContent = '连接失败';
+      }
+    }
+  } finally {
+    clearTimeout(timeout);
+    askController = null;
+    $('askButton').disabled = false;
+    $('askButton').innerHTML = '开始推理 <span>→</span>';
+    $('cancelAskButton').classList.add('hidden');
+  }
+}
+async function recoverTaskResult(requestId) { if (!requestId) return null; for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 1500)); try { const response = await nativeFetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`); const task = await response.json(); if (!response.ok) return null; $('answerStatus').textContent = task.stage || '恢复任务状态'; if (task.result?.answer) return task.result; if (['failed', 'cancelled'].includes(task.status)) return null; } catch (error) { return null; } } return null; }
 function cancelAsk() { askController?.abort(); }
 function ensureAskCancelButton() { const button = document.createElement('button'); button.type = 'button'; button.id = 'cancelAskButton'; button.className = 'cancel-ask hidden'; button.textContent = '取消推理'; button.addEventListener('click', cancelAsk); $('askButton').parentElement?.appendChild(button); }
 async function pollGraphRetry(jobId) { for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.knowledge_graph) { activeCandidateId = job.result.candidate_id; $('graphEditor').value = JSON.stringify(job.result.knowledge_graph, null, 2); $('saveGraphButton').classList.remove('hidden'); renderGraph(job.result.knowledge_graph); loadCandidateStats(); loadCandidateHistory(); showMessage('后台重试成功，相关知识图谱已自动载入。'); return; } if (job.status === 'failed') { showMessage(`后台重试仍未成功：${job.error || '未知错误'}`); return; } $('graphStatus').textContent = `后台重试中（第 ${job.attempts || 0} 次）`; } catch (error) { return; } } showMessage('后台重试仍在进行，可稍后查看候选图谱历史。'); }

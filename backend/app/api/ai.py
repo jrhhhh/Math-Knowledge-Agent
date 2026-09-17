@@ -444,6 +444,9 @@ def task_status(request_id: str, db: Session = Depends(get_db)):
         })
     if not live:
         raise HTTPException(status_code=404, detail="未找到该问答任务。")
+    stream_result = _stream_results.get(request_id)
+    if stream_result:
+        live["result"] = stream_result["value"]
     return live
 
 @router.get("/metrics", response_class=PlainTextResponse)

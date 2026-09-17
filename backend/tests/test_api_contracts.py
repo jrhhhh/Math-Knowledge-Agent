@@ -59,12 +59,16 @@ class APIContractTests(unittest.TestCase):
         self.assertIn("request_logs_deleted", response.json())
 
     def test_task_status_contract(self):
-        from app.api.ai import set_task_status
+        from app.api.ai import set_task_status, _stream_results
         set_task_status("test-task-status", "generating", "测试阶段")
         response = self.client.get("/ai/tasks/test-task-status")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "generating")
         self.assertEqual(response.json()["stage"], "测试阶段")
+        _stream_results["test-task-status"] = {"value": {"answer": "恢复答案"}}
+        recovered = self.client.get("/ai/tasks/test-task-status")
+        self.assertEqual(recovered.json()["result"]["answer"], "恢复答案")
+        _stream_results.pop("test-task-status", None)
         missing = self.client.get("/ai/tasks/not-found-task")
         self.assertEqual(missing.status_code, 404)
 
