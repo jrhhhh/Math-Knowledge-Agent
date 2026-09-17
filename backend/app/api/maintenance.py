@@ -3,6 +3,7 @@ import sqlite3
 import secrets
 import time
 import json
+import urllib.request
 from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.api.ai import get_db
 from app.security import require_admin, record_security_event
 from app.database import engine
-from app.ai.telemetry import record_backup
+from app.ai.telemetry import record_backup, snapshot
 
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
 
@@ -101,6 +102,26 @@ def list_backups(limit: int = 20):
         return {"items": [], "total": 0}
     files = sorted(backup_dir.glob("math_agent-*.db"), key=lambda item: item.stat().st_mtime, reverse=True)[:max(1, min(limit, 100))]
     return {"items": [{"path": str(item), "size_bytes": item.stat().st_size, "modified_at": datetime.fromtimestamp(item.stat().st_mtime).isoformat()} for item in files], "total": len(files)}
+
+@router.post("/backup-alert/notify")
+def notify_backup_alert(_: bool = Depends(require_admin)):
+    metrics = snapshot()
+    if metrics["backups_failed"] <= 0:
+        return {"sent": False, "reason": "no_backup_failure"}
+    webhook = os.getenv("MATH_AGENT_ALERT_WEBHOOK", "").strip()
+    if not webhook:
+        raise HTTPException(status_code=503, detail="未配置 MATH_AGENT_ALERT_WEBHOOK。")
+    body = json.dumps({"text": "Math Agent 数据库备份失败告警", "backups_failed": metrics["backups_failed"], "last_backup_timestamp": metrics["last_backup_timestamp"]}, ensure_ascii=False).encode()
+    request = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            if response.status >= 400:
+                raise HTTPException(status_code=502, detail="Webhook 返回错误。")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Webhook 发送失败：{exc}") from exc
+    return {"sent": True, "backups_failed": metrics["backups_failed"]}
 
 @router.post("/integrity/repair/prepare")
 def prepare_integrity_repair(request: RepairRequest, _: bool = Depends(require_admin)):

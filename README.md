@@ -77,6 +77,7 @@ GitHub Actions 会在 push 和 pull request 时自动执行编译、后端测试
 可用 `./scripts/rehearse_restore.sh backups/xxx.db` 做恢复演练；它只恢复到临时目录并检查关键表，不会覆盖生产数据库。
 运维控制台也提供管理员保护的 `POST /maintenance/backup` 手动备份和 `GET /maintenance/backups` 备份列表接口；网页不会直接执行恢复。
 Prometheus 指标还包含备份成功/失败次数及最后备份时间戳，可据此配置备份失败或长期未备份告警。
+管理员也可调用 `POST /maintenance/backup-alert/notify` 将已记录的备份失败发送到 `MATH_AGENT_ALERT_WEBHOOK`。
 默认告警规则已包含 `MathAgentBackupFailed`（1 小时内备份失败）和 `MathAgentBackupStale`（超过 24 小时未备份）。
 CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结果。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
