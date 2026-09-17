@@ -47,6 +47,7 @@ Current Version: v0.3
 当前架构：
 Math-Agent
 Backend
+- `GET /ai/health`：查看 DeepSeek 调用成功率、重试次数和最近失败原因
 │
 ├── FastAPI
 │

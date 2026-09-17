@@ -30,12 +30,22 @@ from app.ai.concept_matcher import (
     find_concept_by_name_or_alias,
     RELATION_PRIORITY,
 )
+from app.ai.telemetry import record_request, snapshot
 
 
 router = APIRouter(
     prefix="/ai",
     tags=["AI"]
 )
+
+
+@router.get("/health")
+def ai_health():
+    """返回 AI 调用计数和最近失败，便于定位 DeepSeek 不稳定。"""
+    metrics = snapshot()
+    total = metrics["requests"]
+    metrics["success_rate"] = round(metrics["successes"] / total, 4) if total else None
+    return metrics
 
 
 class AskRequest(BaseModel):
@@ -183,9 +193,11 @@ def call_deepseek(
     """
 
     last_error = None
+    attempts = 0
 
     for attempt in range(max_retries):
         try:
+            attempts = attempt + 1
             kwargs = {
                 "model": "deepseek-v4-pro",
                 "messages": messages,
@@ -212,6 +224,7 @@ def call_deepseek(
                 and response.choices[0].message
                 and response.choices[0].message.content
             ):
+                record_request(True, attempts - 1)
                 return response.choices[0].message.content
 
             raise RuntimeError(
@@ -256,6 +269,7 @@ def call_deepseek(
             break
 
     if last_error is not None:
+        record_request(False, max(attempts - 1, 0), repr(last_error))
         raise last_error
 
     raise RuntimeError(
