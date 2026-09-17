@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Math Agent · 公式渲染测试</title>
+  <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']],displayMath:[['\\[','\\]'],['$$','$$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>body{margin:0;padding:32px;background:#f4f6f3;color:#16212a;font:15px/1.8 system-ui,sans-serif}.wrap{max-width:820px;margin:auto;background:white;padding:28px 34px;border-radius:16px;box-shadow:0 12px 35px #11213118}h1{margin-top:0}article{border-top:1px solid #e5e9eb;padding:16px 0}code,pre{background:#eef3f4;padding:3px 6px;border-radius:4px}pre{padding:12px;white-space:pre-wrap}.ok{color:#087f5b}.warn{color:#b54708}</style>
+</head>
+<body><main class="wrap"><h1>公式渲染专项测试</h1><p id="status">等待 MathJax 加载…</p>
+<article><b>1. 行内公式</b><p>欧拉公式：\(e^{i\pi}+1=0\)。</p></article>
+<article><b>2. 独立公式</b><p>勾股定理：</p><p>\[a^2+b^2=c^2\]</p></article>
+<article><b>3. 矩阵</b><p>\[A=\begin{bmatrix}1&2\\3&4\end{bmatrix}\]</p></article>
+<article><b>4. 分段函数</b><p>\[f(x)=\begin{cases}x^2,&x\ge 0\\-x,&x<0\end{cases}\]</p></article>
+<article><b>5. fenced LaTeX 兼容样例</b><pre>```latex
+\\int_0^1 x^2\,dx=\\frac13
+```</pre><p>转换后的结果：\[\int_0^1 x^2\,dx=\frac13\]</p></article>
+</main><script>window.addEventListener('load',()=>{const s=document.querySelector('#status');const check=()=>{if(window.MathJax?.typesetPromise){MathJax.typesetPromise().then(()=>{s.textContent='✓ MathJax 渲染完成';s.className='ok'}).catch(e=>{s.textContent='⚠ 渲染失败：'+e.message;s.className='warn'})}else setTimeout(check,200)};check()});</script></body></html>
