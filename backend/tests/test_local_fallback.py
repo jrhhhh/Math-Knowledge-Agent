@@ -1,6 +1,6 @@
 import unittest
 
-from app.ai.local_fallback import local_math_answer
+from app.ai.local_fallback import local_math_answer, match_local_template
 
 
 class LocalFallbackTests(unittest.TestCase):
@@ -8,6 +8,7 @@ class LocalFallbackTests(unittest.TestCase):
         answer = local_math_answer("柯西中值定理")
         self.assertIn("罗尔定理", answer)
         self.assertIn("ξ", answer)
+        self.assertEqual(match_local_template("柯西中值定理")["id"], "cauchy_mean_value")
 
     def test_topology_answer_contains_mapping_proof(self):
         answer = local_math_answer("为什么连续函数把紧集映射为紧集？")
