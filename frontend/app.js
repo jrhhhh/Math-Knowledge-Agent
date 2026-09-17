@@ -235,6 +235,7 @@ function renderGraph(graph) {
 }
 
 async function loadRetryAlerts() { let panel = $('retryAlerts'); if (!panel) { panel = document.createElement('details'); panel.id = 'retryAlerts'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>重试失败告警</summary><div class="retry-alert-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/retry-alerts?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); panel.querySelector('.retry-alert-info').innerHTML = data.alert ? `<b class="health-warning">⚠ 最近 1 小时有 ${data.failed_count} 个任务最终失败</b>${(data.items || []).slice(0, 3).map(item => `<div class="retry-alert-item"><span>${escapeHtml(item.question)}</span><small>${escapeHtml(item.error || '未知错误')}</small></div>`).join('')}` : '<span class="muted">最近 1 小时没有最终失败任务</span>'; } catch (error) { panel.querySelector('.retry-alert-info').textContent = '重试告警暂不可用'; } }
+async function loadOperationsDashboard() { let panel = $('operationsDashboard'); if (!panel) { panel = document.createElement('details'); panel.id = 'operationsDashboard'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>运营健康总览</summary><div class="ops-dashboard-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/ops-dashboard?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); const sources = Object.entries(data.by_source || {}).map(([name, value]) => `${escapeHtml(name)} ${Math.round((value.average_quality || 0) * 100)}%/${value.count}次`).join(' · ') || '暂无回答'; const providers = Object.entries(data.provider_failure_rates || {}).map(([name, value]) => `${escapeHtml(name)} ${value.failure_rate == null ? '—' : `${Math.round(value.failure_rate * 100)}%`}`).join(' · '); panel.querySelector('.ops-dashboard-info').innerHTML = `<b class="ops-${escapeHtml(data.health || 'healthy')}">${data.health === 'degraded' ? '需要关注' : '运行正常'}</b><div>回答 ${data.answer_count || 0} · 平均质量 ${data.average_quality == null ? '—' : `${Math.round(data.average_quality * 100)}%`} · 平均耗时 ${data.average_duration_seconds == null ? '—' : `${data.average_duration_seconds}s`} · 失败重试 ${data.failed_retry_jobs || 0}</div><div>来源：${sources}</div><div>供应商失败率：${providers || '暂无调用'}</div>`; } catch (error) { panel.querySelector('.ops-dashboard-info').textContent = '运营统计暂不可用'; } }
 $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
@@ -263,6 +264,7 @@ loadRetryAlerts = async function () {
 };
 loadRetryJobs();
 loadRetryAlerts();
+loadOperationsDashboard();
 loadCacheStatus();
 loadHealthMetrics();
 loadTaskHistory();
@@ -289,6 +291,7 @@ ensureTemplateAB();
 setInterval(loadHealthMetrics, 30000);
 setInterval(loadTaskHistory, 15000);
 setInterval(loadRetryAlerts, 30000);
+setInterval(loadOperationsDashboard, 30000);
 const restoreTaskBase = restoreTask;
 restoreTask = async function (requestId) {
   try {

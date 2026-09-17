@@ -669,6 +669,35 @@ def retry_alerts(window_minutes: int = Query(default=60, ge=1, le=10080), db: Se
                        "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
 
 
+@router.get("/ops-dashboard")
+def operations_dashboard(window_minutes: int = Query(default=60, ge=1, le=10080), db: Session = Depends(get_db)):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=window_minutes)
+    answers = db.query(AnswerRecord).filter(AnswerRecord.created_at >= cutoff).all()
+    failed_jobs = db.query(AIRetryJob).filter(AIRetryJob.status == "failed", AIRetryJob.updated_at >= cutoff).count()
+    quality_values = [item.quality_score for item in answers if item.quality_score is not None]
+    durations = [item.duration_seconds for item in answers if item.duration_seconds is not None]
+    by_source = {}
+    for item in answers:
+        bucket = by_source.setdefault(item.answer_source, {"count": 0, "average_quality": 0.0, "average_duration_seconds": 0.0})
+        bucket["count"] += 1
+        bucket["average_quality"] += item.quality_score or 0.0
+        bucket["average_duration_seconds"] += item.duration_seconds or 0.0
+    for bucket in by_source.values():
+        count = bucket["count"] or 1
+        bucket["average_quality"] = round(bucket["average_quality"] / count, 3)
+        bucket["average_duration_seconds"] = round(bucket["average_duration_seconds"] / count, 3)
+    provider_stats = snapshot().get("providers", {})
+    provider_failure_rates = {}
+    for name, value in provider_stats.items():
+        total = (value.get("successes") or 0) + (value.get("failures") or 0)
+        provider_failure_rates[name] = {"failure_rate": round(value.get("failures", 0) / total, 4) if total else None,
+                                        "successes": value.get("successes", 0), "failures": value.get("failures", 0), "state": value.get("state", "unknown")}
+    return {"window_minutes": window_minutes, "answer_count": len(answers), "average_quality": round(sum(quality_values) / len(quality_values), 3) if quality_values else None,
+            "average_duration_seconds": round(sum(durations) / len(durations), 3) if durations else None,
+            "failed_retry_jobs": failed_jobs, "by_source": by_source, "provider_failure_rates": provider_failure_rates,
+            "health": "degraded" if failed_jobs else "healthy"}
+
+
 
 
 class AskRequest(BaseModel):
