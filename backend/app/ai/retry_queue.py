@@ -26,6 +26,9 @@ def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int 
     job = {"id": job_id, "operation": operation, "question": question, "status": "queued", "attempts": 0, "max_attempts": max_attempts, "error": None, "result": None, "created_at": _now(), "updated_at": _now()}
     with _lock:
         _jobs[job_id] = job
+        terminal = [key for key, value in _jobs.items() if value["status"] in {"succeeded", "failed", "cancelled"}]
+        for key in terminal[:-100]:
+            _jobs.pop(key, None)
     db = SessionLocal()
     try:
         db.add(AIRetryJob(id=job_id, operation=operation, question=question, max_attempts=max_attempts))

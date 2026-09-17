@@ -49,9 +49,14 @@ _ANSWER_CACHE_TTL = 300
 _knowledge_version = 0
 _cache_metrics = {"hits": 0, "misses": 0}
 _stream_results = {}
+_STREAM_RESULT_TTL = 600
 
 
 def cached_answer(question: str):
+    now = time.monotonic()
+    for key, value in list(_answer_cache.items()):
+        if now - value["at"] >= _ANSWER_CACHE_TTL:
+            _answer_cache.pop(key, None)
     entry = _answer_cache.get(question.casefold())
     if entry and entry["version"] == _knowledge_version and time.monotonic() - entry["at"] < _ANSWER_CACHE_TTL:
         _cache_metrics["hits"] += 1
@@ -65,6 +70,13 @@ def cached_answer(question: str):
 def invalidate_answer_cache():
     global _knowledge_version
     _knowledge_version += 1
+
+
+def cleanup_stream_results():
+    now = time.monotonic()
+    for request_id, entry in list(_stream_results.items()):
+        if now - entry["at"] >= _STREAM_RESULT_TTL:
+            _stream_results.pop(request_id, None)
 
 
 @router.get("/cache")
@@ -2070,8 +2082,9 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
             nonlocal sequence
             sequence += 1
             return f"id: {sequence}\nevent: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        cleanup_stream_results()
         if request_id and request_id in _stream_results:
-            yield emit("result", _stream_results[request_id])
+            yield emit("result", _stream_results[request_id]["value"])
             return
         yield emit("progress", {"stage": "检索知识点"})
         chunks = queue.Queue()
@@ -2088,7 +2101,7 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
                 yield emit("token", {"text": chunks.get_nowait()})
             result = await task
             if request_id:
-                _stream_results[request_id] = result
+                _stream_results[request_id] = {"at": time.monotonic(), "value": result}
             yield emit("result", result)
         except Exception as exc:
             detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
