@@ -23,6 +23,7 @@ from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
+from app.models.ai_retry_job import AIRetryJob
 
 from app.ai.analyzer import client
 from app.ai.concept_matcher import (
@@ -42,6 +43,14 @@ router = APIRouter(
 )
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 @router.get("/health")
 def ai_health():
     """返回 AI 调用计数和最近失败，便于定位 DeepSeek 不稳定。"""
@@ -58,12 +67,30 @@ def create_retry_job(request: RetryRequest):
     return enqueue(request.operation, request.question.strip())
 
 
+@router.post("/retry-queue/{job_id}/retry")
+def retry_failed_job(job_id: str, db: Session = Depends(get_db)):
+    job = db.query(AIRetryJob).filter(AIRetryJob.id == job_id).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="重试任务不存在。")
+    if job.status not in {"failed", "succeeded"}:
+        raise HTTPException(status_code=409, detail="任务仍在处理中，不能重复触发。")
+    return enqueue(job.operation, job.question, job.max_attempts)
+
+
 @router.get("/retry-queue/{job_id}")
 def retry_job_status(job_id: str):
     job = get_job(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="重试任务不存在或已过期。")
     return job
+
+
+@router.get("/retry-queue")
+def list_retry_jobs(limit: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)):
+    jobs = db.query(AIRetryJob).order_by(AIRetryJob.created_at.desc()).limit(limit).all()
+    return {"items": [{"id": job.id, "operation": job.operation, "question": job.question, "status": job.status, "attempts": job.attempts, "max_attempts": job.max_attempts, "error": job.error, "created_at": job.created_at.isoformat() if job.created_at else None, "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
+
+
 
 
 class AskRequest(BaseModel):
@@ -94,14 +121,6 @@ def record_candidate_event(db: Session, candidate_id: int, action: str, detail: 
 class ProofAnalyzeRequest(BaseModel):
     question: str
     proof: str
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/proof-analyze")

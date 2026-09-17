@@ -45,6 +45,9 @@ async function loadCandidateStats() {
   }
 }
 
+async function loadRetryJobs() { let panel = $('retryJobs'); if (!panel) { panel = document.createElement('details'); panel.id = 'retryJobs'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>后台重试任务</summary><div class="retry-list"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/retry-queue?limit=12`); const data = await response.json(); if (!response.ok) throw new Error(); const names = { queued: '排队中', running: '执行中', retrying: '重试中', succeeded: '已成功', failed: '失败' }; panel.querySelector('.retry-list').innerHTML = (data.items || []).map(job => `<div class="retry-item"><span>${escapeHtml(job.question)}</span><b class="retry-status retry-${escapeHtml(job.status)}">${names[job.status] || job.status}</b><small>${job.attempts}/${job.max_attempts}</small>${job.status === 'failed' ? `<button type="button" data-retry-id="${escapeHtml(job.id)}">重新触发</button>` : ''}</div>`).join('') || '<span class="muted">暂无任务</span>'; panel.querySelectorAll('[data-retry-id]').forEach(button => button.addEventListener('click', () => retryJob(button.dataset.retryId))); } catch (error) { panel.querySelector('.retry-list').innerHTML = '<span class="muted">任务列表暂不可用</span>'; } }
+async function retryJob(jobId) { try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}/retry`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '重新触发失败'); showMessage(`已重新触发后台任务：${data.id}`); loadRetryJobs(); } catch (error) { showMessage(`重新触发失败：${error.message}`); } }
+
 function ensureBatchAuditButton() {
   if ($('batchValidateCandidates')) return;
   const filter = $('candidateStatusFilter');
@@ -139,3 +142,4 @@ ensureBatchAuditButton();
 loadGraph();
 loadCandidateStats();
 loadCandidateHistory();
+loadRetryJobs();
