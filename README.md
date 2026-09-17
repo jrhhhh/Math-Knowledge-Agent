@@ -57,6 +57,8 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 首 token 超过 3 秒或平均响应超过 20 秒时，监控面板会显示慢请求告警。
 每次问答响应都包含 `request_id`，后端耗时日志使用同一 ID，便于端到端排查。
 `GET /ai/requests/{request_id}` 可查询本地请求成功记录、耗时和错误信息；`GET /ai/requests` 支持按 `status`、`since`、`until` 筛选最近日志，`GET /ai/requests/export` 可导出 CSV（最多 5000 条），便于分析慢请求趋势。
+
+可选备用模型：设置 `MATH_AGENT_BACKUP_API_KEY`、`MATH_AGENT_BACKUP_BASE_URL` 和可选的 `MATH_AGENT_BACKUP_MODEL`（OpenAI 兼容接口）。主模型失败后会优先切换备用模型，再进入本地兜底；是否配置可通过 `/ai/health` 的 `backup_model_configured` 查看。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务

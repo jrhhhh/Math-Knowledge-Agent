@@ -17,6 +17,12 @@ client = OpenAI(
     max_retries=0,
 )
 
+# 可选的 OpenAI 兼容备用服务。未配置时完全不启用，保持现有部署兼容。
+backup_api_key = os.getenv("MATH_AGENT_BACKUP_API_KEY")
+backup_base_url = os.getenv("MATH_AGENT_BACKUP_BASE_URL")
+backup_model = os.getenv("MATH_AGENT_BACKUP_MODEL", "gpt-4o-mini")
+backup_client = OpenAI(api_key=backup_api_key, base_url=backup_base_url, timeout=30.0, max_retries=0) if backup_api_key and backup_base_url else None
+
 
 def analyze_problem(problem: str):
 

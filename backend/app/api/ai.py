@@ -32,7 +32,7 @@ from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 
-from app.ai.analyzer import client
+from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
     semantic_retrieve_concepts,
     search_similar_problems,
@@ -137,6 +137,7 @@ def ai_health():
     metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
     metrics["model_circuit"] = circuit_snapshot()
+    metrics["backup_model_configured"] = backup_client is not None
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
 
@@ -385,6 +386,8 @@ def call_deepseek(
     extra_body: dict | None = None,
     on_chunk=None,
     circuit_enabled: bool = False,
+    provider_client=None,
+    model: str = "deepseek-v4-pro",
 ):
     """
     调用 DeepSeek API。
@@ -410,7 +413,7 @@ def call_deepseek(
                 before_call()
             attempts = attempt + 1
             kwargs = {
-                "model": "deepseek-v4-pro",
+                "model": model,
                 "messages": messages,
             }
 
@@ -428,7 +431,7 @@ def call_deepseek(
             if on_chunk is not None:
                 kwargs["stream"] = True
 
-            response = client.chat.completions.create(**kwargs)
+            response = (provider_client or client).chat.completions.create(**kwargs)
             if on_chunk is not None:
                 text_parts = []
                 for chunk in response:
@@ -2098,9 +2101,28 @@ def _ask_impl(
             repr(exc)
         )
 
+        # 若配置了备用 OpenAI 兼容服务，先切换供应商，避免再次消耗主服务超时。
+        if backup_client is not None:
+            try:
+                answer = call_deepseek(
+                    messages=[{"role": "system", "content": "你是一名严谨的中文数学教师，直接给出可靠答案。"}, {"role": "user", "content": question}],
+                    max_retries=1, max_tokens=primary_max_tokens, timeout=30.0,
+                    on_chunk=stream_callback,
+                    extra_body={"thinking": {"type": "disabled"}} if stream_callback else None,
+                    provider_client=backup_client, model=backup_model,
+                )
+                answer_source = "backup_model"
+                print("[AI] backup model answered")
+            except Exception as backup_exc:
+                print("[AI] backup model failed:", repr(backup_exc))
+                answer = None
+        else:
+            answer = None
+
         # 第一轮使用图谱上下文；若模型返回空内容或超时，改用更长时限的
         # 纯数学回答请求，避免无关的知识库兜底替代真正答案。
-        try:
+        if not answer:
+          try:
             answer = call_deepseek(
                 messages=[
                     {
@@ -2126,7 +2148,7 @@ def _ask_impl(
             )
             answer_source = "deepseek_extended"
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
-        except Exception as retry_exc:
+          except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
             answer = local_math_answer(question)
             answer_source = "local_fallback"
