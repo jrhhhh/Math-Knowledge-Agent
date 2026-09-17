@@ -18,6 +18,9 @@ class APIContractTests(unittest.TestCase):
         response = self.client.get("/maintenance/integrity")
         self.assertEqual(response.status_code, 200)
         self.assertIn("checks", response.json())
+        preview = self.client.get("/maintenance/integrity/repair-preview?limit=5")
+        self.assertEqual(preview.status_code, 200)
+        self.assertTrue(preview.json()["read_only"])
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
