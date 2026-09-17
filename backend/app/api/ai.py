@@ -27,6 +27,7 @@ from app.ai.concept_matcher import (
     search_similar_problems,
     normalize_relation,
     find_concept_by_name_or_alias,
+    RELATION_PRIORITY,
 )
 
 
@@ -947,10 +948,23 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         relation = normalize_relation(edge.get("relation"))
         if source_id is None or target_id is None or relation is None or source_id == target_id:
             continue
-        exists = db.query(ConceptRelation).filter_by(source_concept_id=source_id, target_concept_id=target_id, relation=relation).first()
-        if exists is None:
-            db.add(ConceptRelation(source_concept_id=source_id, target_concept_id=target_id, relation=relation, weight=max(0.0, min(1.0, float(edge.get("weight", 0.8))))))
-            created_relations += 1
+        try:
+            weight = max(0.0, min(1.0, float(edge.get("weight", 0.8))))
+        except (TypeError, ValueError):
+            weight = 0.8
+        existing_relations = db.query(ConceptRelation).filter_by(source_concept_id=source_id, target_concept_id=target_id).all()
+        same_relation = next((item for item in existing_relations if normalize_relation(item.relation) == relation), None)
+        if same_relation is not None:
+            same_relation.weight = max(float(same_relation.weight or 0.0), weight)
+            continue
+        new_priority = RELATION_PRIORITY.get(relation, 0)
+        old_priorities = [RELATION_PRIORITY.get(normalize_relation(item.relation), 0) for item in existing_relations]
+        if old_priorities and new_priority <= max(old_priorities):
+            continue
+        for existing in existing_relations:
+            db.delete(existing)
+        db.add(ConceptRelation(source_concept_id=source_id, target_concept_id=target_id, relation=relation, weight=weight))
+        created_relations += 1
     candidate.status = "saved"
     db.commit()
     return {"candidate_id": candidate.id, "status": candidate.status, "created_concepts": created_concepts, "created_relations": created_relations}
