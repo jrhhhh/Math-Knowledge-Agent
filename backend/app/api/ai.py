@@ -34,7 +34,7 @@ from app.ai.concept_matcher import (
     RELATION_PRIORITY,
 )
 from app.ai.telemetry import record_request, snapshot
-from app.ai.retry_queue import enqueue, get_job, queue_stats
+from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
 
 
 router = APIRouter(
@@ -83,6 +83,14 @@ def retry_job_status(job_id: str):
     job = get_job(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="重试任务不存在或已过期。")
+    return job
+
+
+@router.post("/retry-queue/{job_id}/cancel")
+def cancel_retry_job(job_id: str):
+    job = cancel_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="重试任务不存在。")
     return job
 
 

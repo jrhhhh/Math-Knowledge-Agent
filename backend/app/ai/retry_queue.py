@@ -45,6 +45,26 @@ def get_job(job_id: str):
             return {"id": stored.id, "operation": stored.operation, "question": stored.question, "status": stored.status, "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": json.loads(stored.result_json) if stored.result_json else None, "created_at": stored.created_at.isoformat() if stored.created_at else None, "updated_at": stored.updated_at.isoformat() if stored.updated_at else None}
     finally:
         db.close()
+
+
+def cancel_job(job_id: str):
+    with _lock:
+        job = _jobs.get(job_id)
+        if job:
+            job["status"] = "cancelled"
+            job["updated_at"] = _now()
+            _persist(job)
+            return job.copy()
+    db = SessionLocal()
+    try:
+        stored = db.query(AIRetryJob).filter(AIRetryJob.id == job_id).first()
+        if stored and stored.status in {"queued", "running", "retrying"}:
+            stored.status = "cancelled"
+            db.commit()
+            return get_job(job_id)
+    finally:
+        db.close()
+    return None
     with _lock:
         job = _jobs.get(job_id)
         return job.copy() if job else None
@@ -64,6 +84,9 @@ def _run(job_id: str):
     _persist(job)
     global _last_attempt
     while job["attempts"] < job["max_attempts"]:
+        if job["status"] == "cancelled":
+            _persist(job)
+            return
         job["attempts"] += 1
         wait_for = max(0.0, 1.5 - (time.monotonic() - _last_attempt))
         if wait_for:

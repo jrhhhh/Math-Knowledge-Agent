@@ -53,6 +53,7 @@ Backend
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务
 - `POST /ai/retry-queue/{job_id}/retry`：重新触发已结束的失败或成功任务
+- `POST /ai/retry-queue/{job_id}/cancel`：取消尚未结束的后台重试任务
 重试任务持久化在 SQLite；服务重启时会自动恢复 queued、running 和 retrying 状态的任务。
 │
 ├── FastAPI
