@@ -5,14 +5,19 @@ from threading import Lock
 
 _lock = Lock()
 _recent_failures = deque(maxlen=50)
-_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0}
+_metrics = {"requests": 0, "successes": 0, "failures": 0, "retries": 0, "duration_total": 0.0, "first_token_total": 0.0, "first_token_samples": 0}
 
 
-def record_request(success: bool, retries: int = 0, error: str | None = None):
+def record_request(success: bool, retries: int = 0, error: str | None = None, duration: float | None = None, first_token: float | None = None):
     with _lock:
         _metrics["requests"] += 1
         _metrics["retries"] += retries
         _metrics["successes" if success else "failures"] += 1
+        if duration is not None:
+            _metrics["duration_total"] += duration
+        if first_token is not None:
+            _metrics["first_token_total"] += first_token
+            _metrics["first_token_samples"] += 1
         if not success:
             _recent_failures.append({"at": datetime.now(timezone.utc).isoformat(), "error": error or "unknown"})
 

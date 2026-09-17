@@ -52,6 +52,7 @@ Backend
 前端 `/ask` 请求支持手动取消，并设置 90 秒客户端超时；后端调用仍有独立超时保护。答案缓存绑定知识库版本，候选图谱保存后会自动失效旧缓存。
 缓存管理接口：`GET /ai/cache` 查看命中率，`DELETE /ai/cache` 清空全部答案缓存，`DELETE /ai/cache/{question}` 仅失效指定问题。
 AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`server_error`、`invalid_response` 或 `unknown`，便于前端展示针对性提示和后续监控。
+`/ai/health` 还返回平均响应耗时和平均首 token 耗时，用于定位模型生成瓶颈。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务

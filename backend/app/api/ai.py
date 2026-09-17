@@ -126,6 +126,9 @@ def ai_health():
     metrics = snapshot()
     total = metrics["requests"]
     metrics["success_rate"] = round(metrics["successes"] / total, 4) if total else None
+    metrics["average_duration_seconds"] = round(metrics.pop("duration_total") / total, 3) if total else None
+    samples = metrics.pop("first_token_samples")
+    metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
     return metrics
 
@@ -315,6 +318,8 @@ def call_deepseek(
     """
 
     last_error = None
+    request_started = time.perf_counter()
+    first_token_at = None
     attempts = 0
 
     for attempt in range(max_retries):
@@ -345,9 +350,11 @@ def call_deepseek(
                 for chunk in response:
                     content = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else None
                     if content:
+                        if first_token_at is None:
+                            first_token_at = time.perf_counter()
                         text_parts.append(content)
                         on_chunk(content)
-                record_request(True, attempts - 1)
+                record_request(True, attempts - 1, duration=time.perf_counter() - request_started, first_token=first_token_at - request_started if first_token_at else None)
                 return "".join(text_parts)
 
             if (
@@ -355,7 +362,7 @@ def call_deepseek(
                 and response.choices[0].message
                 and response.choices[0].message.content
             ):
-                record_request(True, attempts - 1)
+                record_request(True, attempts - 1, duration=time.perf_counter() - request_started)
                 return response.choices[0].message.content
 
             raise RuntimeError(
@@ -400,7 +407,7 @@ def call_deepseek(
             break
 
     if last_error is not None:
-        record_request(False, max(attempts - 1, 0), repr(last_error))
+        record_request(False, max(attempts - 1, 0), repr(last_error), duration=time.perf_counter() - request_started)
         raise last_error
 
     raise RuntimeError(
