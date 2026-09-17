@@ -41,6 +41,17 @@ router = APIRouter(
     prefix="/ai",
     tags=["AI"]
 )
+_answer_cache = {}
+_ANSWER_CACHE_TTL = 300
+
+
+def cached_answer(question: str):
+    entry = _answer_cache.get(question.casefold())
+    if entry and time.monotonic() - entry["at"] < _ANSWER_CACHE_TTL:
+        return entry["value"]
+    if entry:
+        _answer_cache.pop(question.casefold(), None)
+    return None
 
 
 def get_db():
@@ -734,6 +745,7 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
             # thinking 模式可避免 reasoning_content 挤占 JSON 正文。
             extra_body={"thinking": {"type": "disabled"}},
         )
+
         generated = parse_ai_graph_json(raw)
     except json.JSONDecodeError:
         # 某些推理轮次会在较长描述字段中截断。第二轮改用极简契约，
@@ -1632,6 +1644,12 @@ def ask(
             detail="问题不能为空。"
         )
 
+    cached = cached_answer(question)
+    if cached is not None:
+        cached = dict(cached)
+        cached["cache_hit"] = True
+        return cached
+
     # ========================================================
     # 1. 语义检索知识点
     # ========================================================
@@ -1947,7 +1965,7 @@ def ask(
     # ========================================================
 
     print("[Timing] total ask: %.2fs" % (time.perf_counter() - started_at))
-    return {
+    result = {
         "question": question,
 
         "answer": answer,
@@ -1988,3 +2006,6 @@ def ask(
             "relations": graph_relations
         }
     }
+    result["cache_hit"] = False
+    _answer_cache[question.casefold()] = {"at": time.monotonic(), "value": result}
+    return result
