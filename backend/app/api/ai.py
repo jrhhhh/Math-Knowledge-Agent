@@ -17,6 +17,7 @@ from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
 from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
+from app.models.graph_candidate import GraphCandidate
 
 from app.ai.analyzer import client
 from app.ai.concept_matcher import (
@@ -741,7 +742,18 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
                 "weight": relation.get("weight", 1.0),
             })
 
+    candidate = GraphCandidate(
+        question=question,
+        graph_json=json.dumps({"nodes": nodes, "edges": edges}, ensure_ascii=False),
+        validation_json=json.dumps({"valid": True, "invalid_edges": []}, ensure_ascii=False),
+        status="pending",
+    )
+    db.add(candidate)
+    db.commit()
+    db.refresh(candidate)
+
     return {
+        "candidate_id": candidate.id,
         "question": question,
         "concepts": [
             {"id": node["id"], "name": node["name"], "type": node["type"], "similarity": 1.0, "source": node["source"]}
@@ -750,6 +762,83 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
         "knowledge_graph": {"nodes": nodes, "edges": edges},
         "message": "AI 已根据问题生成相关知识图谱。",
     }
+
+
+@router.get("/graph-candidates/{candidate_id}")
+def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
+    candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    return {
+        "id": candidate.id,
+        "question": candidate.question,
+        "status": candidate.status,
+        "validation": json.loads(candidate.validation_json or "{}"),
+        "knowledge_graph": json.loads(candidate.graph_json),
+        "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
+    }
+
+
+@router.post("/graph-candidates/{candidate_id}/validate")
+def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
+    candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    graph = json.loads(candidate.graph_json)
+    node_ids = {node.get("id") for node in graph.get("nodes", [])}
+    invalid_edges = []
+    for index, edge in enumerate(graph.get("edges", [])):
+        relation = normalize_relation(edge.get("relation"))
+        if edge.get("source") not in node_ids or edge.get("target") not in node_ids:
+            invalid_edges.append({"index": index, "reason": "边端点不存在"})
+        elif edge.get("source") == edge.get("target") or relation is None:
+            invalid_edges.append({"index": index, "reason": "自环或非法关系"})
+    validation = {"valid": not invalid_edges and len(graph.get("nodes", [])) >= 2, "invalid_edges": invalid_edges}
+    candidate.validation_json = json.dumps(validation, ensure_ascii=False)
+    candidate.status = "validated" if validation["valid"] else "rejected"
+    db.commit()
+    return {"candidate_id": candidate.id, "status": candidate.status, "validation": validation}
+
+
+@router.post("/graph-candidates/{candidate_id}/save")
+def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
+    candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    if candidate.status == "saved":
+        return {"candidate_id": candidate.id, "status": "saved", "created_concepts": 0, "created_relations": 0}
+    validation = json.loads(candidate.validation_json or "{}")
+    if candidate.status != "validated" or not validation.get("valid"):
+        raise HTTPException(status_code=409, detail="候选图谱尚未通过校验。")
+
+    graph = json.loads(candidate.graph_json)
+    id_map = {}
+    created_concepts = 0
+    for node in graph.get("nodes", []):
+        name = str(node.get("name", "")).strip()
+        if not name:
+            continue
+        concept = db.query(Concept).filter(Concept.name == name).first()
+        if concept is None:
+            concept = Concept(name=name, type=node.get("type", "concept"), description=node.get("description", ""), field=node.get("field", "数学"), level=node.get("level", 1))
+            db.add(concept)
+            db.flush()
+            created_concepts += 1
+        id_map[node.get("id")] = concept.id
+
+    created_relations = 0
+    for edge in graph.get("edges", []):
+        source_id, target_id = id_map.get(edge.get("source")), id_map.get(edge.get("target"))
+        relation = normalize_relation(edge.get("relation"))
+        if source_id is None or target_id is None or relation is None or source_id == target_id:
+            continue
+        exists = db.query(ConceptRelation).filter_by(source_concept_id=source_id, target_concept_id=target_id, relation=relation).first()
+        if exists is None:
+            db.add(ConceptRelation(source_concept_id=source_id, target_concept_id=target_id, relation=relation, weight=max(0.0, min(1.0, float(edge.get("weight", 0.8))))))
+            created_relations += 1
+    candidate.status = "saved"
+    db.commit()
+    return {"candidate_id": candidate.id, "status": candidate.status, "created_concepts": created_concepts, "created_relations": created_relations}
 
 
 # ============================================================
