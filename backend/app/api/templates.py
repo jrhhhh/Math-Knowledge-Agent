@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -30,8 +31,11 @@ class TemplatePreview(BaseModel):
 def serialize(item):
     return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
 
-def audit(db, template_id, action, detail=""):
-    db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail))
+def audit(db, template_id, action, detail="", snapshot=None):
+    db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))
+
+def snapshot_of(item):
+    return {"template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled}
 
 
 @router.get("")
@@ -72,9 +76,10 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
+    before = snapshot_of(item)
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
-    audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys())); db.commit(); db.refresh(item)
+    audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys()), before); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -83,11 +88,28 @@ def delete_template(template_id: str, db: Session = Depends(get_db)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
-    db.delete(item); audit(db, template_id, "deleted"); db.commit()
+    db.delete(item); audit(db, template_id, "deleted", snapshot=snapshot_of(item)); db.commit()
     return {"deleted": True, "template_id": template_id}
 
 
 @router.get("/{template_id}/events")
 def template_events(template_id: str, db: Session = Depends(get_db)):
     events = db.query(LocalTemplateEvent).filter(LocalTemplateEvent.template_id == template_id).order_by(LocalTemplateEvent.created_at.desc()).all()
-    return {"template_id": template_id, "events": [{"action": event.action, "detail": event.detail, "created_at": event.created_at.isoformat()} for event in events]}
+    return {"template_id": template_id, "events": [{"id": event.id, "action": event.action, "detail": event.detail, "created_at": event.created_at.isoformat()} for event in events]}
+
+
+@router.post("/{template_id}/rollback/{event_id}")
+def rollback_template(template_id: str, event_id: int, db: Session = Depends(get_db)):
+    event = db.query(LocalTemplateEvent).filter(LocalTemplateEvent.id == event_id, LocalTemplateEvent.template_id == template_id).first()
+    if event is None or not event.snapshot:
+        raise HTTPException(status_code=404, detail="没有可回滚的模板快照。")
+    data = json.loads(event.snapshot)
+    item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
+    if item is None:
+        item = LocalTemplate(**data); db.add(item)
+    else:
+        before = snapshot_of(item)
+        item.pattern, item.answer, item.enabled = data["pattern"], data["answer"], data["enabled"]
+        audit(db, template_id, "rollback", f"from_event={event_id}", before)
+    db.commit(); db.refresh(item)
+    return serialize(item)

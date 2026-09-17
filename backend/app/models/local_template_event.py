@@ -8,4 +8,5 @@ class LocalTemplateEvent(Base):
     template_id = Column(String(100), nullable=False, index=True)
     action = Column(String(30), nullable=False)
     detail = Column(Text, nullable=True)
+    snapshot = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)

@@ -27,6 +27,10 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("events", response.json())
 
+    def test_missing_template_rollback_contract(self):
+        response = self.client.post("/local-templates/not-found/rollback/1")
+        self.assertEqual(response.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()
