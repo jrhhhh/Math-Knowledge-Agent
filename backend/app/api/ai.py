@@ -15,7 +15,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -384,6 +384,28 @@ def ai_health():
     metrics["backup_model_configured"] = backup_client is not None
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
+
+@router.get("/metrics", response_class=PlainTextResponse)
+def prometheus_metrics():
+    metrics = snapshot()
+    total = metrics["requests"]
+    lines = [
+        "# HELP math_agent_requests_total Total AI requests.",
+        "# TYPE math_agent_requests_total counter",
+        f"math_agent_requests_total {metrics['requests']}",
+        f"math_agent_requests_succeeded_total {metrics['successes']}",
+        f"math_agent_requests_failed_total {metrics['failures']}",
+        f"math_agent_retries_total {metrics['retries']}",
+        f"math_agent_slow_requests_total {metrics['slow_requests']}",
+        f"math_agent_duration_seconds_total {metrics['duration_total']:.6f}",
+        f"math_agent_cache_entries {len(_answer_cache)}",
+        f"math_agent_cache_hits_total {_cache_metrics['hits']}",
+        f"math_agent_cache_misses_total {_cache_metrics['misses']}",
+        f"math_agent_success_ratio {metrics['successes'] / total if total else 0:.6f}",
+    ]
+    for status, count in queue_stats().items():
+        lines.append(f'math_agent_retry_queue_jobs{{status="{status}"}} {count}')
+    return PlainTextResponse("\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
 
 
 def cleanup_request_logs(retention_days: int = 30):
