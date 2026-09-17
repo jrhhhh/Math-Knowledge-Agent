@@ -13,7 +13,7 @@ from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -55,7 +55,7 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
-from app.security import require_admin, issue_admin_token
+from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, _LOCKOUT_SECONDS
 
 
 router = APIRouter(
@@ -147,10 +147,15 @@ class AdminLoginRequest(BaseModel):
     key: str
 
 @router.post("/auth/login")
-def admin_login(request: AdminLoginRequest):
+def admin_login(request: AdminLoginRequest, http_request: Request):
+    identity = http_request.client.host if http_request.client else "unknown"
+    if not login_allowed(identity):
+        raise HTTPException(status_code=429, detail="登录失败次数过多，请 5 分钟后重试。", headers={"Retry-After": str(_LOCKOUT_SECONDS)})
     configured = os.getenv("MATH_AGENT_ADMIN_KEY", "").strip()
     if not configured or not hmac.compare_digest(request.key, configured):
+        record_login_failure(identity)
         raise HTTPException(status_code=401, detail="管理员密钥无效。")
+    clear_login_failures(identity)
     return {"access_token": issue_admin_token(configured), "token_type": "bearer", "expires_in": 3600}
 
 class ReviewRequest(BaseModel):

@@ -54,12 +54,24 @@ class AnswerRecordContractTests(unittest.TestCase):
 
     def test_admin_login_returns_bearer_token(self):
         from unittest.mock import patch
+        from app import security
+        security._login_failures.clear()
         with patch.dict(os.environ, {"MATH_AGENT_ADMIN_KEY": "test-secret"}):
             invalid = self.client.post("/ai/auth/login", json={"key": "bad"})
             self.assertEqual(invalid.status_code, 401)
             valid = self.client.post("/ai/auth/login", json={"key": "test-secret"})
             self.assertEqual(valid.status_code, 200)
             self.assertEqual(valid.json()["token_type"], "bearer")
+
+    def test_admin_login_rate_limit(self):
+        from unittest.mock import patch
+        from app import security
+        security._login_failures.clear()
+        with patch.dict(os.environ, {"MATH_AGENT_ADMIN_KEY": "test-secret"}):
+            for _ in range(5):
+                self.assertEqual(self.client.post("/ai/auth/login", json={"key": "wrong"}).status_code, 401)
+            limited = self.client.post("/ai/auth/login", json={"key": "wrong"})
+            self.assertEqual(limited.status_code, 429)
 
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})

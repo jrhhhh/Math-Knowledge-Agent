@@ -4,7 +4,32 @@ import hashlib
 import hmac
 import json
 import time
+from threading import Lock
 from fastapi import Header, HTTPException
+
+_login_failures = {}
+_login_lock = Lock()
+_MAX_LOGIN_FAILURES = 5
+_LOCKOUT_SECONDS = 300
+
+def login_allowed(identity: str):
+    now = time.time()
+    with _login_lock:
+        entry = _login_failures.get(identity)
+        if entry and entry[0] >= _MAX_LOGIN_FAILURES and now - entry[1] < _LOCKOUT_SECONDS:
+            return False
+        if entry and now - entry[1] >= _LOCKOUT_SECONDS:
+            _login_failures.pop(identity, None)
+        return True
+
+def record_login_failure(identity: str):
+    with _login_lock:
+        count = _login_failures.get(identity, (0, 0))[0] + 1
+        _login_failures[identity] = (count, time.time())
+
+def clear_login_failures(identity: str):
+    with _login_lock:
+        _login_failures.pop(identity, None)
 
 def issue_admin_token(key: str):
     payload = {"sub": "admin", "exp": int(time.time()) + 3600}
