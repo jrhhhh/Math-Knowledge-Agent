@@ -1078,6 +1078,7 @@ def search_similar_problems(
     concept_ids: list[int],
     candidate_limit: int = 10,
     result_limit: int = 5,
+    semantic: bool = True,
 ):
     """
     历史相似题完整检索流程。
@@ -1160,10 +1161,14 @@ def search_similar_problems(
     # 3. DeepSeek 语义排序
     # --------------------------------------------------------
 
-    ranked = rank_similar_problems(
-        question=question,
-        problems=unique_candidates,
-        result_limit=result_limit
+    ranked = (
+        rank_similar_problems(
+            question=question,
+            problems=unique_candidates,
+            result_limit=result_limit
+        )
+        if semantic
+        else []
     )
 
     # --------------------------------------------------------

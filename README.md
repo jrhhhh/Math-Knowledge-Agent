@@ -14,7 +14,7 @@
 
 ## Project Status
 
-Current Version: v0.2
+Current Version: v0.3
 
 已完成：
 
@@ -31,10 +31,11 @@ Current Version: v0.2
 
 正在开发：
 
-- [ ] Problem 与 Concept 知识关联
+- [x] Problem 与 Concept 知识关联
 - [x] 数学知识图谱
 - [x] AI 自动提取知识点
 - [x] 智能证明分析
+- [x] 分步证明分析
 - [ ] 个性化学习路径
 
 
@@ -101,7 +102,17 @@ Backend
 - 数学问题输入与 AI 回答
 - 相关知识点展示
 - 知识图谱可视化
+- 分步证明审查与错误定位
+- MathJax 数学公式排版
 - 响应式布局与移动端适配
+
+### AI API
+
+- `POST /ai/ask`：数学问答、知识点检索和历史题推荐
+- `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
+- `GET /concepts/graph`：获取知识图谱节点和关系
+
+`/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。
 
 启动前端展示页：
 
@@ -116,8 +127,7 @@ python3 -m http.server 5500
 
 ```bash
 cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload
+./.venv/bin/python -m uvicorn app.main:app --reload
 ```
 
 
@@ -146,17 +156,24 @@ Clone repository:
 git clone https://github.com/jrhhhh/Math-Knowledge-Agent.git
 进入 backend:
 ```bash
-cd backend
-创建虚拟环境:
+cd Math-Knowledge-Agent/backend
 python3 -m venv .venv
-安装依赖:
-pip install fastapi uvicorn sqlalchemy openai python-dotenv
-启动:
-uvicorn app.main:app --reload
+./.venv/bin/pip install fastapi uvicorn sqlalchemy openai python-dotenv
+./.venv/bin/python -m uvicorn app.main:app --reload
 ```
 打开：
 http://127.0.0.1:8000/docs
-Roadmap
+
+前端另开一个终端启动：
+
+```bash
+cd frontend
+python3 -m http.server 5500
+```
+
+访问：`http://127.0.0.1:5500/index.html`
+
+## Roadmap
 Phase 1: Backend Foundation
 - Database
 - API

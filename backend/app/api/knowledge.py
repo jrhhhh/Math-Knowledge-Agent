@@ -91,7 +91,7 @@ def get_knowledge(
                 "weight": relation.weight
             })
 
-    # 4. 与当前知识点相关的其他知识
+    # 4. 其他关系（保留完整关系类型，兼容旧版 related）
     related_relations = db.query(
         ConceptRelation
     ).filter(
@@ -100,7 +100,7 @@ def get_knowledge(
             |
             (ConceptRelation.target_concept_id == concept.id)
         ),
-        ConceptRelation.relation == "related"
+        ConceptRelation.relation.notin_(["prerequisite", "supports"]),
     ).all()
 
     related = []
@@ -121,6 +121,7 @@ def get_knowledge(
                 "id": other.id,
                 "name": other.name,
                 "type": other.type,
+                "relation": relation.relation,
                 "weight": relation.weight
             })
 

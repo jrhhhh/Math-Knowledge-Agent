@@ -1,3 +1,4 @@
+import json
 import time
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -34,17 +35,102 @@ class AskRequest(BaseModel):
     question: str
 
 
-# ============================================================
-# Database
-# ============================================================
+class ProofAnalyzeRequest(BaseModel):
+    question: str
+    proof: str
+
 
 def get_db():
     db = SessionLocal()
-
     try:
         yield db
     finally:
         db.close()
+
+
+@router.post("/proof-analyze")
+def analyze_proof(
+    request: ProofAnalyzeRequest,
+    db: Session = Depends(get_db),
+):
+    """分析用户证明的步骤、逻辑缺口和相关知识点。"""
+    if not request.question.strip() or not request.proof.strip():
+        raise HTTPException(status_code=422, detail="question 和 proof 不能为空。")
+
+    matched = safe_semantic_retrieve_concepts(db, request.question)
+    concept_context = [
+        {
+            "id": item["concept"].id,
+            "name": item["concept"].name,
+            "type": item["concept"].type,
+            "similarity": item.get("similarity", 0.0),
+        }
+        for item in matched
+    ]
+    prompt = f"""
+你是严格的数学证明审查助手。请分析下面的题目和用户证明。
+
+题目：
+{request.question}
+
+用户证明：
+{request.proof}
+
+相关知识点候选：
+{json.dumps(concept_context, ensure_ascii=False)}
+
+将证明拆成有序步骤，检查每一步是否由前一步和已知条件推出。
+错误类型只能使用：missing_assumption、invalid_inference、wrong_theorem、undefined_symbol、circular_reasoning、incomplete、none。
+只返回 JSON：
+{{
+  "valid": true,
+  "summary": "总体判断",
+  "steps": [
+    {{"step": 1, "text": "步骤内容", "status": "valid", "error_type": "none", "reason": "理由", "related_concepts": ["知识点"]}}
+  ],
+  "missing_assumptions": ["缺失条件"],
+  "suggestions": ["改进建议"]
+}}
+"""
+    try:
+        raw = call_deepseek(
+            messages=[
+                {"role": "system", "content": "你是严谨的数学证明验证器，只输出合法 JSON。"},
+                {"role": "user", "content": prompt},
+            ],
+            max_retries=2,
+            retry_delay=1.0,
+            response_format={"type": "json_object"},
+        )
+        result = json.loads(raw)
+    except Exception as exc:
+        print("[AI] proof analysis failed:", repr(exc))
+        raise HTTPException(status_code=503, detail="证明分析服务暂时不可用。")
+
+    steps = result.get("steps", [])
+    if not isinstance(steps, list):
+        steps = []
+    normalized_steps = []
+    for index, step in enumerate(steps, 1):
+        if not isinstance(step, dict):
+            continue
+        normalized_steps.append({
+            "step": step.get("step", index),
+            "text": str(step.get("text", "")),
+            "status": step.get("status", "invalid"),
+            "error_type": step.get("error_type", "incomplete"),
+            "reason": str(step.get("reason", "")),
+            "related_concepts": step.get("related_concepts", []),
+        })
+    return {
+        "question": request.question,
+        "valid": bool(result.get("valid", False)),
+        "summary": str(result.get("summary", "")),
+        "steps": normalized_steps,
+        "missing_assumptions": result.get("missing_assumptions", []),
+        "suggestions": result.get("suggestions", []),
+        "matched_concepts": concept_context,
+    }
 
 
 # ============================================================
@@ -167,6 +253,20 @@ def safe_semantic_retrieve_concepts(
     不让整个请求直接崩溃。
     """
 
+    # 常见问题优先走本地匹配，避免为明显命中的知识点调用 LLM。
+    normalized_question = "".join(question.lower().split())
+    local_matches = []
+    for concept in db.query(Concept).all():
+        normalized_name = "".join((concept.name or "").lower().split())
+        if normalized_name and normalized_name in normalized_question:
+            local_matches.append({
+                "concept": concept,
+                "similarity": 1.0,
+                "reason": "知识点名称在问题中直接出现。",
+            })
+    if local_matches:
+        return local_matches[:5]
+
     try:
         return semantic_retrieve_concepts(
             db,
@@ -200,7 +300,8 @@ def safe_search_similar_problems(
             question=question,
             concept_ids=concept_ids,
             candidate_limit=10,
-            result_limit=5
+            result_limit=5,
+            semantic=False,
         )
 
     except Exception as exc:
@@ -446,6 +547,14 @@ def get_historical_problems(
     """
 
     historical_problems = {}
+    total_matched_concepts = len({item["concept"].id for item in matched_concepts})
+    similarity_by_concept = {}
+    for item in matched_concepts:
+        try:
+            similarity = float(item.get("similarity") or 0.0)
+        except (TypeError, ValueError):
+            similarity = 0.0
+        similarity_by_concept[item["concept"].id] = max(0.0, min(1.0, similarity))
 
     for item in matched_concepts:
 
@@ -508,21 +617,42 @@ def get_historical_problems(
                     importance
                 )
 
-            historical_problems[
-                problem.id
-            ]["matched_concepts"].append({
-                "concept_id": concept.id,
-                "concept_name": concept.name,
-                "importance": importance
-            })
+            matches = historical_problems[problem.id]["matched_concepts"]
+            existing = next(
+                (match for match in matches if match["concept_id"] == concept.id),
+                None,
+            )
+            if existing is None:
+                matches.append({
+                    "concept_id": concept.id,
+                    "concept_name": concept.name,
+                    "importance": importance,
+                    "similarity": similarity_by_concept.get(concept.id, 0.0),
+                })
+            else:
+                existing["importance"] = max(existing["importance"], importance)
+
+    for problem in historical_problems.values():
+        matches = problem["matched_concepts"]
+        matched_count = len(matches)
+        coverage = matched_count / total_matched_concepts if total_matched_concepts else 0.0
+        similarities = [match["similarity"] for match in matches]
+        problem["coverage"] = round(coverage, 4)
+        problem["score"] = round(
+            max(similarities, default=0.0) * 0.45
+            + coverage * 0.30
+            + problem["importance"] * 0.15
+            + (sum(similarities) / len(similarities) if similarities else 0.0) * 0.10,
+            4,
+        )
 
     # --------------------------------------------------------
-    # 按重要程度排序
+    # 按综合相关程度排序
     # --------------------------------------------------------
 
     problems = sorted(
         historical_problems.values(),
-        key=lambda item: item["importance"],
+        key=lambda item: (item["score"], item["importance"], item["id"]),
         reverse=True
     )
 
@@ -760,6 +890,7 @@ def ask(
     request: AskRequest,
     db: Session = Depends(get_db)
 ):
+    started_at = time.perf_counter()
     question = request.question.strip()
 
     if not question:
@@ -778,6 +909,7 @@ def ask(
             question
         )
     )
+    print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
 
     # --------------------------------------------------------
     # semantic_retrieve_concepts() 返回的是：
@@ -807,6 +939,7 @@ def ask(
             limit=10
         )
     )
+    print("[Timing] historical retrieval: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
     # 3. 历史相似题目
@@ -819,6 +952,7 @@ def ask(
             concept_ids=concept_ids
         )
     )
+    print("[Timing] similar problems: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
     # 4. 构建知识图谱
@@ -831,6 +965,7 @@ def ask(
         db,
         matched_concepts
     )
+    print("[Timing] graph build: %.2fs" % (time.perf_counter() - started_at))
 
     # ========================================================
     # 5. 格式化 Prompt 数据
@@ -999,9 +1134,10 @@ def ask(
                     "content": prompt
                 }
             ],
-            max_retries=3,
-            retry_delay=2.0
+            max_retries=2,
+            retry_delay=0.5
         )
+        print("[Timing] final answer: %.2fs" % (time.perf_counter() - started_at))
 
     except Exception as exc:
 
@@ -1028,6 +1164,7 @@ def ask(
     # 8. 返回完整结果
     # ========================================================
 
+    print("[Timing] total ask: %.2fs" % (time.perf_counter() - started_at))
     return {
         "question": question,
 
@@ -1054,7 +1191,9 @@ def ask(
                 "importance": problem["importance"],
                 "matched_concepts": (
                     problem["matched_concepts"]
-                )
+                ),
+                "score": problem.get("score", 0.0),
+                "coverage": problem.get("coverage", 0.0)
             }
             for problem in historical_problems
         ],
