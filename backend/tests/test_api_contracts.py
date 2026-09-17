@@ -81,6 +81,7 @@ class APIContractTests(unittest.TestCase):
         from app.database import SessionLocal
         from app.models.ai_task_status import AITaskStatus
         db = SessionLocal()
+        db.query(AITaskStatus).filter(AITaskStatus.request_id == "test-task-conflict").delete(synchronize_session=False)
         db.add(AITaskStatus(request_id="test-task-conflict", question="测试问题", status="generating", stage="生成中"))
         db.commit()
         db.close()

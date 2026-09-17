@@ -4,6 +4,7 @@ from threading import Lock
 from uuid import uuid4
 import json
 import time
+import os
 from queue import PriorityQueue
 
 from app.database import SessionLocal
@@ -15,6 +16,10 @@ _pending = PriorityQueue()
 _lock = Lock()
 _jobs = {}
 _last_attempt = 0.0
+try:
+    RETRY_BACKOFF_MAX_SECONDS = max(1.5, float(os.getenv("MATH_AGENT_RETRY_BACKOFF_MAX_SECONDS", "30")))
+except (TypeError, ValueError):
+    RETRY_BACKOFF_MAX_SECONDS = 30.0
 
 
 def _now():
@@ -91,7 +96,8 @@ def _run(job_id: str):
             _persist(job)
             return
         job["attempts"] += 1
-        wait_for = max(0.0, 1.5 - (time.monotonic() - _last_attempt))
+        exponential_wait = min(RETRY_BACKOFF_MAX_SECONDS, 1.5 * (2 ** max(job["attempts"] - 1, 0)))
+        wait_for = max(0.0, exponential_wait - (time.monotonic() - _last_attempt))
         if wait_for:
             time.sleep(wait_for)
         _last_attempt = time.monotonic()

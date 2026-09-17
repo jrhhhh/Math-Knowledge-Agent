@@ -95,6 +95,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /ai/retry-queue/{job_id}/retry`：重新触发已结束的失败或成功任务
 - `POST /ai/retry-queue/{job_id}/cancel`：取消尚未结束的后台重试任务
 重试任务持久化在 SQLite；服务重启时会自动恢复 queued、running 和 retrying 状态的任务。
+重试间隔采用指数退避，默认从 1.5 秒开始并封顶 30 秒，可通过 `MATH_AGENT_RETRY_BACKOFF_MAX_SECONDS` 调整；达到最大尝试次数后任务进入 `failed`，可通过任务详情或重试队列重新触发。
 │
 ├── FastAPI
 │

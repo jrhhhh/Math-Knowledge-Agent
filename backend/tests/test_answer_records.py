@@ -121,5 +121,10 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["operation"], "answer")
 
+    def test_retry_backoff_is_bounded(self):
+        from app.ai import retry_queue
+        self.assertGreaterEqual(retry_queue.RETRY_BACKOFF_MAX_SECONDS, 1.5)
+        self.assertLessEqual(min(retry_queue.RETRY_BACKOFF_MAX_SECONDS, 1.5 * (2 ** 10)), retry_queue.RETRY_BACKOFF_MAX_SECONDS)
+
 if __name__ == "__main__":
     unittest.main()
