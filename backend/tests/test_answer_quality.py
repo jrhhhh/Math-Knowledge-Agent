@@ -12,6 +12,12 @@ class AnswerQualityTests(unittest.TestCase):
     def test_empty_answer_is_weak(self):
         self.assertEqual(evaluate_answer("")["level"], "weak")
 
+    def test_proof_question_has_specialized_checks(self):
+        result = evaluate_answer("设 x∈K。由定理可得，因此结论成立。证明完毕。", "证明连续函数在紧集上有界")
+        self.assertEqual(result["question_type"], "proof")
+        self.assertIn("has_basis", result["checks"])
+        self.assertIn("has_derivation", result["checks"])
+
 
 if __name__ == "__main__":
     unittest.main()

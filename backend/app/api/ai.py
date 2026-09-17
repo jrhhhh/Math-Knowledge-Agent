@@ -2160,7 +2160,7 @@ def _ask_impl(
     # ========================================================
 
     # 非流式请求允许在展示前做一次质量修复；流式响应已经发送过 token，不能重复推送。
-    initial_quality = evaluate_answer(answer)
+    initial_quality = evaluate_answer(answer, question)
     if stream_callback is None and answer_source in {"deepseek", "deepseek_extended", "backup_model"} and initial_quality["score"] < 0.5:
         try:
             repaired = call_deepseek(
@@ -2170,7 +2170,7 @@ def _ask_impl(
                 ],
                 max_retries=1, max_tokens=1800, timeout=70.0, circuit_enabled=True,
             )
-            repaired_quality = evaluate_answer(repaired)
+            repaired_quality = evaluate_answer(repaired, question)
             if repaired_quality["score"] >= initial_quality["score"]:
                 answer, answer_source = repaired, "quality_retry"
                 print("[AI] quality retry improved answer")
@@ -2184,7 +2184,7 @@ def _ask_impl(
 
         "answer": answer,
         "answer_source": answer_source,
-        "answer_quality": evaluate_answer(answer),
+        "answer_quality": evaluate_answer(answer, question),
 
         "concepts": [
             {
