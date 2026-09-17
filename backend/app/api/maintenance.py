@@ -2,13 +2,14 @@ import os
 import sqlite3
 import secrets
 import time
+import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.ai import get_db
-from app.security import require_admin
+from app.security import require_admin, record_security_event
 from app.database import engine
 
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
@@ -46,7 +47,7 @@ def repair_preview(limit: int = 100, db: Session = Depends(get_db)):
             "recommendation": "请人工确认后再执行修复；本接口不会修改数据。"}
 
 @router.post("/integrity/repair")
-def repair_integrity(request: RepairRequest, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+def repair_integrity(request: RepairRequest, http_request: Request, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     ids = {key: sorted(set(values)) for key, values in request.model_dump(exclude={"confirmation_token"}).items()}
     total = sum(len(values) for values in ids.values())
     if total == 0:
@@ -70,6 +71,7 @@ def repair_integrity(request: RepairRequest, db: Session = Depends(get_db), _: b
             result = db.execute(text(f"DELETE FROM {table} WHERE id IN ({','.join(str(i) for i in ids[key])})"))
             deleted[key.replace("_ids", "")] = result.rowcount
     db.commit()
+    record_security_event("integrity_repaired", http_request, json.dumps({"deleted": deleted, "backup_path": backup_path, "ids": ids}, ensure_ascii=False))
     return {"deleted": deleted, "backup_path": backup_path, "message": "修复完成，已先生成备份。"}
 
 @router.post("/integrity/repair/prepare")
