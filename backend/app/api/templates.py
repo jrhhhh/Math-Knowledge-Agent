@@ -70,6 +70,16 @@ def sample_stats(db: Session = Depends(get_db)):
     return {"total": len(samples), "matched": len(samples) - by_template.get("unmatched", 0), "by_template": by_template}
 
 
+@router.get("/samples/recommendations")
+def sample_recommendations(db: Session = Depends(get_db)):
+    samples = db.query(QuestionSample).filter(QuestionSample.matched_template_id.is_(None)).all()
+    buckets = {"short": 0, "medium": 0, "long": 0}
+    for sample in samples:
+        bucket = "short" if sample.question_length < 12 else ("medium" if sample.question_length < 40 else "long")
+        buckets[bucket] += 1
+    return {"unmatched": len(samples), "length_buckets": buckets, "recommendation": "收集更多未命中问题后，人工归纳主题并创建模板。" if samples else "暂无需要补充的模板。"}
+
+
 @router.post("/ab-test")
 def template_ab_test(request: TemplateABTest, db: Session = Depends(get_db)):
     templates = {item.template_id: item for item in db.query(LocalTemplate).filter(LocalTemplate.template_id.in_(request.template_ids), LocalTemplate.enabled.is_(True), LocalTemplate.review_status == "approved").all()}

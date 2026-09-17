@@ -45,6 +45,11 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("by_template", response.json())
 
+    def test_sample_recommendations_contract(self):
+        response = self.client.get("/local-templates/samples/recommendations")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("length_buckets", response.json())
+
     def test_template_preview_contract(self):
         response = self.client.post("/local-templates/preview", json={"question": "不存在的模板问题"})
         self.assertEqual(response.status_code, 200)
