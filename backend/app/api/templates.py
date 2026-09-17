@@ -40,6 +40,20 @@ def template_usage(db: Session = Depends(get_db)):
     items = db.query(LocalTemplate).order_by(LocalTemplate.hit_count.desc(), LocalTemplate.id.asc()).all()
     return {"total_hits": sum(item.hit_count for item in items), "items": [{"template_id": item.template_id, "hit_count": item.hit_count, "last_hit_at": item.last_hit_at.isoformat() if item.last_hit_at else None} for item in items]}
 
+
+@router.get("/recommendations")
+def template_recommendations(db: Session = Depends(get_db)):
+    items = db.query(LocalTemplate).all()
+    recommendations = []
+    for item in items:
+        if item.review_status == "rejected":
+            recommendations.append({"template_id": item.template_id, "reason": "模板已驳回，请修订后重新审核。"})
+        elif not item.enabled:
+            recommendations.append({"template_id": item.template_id, "reason": "模板已禁用，请确认是否仍需保留。"})
+        elif item.review_status == "approved" and item.hit_count == 0:
+            recommendations.append({"template_id": item.template_id, "reason": "尚未命中，建议用典型问题测试正则。"})
+    return {"items": recommendations, "total": len(recommendations)}
+
 def audit(db, template_id, action, detail="", snapshot=None):
     db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))
 
