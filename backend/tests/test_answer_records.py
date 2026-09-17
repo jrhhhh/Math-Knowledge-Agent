@@ -15,6 +15,7 @@ class AnswerRecordContractTests(unittest.TestCase):
         metrics = self.client.get("/ai/metrics")
         self.assertEqual(metrics.status_code, 200)
         self.assertIn("math_agent_requests_total", metrics.text)
+        self.assertIn("math_agent_automated_backup_timestamp", metrics.text)
         stats = self.client.get("/ai/answers/stats")
         self.assertEqual(stats.status_code, 200)
         self.assertIn("quality_levels", stats.json())

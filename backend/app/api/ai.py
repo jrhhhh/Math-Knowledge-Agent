@@ -388,6 +388,12 @@ def ai_health():
 @router.get("/metrics", response_class=PlainTextResponse)
 def prometheus_metrics():
     metrics = snapshot()
+    backup_status_path = os.getenv("MATH_AGENT_BACKUP_STATUS_FILE", "backups/backup-status.json")
+    try:
+        with open(backup_status_path, encoding="utf-8") as stream:
+            automated_backup = json.load(stream)
+    except (OSError, json.JSONDecodeError):
+        automated_backup = {"status": "unknown", "timestamp": 0}
     total = metrics["requests"]
     lines = [
         "# HELP math_agent_requests_total Total AI requests.",
@@ -404,6 +410,9 @@ def prometheus_metrics():
         f"math_agent_backups_succeeded_total {metrics['backups_succeeded']}",
         f"math_agent_backups_failed_total {metrics['backups_failed']}",
         f"math_agent_last_backup_timestamp {metrics['last_backup_timestamp']}",
+        f"math_agent_automated_backup_success {1 if automated_backup.get('status') == 'succeeded' else 0}",
+        f"math_agent_automated_backup_failure {1 if automated_backup.get('status') == 'failed' else 0}",
+        f"math_agent_automated_backup_timestamp {automated_backup.get('timestamp', 0)}",
         f"math_agent_success_ratio {metrics['successes'] / total if total else 0:.6f}",
     ]
     for status, count in queue_stats().items():
