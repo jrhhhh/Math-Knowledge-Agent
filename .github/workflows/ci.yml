@@ -1,0 +1,33 @@
+name: Math Agent CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Compile backend
+        run: python -m compileall -q backend/app
+      - name: Run backend tests
+        run: cd backend && python -m unittest discover -s tests -q
+      - name: Check frontend JavaScript
+        run: node --check frontend/app.js
+      - name: Start services
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/math-agent-api.log 2>&1 &
+          python -m http.server 5500 --directory frontend > /tmp/math-agent-web.log 2>&1 &
+          sleep 3
+        working-directory: backend
+      - name: Run smoke test
+        run: ./scripts/smoke_test.sh
