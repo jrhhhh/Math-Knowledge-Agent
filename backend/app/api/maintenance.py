@@ -1,9 +1,20 @@
-from fastapi import APIRouter, Depends
+import os
+import sqlite3
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.api.ai import get_db
+from app.security import require_admin
+from app.database import engine
 
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
+
+class RepairRequest(BaseModel):
+    orphan_problem_concept_ids: list[int] = Field(default_factory=list, max_length=200)
+    orphan_relation_ids: list[int] = Field(default_factory=list, max_length=200)
+    duplicate_relation_ids: list[int] = Field(default_factory=list, max_length=200)
 
 @router.get("/integrity")
 def integrity_report(db: Session = Depends(get_db)):
@@ -24,3 +35,27 @@ def repair_preview(limit: int = 100, db: Session = Depends(get_db)):
     return {"read_only": True, "items": {"orphan_problem_concepts": [dict(row) for row in orphan_links],
             "orphan_relations": [dict(row) for row in orphan_relations], "duplicate_relations": [dict(row) for row in duplicates]},
             "recommendation": "请人工确认后再执行修复；本接口不会修改数据。"}
+
+@router.post("/integrity/repair")
+def repair_integrity(request: RepairRequest, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    ids = {key: sorted(set(values)) for key, values in request.model_dump().items()}
+    total = sum(len(values) for values in ids.values())
+    if total == 0:
+        raise HTTPException(status_code=422, detail="至少指定一条待修复记录。")
+    backup_dir = os.getenv("MATH_AGENT_BACKUP_DIR", "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    backup_path = os.path.join(backup_dir, f"math_agent-before-repair-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db")
+    source = engine.raw_connection()
+    destination = sqlite3.connect(backup_path)
+    try:
+        source.driver_connection.backup(destination)
+        destination.commit()
+    finally:
+        destination.close(); source.close()
+    deleted = {"orphan_problem_concepts": 0, "orphan_relations": 0, "duplicate_relations": 0}
+    for key, table in (("orphan_problem_concept_ids", "problem_concepts"), ("orphan_relation_ids", "concept_relations"), ("duplicate_relation_ids", "concept_relations")):
+        if ids[key]:
+            result = db.execute(text(f"DELETE FROM {table} WHERE id IN ({','.join(str(i) for i in ids[key])})"))
+            deleted[key.replace("_ids", "")] = result.rowcount
+    db.commit()
+    return {"deleted": deleted, "backup_path": backup_path, "message": "修复完成，已先生成备份。"}
