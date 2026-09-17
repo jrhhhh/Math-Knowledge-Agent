@@ -63,9 +63,9 @@ def ai_health():
 
 @router.post("/retry-queue")
 def create_retry_job(request: RetryRequest):
-    if request.operation != "related_graph" or not request.question.strip():
+    if request.operation != "related_graph" or not request.question.strip() or request.priority not in {0, 10}:
         raise HTTPException(status_code=422, detail="仅支持对非空问题重试相关知识图谱。")
-    return enqueue(request.operation, request.question.strip())
+    return enqueue(request.operation, request.question.strip(), priority=request.priority)
 
 
 @router.post("/retry-queue/{job_id}/retry")
@@ -75,7 +75,7 @@ def retry_failed_job(job_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="重试任务不存在。")
     if job.status not in {"failed", "succeeded"}:
         raise HTTPException(status_code=409, detail="任务仍在处理中，不能重复触发。")
-    return enqueue(job.operation, job.question, job.max_attempts)
+    return enqueue(job.operation, job.question, job.max_attempts, priority=5)
 
 
 @router.get("/retry-queue/{job_id}")
@@ -113,6 +113,7 @@ class GraphCandidateBatchRequest(BaseModel):
 class RetryRequest(BaseModel):
     operation: str = "related_graph"
     question: str
+    priority: int = 0
 
 
 def record_candidate_event(db: Session, candidate_id: int, action: str, detail: dict | None = None):

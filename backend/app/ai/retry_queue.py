@@ -4,12 +4,14 @@ from threading import Lock
 from uuid import uuid4
 import json
 import time
+from queue import PriorityQueue
 
 from app.database import SessionLocal
 from app.models.ai_retry_job import AIRetryJob
 
 
 _executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="math-agent-retry")
+_pending = PriorityQueue()
 _lock = Lock()
 _jobs = {}
 _last_attempt = 0.0
@@ -19,7 +21,7 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def enqueue(operation: str, question: str, max_attempts: int = 3):
+def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int = 0):
     job_id = uuid4().hex[:12]
     job = {"id": job_id, "operation": operation, "question": question, "status": "queued", "attempts": 0, "max_attempts": max_attempts, "error": None, "result": None, "created_at": _now(), "updated_at": _now()}
     with _lock:
@@ -30,7 +32,8 @@ def enqueue(operation: str, question: str, max_attempts: int = 3):
         db.commit()
     finally:
         db.close()
-    _executor.submit(_run, job_id)
+    _pending.put((-priority, job_id))
+    _executor.submit(_worker)
     return job.copy()
 
 
@@ -84,6 +87,17 @@ def _run(job_id: str):
         _persist(job)
 
 
+def _worker():
+    try:
+        _, job_id = _pending.get_nowait()
+    except Exception:
+        return
+    try:
+        _run(job_id)
+    finally:
+        _pending.task_done()
+
+
 def _persist(job):
     db = SessionLocal()
     try:
@@ -105,7 +119,8 @@ def resume_pending_jobs():
         for stored in jobs:
             with _lock:
                 _jobs[stored.id] = {"id": stored.id, "operation": stored.operation, "question": stored.question, "status": "queued", "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": None, "created_at": stored.created_at.isoformat() if stored.created_at else _now(), "updated_at": _now()}
-            _executor.submit(_run, stored.id)
+            _pending.put((0, stored.id))
+            _executor.submit(_worker)
     finally:
         db.close()
 

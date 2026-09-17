@@ -48,7 +48,7 @@ Current Version: v0.3
 Math-Agent
 Backend
 - `GET /ai/health`：查看 DeepSeek 调用成功率、重试次数和最近失败原因
-后台重试队列采用单并发和 1.5 秒最小请求间隔，降低触发 DeepSeek 限流的概率。
+后台重试队列采用单并发和 1.5 秒最小请求间隔，降低触发 DeepSeek 限流的概率；用户当前请求使用高优先级，失败任务重新触发使用普通优先级。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务
