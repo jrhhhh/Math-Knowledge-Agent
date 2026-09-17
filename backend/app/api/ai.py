@@ -9,6 +9,7 @@ import hashlib
 import re
 import os
 import hmac
+import urllib.request
 from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
@@ -186,6 +187,26 @@ def security_alerts(db: Session = Depends(get_db)):
     if counts.get("login_rate_limited", 0):
         alerts.append({"severity": "high", "type": "login_rate_limit", "count": counts["login_rate_limited"], "message": "检测到登录限流事件。"})
     return {"window_minutes": 10, "alert": bool(alerts), "alerts": alerts, "counts": counts}
+
+@router.post("/security-alerts/notify")
+def notify_security_alerts(db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    webhook = os.getenv("MATH_AGENT_ALERT_WEBHOOK", "").strip()
+    if not webhook:
+        raise HTTPException(status_code=503, detail="未配置 MATH_AGENT_ALERT_WEBHOOK。")
+    payload = security_alerts(db)
+    if not payload["alert"]:
+        return {"sent": False, "reason": "no_active_alert", "alerts": []}
+    body = json.dumps({"text": "Math Agent 安全告警", **payload}, ensure_ascii=False).encode()
+    request = urllib.request.Request(webhook, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            if response.status >= 400:
+                raise HTTPException(status_code=502, detail="Webhook 返回错误。")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Webhook 发送失败：{exc}") from exc
+    return {"sent": True, "alerts": payload["alerts"]}
 
 class ReviewRequest(BaseModel):
     status: str

@@ -80,6 +80,8 @@ class AnswerRecordContractTests(unittest.TestCase):
             alerts = self.client.get("/ai/security-alerts")
             self.assertEqual(alerts.status_code, 200)
             self.assertIn("alerts", alerts.json())
+            no_webhook = self.client.post("/ai/security-alerts/notify", headers={"X-Admin-Key": "test-secret"})
+            self.assertEqual(no_webhook.status_code, 503)
 
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})
