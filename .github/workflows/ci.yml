@@ -7,6 +7,8 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    env:
+      DEEPSEEK_API_KEY: ci-test-placeholder
     defaults:
       run:
         working-directory: .
