@@ -2300,11 +2300,14 @@ def _ask_impl(
     quality = result["answer_quality"]
     if quality.get("score", 1.0) < 0.75 and not (request_id or "").startswith("retry-"):
         result["quality_retry_job"] = enqueue("answer", question, max_attempts=2, priority=5)
-    db.add(AnswerRecord(request_id=request_id or "unknown", question=question, answer=answer,
-                        answer_source=answer_source, quality_score=quality.get("score"),
-                        duration_seconds=round(time.perf_counter() - started_at, 3)))
+    answer_record = AnswerRecord(request_id=request_id or "unknown", question=question, answer=answer,
+                                 answer_source=answer_source, quality_score=quality.get("score"),
+                                 duration_seconds=round(time.perf_counter() - started_at, 3))
+    db.add(answer_record)
     db.add(AIRequestLog(request_id=request_id or "unknown", question=question, status="succeeded", duration_seconds=round(time.perf_counter() - started_at, 3)))
     db.commit()
+    db.refresh(answer_record)
+    result["answer_id"] = answer_record.id
     return result
 
 

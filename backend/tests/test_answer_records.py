@@ -12,6 +12,21 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("items", response.json())
 
+    def test_feedback_contract_for_saved_answer(self):
+        from app.database import SessionLocal
+        from app.models.answer_record import AnswerRecord
+        db = SessionLocal()
+        try:
+            item = AnswerRecord(request_id="test-feedback", question="q", answer="a", answer_source="test")
+            db.add(item)
+            db.commit()
+            db.refresh(item)
+            response = self.client.post(f"/ai/answers/{item.id}/feedback", json={"rating": 5, "feedback": "清晰"})
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.json()["rating"], 5)
+        finally:
+            db.close()
+
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})
         self.assertEqual(invalid.status_code, 422)
