@@ -1,4 +1,5 @@
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
@@ -30,6 +31,15 @@ class APIContractTests(unittest.TestCase):
         response = self.client.post("/ai/ask-stream", json={"question": ""})
         self.assertEqual(response.status_code, 200)
         self.assertIn('"error_code": "http_error"', response.text)
+
+    def test_concurrent_stream_connections(self):
+        def request_stream(_):
+            response = self.client.post("/ai/ask-stream", json={"question": ""})
+            return response.status_code, '"error_code": "http_error"' in response.text
+
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            results = list(executor.map(request_stream, range(16)))
+        self.assertTrue(all(status == 200 and valid for status, valid in results))
 
 
 if __name__ == "__main__":
