@@ -56,6 +56,10 @@ jobs:
           grep -q 'MathAgentBackupFailed' prometheus-alerts.yml
           grep -q 'MathAgentBackupStale' prometheus-alerts.yml
           grep -q 'MathAgentAutomatedBackupFailed' prometheus-alerts.yml
+      - name: Validate Prometheus rule syntax
+        run: |
+          go install github.com/prometheus/prometheus/cmd/promtool@v2.53.0
+          "$(go env GOPATH)/bin/promtool" check rules prometheus-alerts.yml
       - name: Install Playwright
         run: npm install --no-save playwright
       - name: Install Chromium
