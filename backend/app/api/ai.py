@@ -22,6 +22,7 @@ from app.ai.analyzer import client
 from app.ai.concept_matcher import (
     semantic_retrieve_concepts,
     search_similar_problems,
+    normalize_relation,
 )
 
 
@@ -32,6 +33,10 @@ router = APIRouter(
 
 
 class AskRequest(BaseModel):
+    question: str
+
+
+class RelatedGraphRequest(BaseModel):
     question: str
 
 
@@ -142,6 +147,9 @@ def call_deepseek(
     max_retries: int = 3,
     retry_delay: float = 2.0,
     response_format=None,
+    max_tokens: int | None = None,
+    timeout: float | None = None,
+    extra_body: dict | None = None,
 ):
     """
     调用 DeepSeek API。
@@ -167,6 +175,15 @@ def call_deepseek(
 
             if response_format is not None:
                 kwargs["response_format"] = response_format
+
+            if max_tokens is not None:
+                kwargs["max_tokens"] = max_tokens
+
+            if timeout is not None:
+                kwargs["timeout"] = timeout
+
+            if extra_body is not None:
+                kwargs["extra_body"] = extra_body
 
             response = client.chat.completions.create(
                 **kwargs
@@ -266,6 +283,12 @@ def safe_semantic_retrieve_concepts(
             })
     if local_matches:
         return local_matches[:5]
+
+    # 短输入通常是“定理/概念名称”查询。若本地库未收录，直接交给
+    # 数学回答模型比先等待一次全库语义检索更快，也不会丢失答案质量。
+    if len(normalized_question) <= 20:
+        print("[AI] skipping semantic retrieval for short unmatched query")
+        return []
 
     try:
         return semantic_retrieve_concepts(
@@ -529,6 +552,204 @@ def build_knowledge_graph(
             })
 
     return graph_nodes, graph_relations
+
+
+@router.post("/related-graph")
+def get_related_graph(
+    request: RelatedGraphRequest,
+    db: Session = Depends(get_db),
+):
+    """快速筛选并展开已有知识库中的一层相关图谱，不调用答案生成模型。"""
+    question = request.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="问题不能为空。")
+
+    return generate_ai_related_graph(db, question)
+
+
+def parse_ai_graph_json(raw: str):
+    """解析普通文本通道中可能带有 Markdown 围栏的 JSON 图谱。"""
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else ""
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3]
+    start = text.find("{")
+    end = text.rfind("}")
+    if start < 0 or end < start:
+        raise json.JSONDecodeError("No JSON object found", text, 0)
+    return json.loads(text[start:end + 1])
+
+
+def generate_ai_related_graph(db: Session, question: str):
+    """由模型生成题目相关的临时知识图谱，并尽可能锚定到本地知识库。"""
+    prompt = f"""为数学问题“{question}”生成学习知识图谱。只输出 JSON：
+{{"nodes":[{{"id":"n1","name":"名称","type":"concept","description":"说明","field":"分支","level":1}}],"edges":[{{"source":"n1","target":"n2","relation":"prerequisite","weight":0.9}}]}}
+
+给出 4-8 个中文节点和 3-12 条边。type 只能为 concept/theorem/property/method；
+relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/generalizes/specializes。
+边端点必须存在且不能自环。节点只保留解答该问题必须的定义、条件、定理或方法。"""
+
+    try:
+        raw = call_deepseek(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是严谨的数学知识图谱构建器，只输出合法 JSON。",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_retries=2,
+            max_tokens=1600,
+            timeout=45.0,
+            # 图谱是结构化抽取任务，不需要消耗高强度推理预算；关闭默认
+            # thinking 模式可避免 reasoning_content 挤占 JSON 正文。
+            extra_body={"thinking": {"type": "disabled"}},
+        )
+        generated = parse_ai_graph_json(raw)
+    except json.JSONDecodeError:
+        # 某些推理轮次会在较长描述字段中截断。第二轮改用极简契约，
+        # 仍完全由 AI 生成，只减少令牌与格式风险。
+        compact_prompt = f"""为“{question}”输出一个数学知识图谱 JSON，不要解释：
+{{"nodes":[{{"id":"n1","name":"概念","type":"concept"}}],"edges":[{{"source":"n1","target":"n2","relation":"uses","weight":0.9}}]}}
+给 4-7 个节点和 3-10 条边。type 仅 concept/theorem/property/method；relation 仅 prerequisite/supports/defines/property_of/uses/equivalent_to/generalizes/specializes。"""
+        try:
+            raw = call_deepseek(
+                messages=[
+                    {"role": "system", "content": "你是数学知识图谱构建器，只输出完整合法 JSON。"},
+                    {"role": "user", "content": compact_prompt},
+                ],
+                max_retries=2,
+                max_tokens=1600,
+                timeout=45.0,
+                extra_body={"thinking": {"type": "disabled"}},
+            )
+            generated = parse_ai_graph_json(raw)
+        except Exception as exc:
+            print("[AI] compact related graph generation failed:", repr(exc))
+            raise HTTPException(
+                status_code=503,
+                detail="DeepSeek 未能生成完整知识图谱，请稍后重试。",
+            ) from exc
+    except Exception as exc:
+        print("[AI] related graph generation failed:", repr(exc))
+        raise HTTPException(
+            status_code=503,
+            detail="DeepSeek 未能生成知识图谱，请稍后重试。",
+        ) from exc
+
+    valid_types = {"concept", "theorem", "property", "method"}
+    generated_nodes = generated.get("nodes")
+    if not isinstance(generated_nodes, list):
+        raise HTTPException(status_code=502, detail="DeepSeek 返回的知识图谱格式无效。")
+
+    database_concepts = db.query(Concept).all()
+    by_normalized_name = {
+        "".join((concept.name or "").lower().split()): concept
+        for concept in database_concepts
+    }
+    nodes = []
+    node_id_map = {}
+    used_ids = set()
+    matched_concepts = []
+
+    for index, node in enumerate(generated_nodes[:10], start=1):
+        if not isinstance(node, dict):
+            continue
+        source_id = str(node.get("id", "")).strip()
+        name = str(node.get("name", "")).strip()[:48]
+        node_type = str(node.get("type", "concept")).strip().lower()
+        if not source_id or not name or source_id in node_id_map or node_type not in valid_types:
+            continue
+
+        normalized_name = "".join(name.lower().split())
+        local_concept = by_normalized_name.get(normalized_name)
+        if local_concept is not None:
+            graph_id = local_concept.id
+            matched_concepts.append({
+                "concept": local_concept,
+                "similarity": 1.0,
+                "reason": "AI 图谱节点与本地知识点同名。",
+            })
+            node_data = {
+                "id": graph_id,
+                "name": local_concept.name,
+                "type": local_concept.type,
+                "description": local_concept.description,
+                "field": local_concept.field,
+                "level": local_concept.level,
+                "source": "knowledge_base",
+            }
+        else:
+            graph_id = f"ai-{index}"
+            node_data = {
+                "id": graph_id,
+                "name": name,
+                "type": node_type,
+                "description": str(node.get("description", "")).strip()[:160],
+                "field": str(node.get("field", "数学")).strip()[:32] or "数学",
+                "level": max(1, min(5, int(node.get("level", 1)) if str(node.get("level", "")).isdigit() else 1)),
+                "source": "ai_generated",
+            }
+
+        if graph_id in used_ids:
+            node_id_map[source_id] = graph_id
+            continue
+        used_ids.add(graph_id)
+        node_id_map[source_id] = graph_id
+        nodes.append(node_data)
+
+    if len(nodes) < 2:
+        raise HTTPException(status_code=502, detail="DeepSeek 未返回足够的有效知识点，请重试。")
+
+    edges = []
+    edge_keys = set()
+    for edge in generated.get("edges", [])[:14]:
+        if not isinstance(edge, dict):
+            continue
+        source = node_id_map.get(str(edge.get("source", "")).strip())
+        target = node_id_map.get(str(edge.get("target", "")).strip())
+        relation = normalize_relation(edge.get("relation"))
+        if source is None or target is None or source == target or relation is None:
+            continue
+        edge_key = (source, target, relation)
+        if edge_key in edge_keys:
+            continue
+        edge_keys.add(edge_key)
+        try:
+            weight = max(0.0, min(1.0, float(edge.get("weight", 0.8))))
+        except (TypeError, ValueError):
+            weight = 0.8
+        edges.append({"source": source, "target": target, "relation": relation, "weight": weight})
+
+    # 已知节点额外展开真实数据库关系，使 AI 结果与既有知识库连通。
+    local_nodes, local_relations = build_knowledge_graph(db, matched_concepts)
+    known_node_ids = {node["id"] for node in nodes}
+    for local_node in local_nodes:
+        if local_node["id"] not in known_node_ids and len(nodes) < 16:
+            local_node["source"] = "knowledge_base"
+            nodes.append(local_node)
+            known_node_ids.add(local_node["id"])
+    for relation in local_relations:
+        edge_key = (relation["source"]["id"], relation["target"]["id"], relation["relation"])
+        if edge_key not in edge_keys:
+            edge_keys.add(edge_key)
+            edges.append({
+                "source": relation["source"]["id"],
+                "target": relation["target"]["id"],
+                "relation": relation["relation"],
+                "weight": relation.get("weight", 1.0),
+            })
+
+    return {
+        "question": question,
+        "concepts": [
+            {"id": node["id"], "name": node["name"], "type": node["type"], "similarity": 1.0, "source": node["source"]}
+            for node in nodes
+        ],
+        "knowledge_graph": {"nodes": nodes, "edges": edges},
+        "message": "AI 已根据问题生成相关知识图谱。",
+    }
 
 
 # ============================================================
@@ -1113,10 +1334,40 @@ def ask(
 请直接用中文回答。
 """
 
+    # 最终回答只带入高价值上下文，避免大 Prompt 导致生成超时。
+    compact_prompt = f"""请用中文回答这个数学问题：
+
+{question}
+
+相关知识点：
+{format_graph_nodes(graph_nodes[:6])}
+
+关键关系：
+{format_graph_relations(graph_relations[:10])}
+
+可参考历史题：
+{format_historical_problems(historical_problems, max_items=2, max_content_length=400, max_solution_length=600)}
+
+要求：先给结论；证明题按“定义—关键依据—推导—结论”写出简洁且严谨的证明；只使用与当前问题相关的信息；总长度控制在 800 个中文字符以内。"""
+
+    direct_math_prompt = f"""请完整而简洁地回答数学问题：{question}
+
+如果这是一个定理或概念，请依次给出：
+1. 准确的定义或定理陈述；
+2. 所需条件；
+3. 结论及关键公式；
+4. 简短证明思路或一个典型应用。
+
+请直接给出数学内容，不要提及知识库、系统或无法回答。"""
+    primary_prompt = compact_prompt if matched_concepts else direct_math_prompt
+    primary_timeout = 25.0 if matched_concepts else 70.0
+    primary_max_tokens = 900 if matched_concepts else 1600
+
     # ========================================================
     # 7. 最终 DeepSeek 调用
     # ========================================================
 
+    answer_source = "deepseek"
     try:
 
         answer = call_deepseek(
@@ -1131,11 +1382,12 @@ def ask(
                 },
                 {
                     "role": "user",
-                    "content": prompt
+                    "content": primary_prompt
                 }
             ],
-            max_retries=2,
-            retry_delay=0.5
+            max_retries=1,
+            max_tokens=primary_max_tokens,
+            timeout=primary_timeout,
         )
         print("[Timing] final answer: %.2fs" % (time.perf_counter() - started_at))
 
@@ -1146,19 +1398,37 @@ def ask(
             repr(exc)
         )
 
-        # ----------------------------------------------------
-        # 不再直接返回 Python 500 traceback。
-        # 返回明确的 API 错误。
-        # ----------------------------------------------------
-
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "DeepSeek 当前暂时无法完成回答。"
-                "知识点和历史题目检索已经完成，"
-                "请稍后重新提交。"
+        # 第一轮使用图谱上下文；若模型返回空内容或超时，改用更长时限的
+        # 纯数学回答请求，避免无关的知识库兜底替代真正答案。
+        try:
+            answer = call_deepseek(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "你是一名严谨的中文数学教师。直接回答问题；"
+                            "若问题是定理，给出定理陈述、条件和证明思路或完整证明。"
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"请认真回答以下数学问题，不要提及知识库或系统状态：\n\n{question}"
+                        ),
+                    },
+                ],
+                max_retries=1,
+                max_tokens=1600,
+                timeout=70.0,
             )
-        )
+            answer_source = "deepseek_extended"
+            print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
+        except Exception as retry_exc:
+            print("[AI] extended answer generation failed:", repr(retry_exc))
+            raise HTTPException(
+                status_code=503,
+                detail="DeepSeek 在较长回答时间内仍未返回结果，请稍后重试。",
+            )
 
     # ========================================================
     # 8. 返回完整结果
@@ -1169,6 +1439,7 @@ def ask(
         "question": question,
 
         "answer": answer,
+        "answer_source": answer_source,
 
         "concepts": [
             {

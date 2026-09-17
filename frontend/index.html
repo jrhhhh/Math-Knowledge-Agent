@@ -28,7 +28,7 @@
       <header class="topbar"><div><p class="eyebrow">MATH LEARNING WORKSPACE</p><h1>把难题，变成清晰的思路。</h1></div><button class="ghost-btn" id="refreshGraph">↻ 刷新图谱</button></header>
       <section class="hero" id="ask">
         <div class="hero-copy"><span class="pill">AI PROOF ASSISTANT</span><h2>今天想探索什么数学问题？</h2><p>输入题目、定义或证明请求，Math Agent 会结合知识图谱，为你拆解关键概念与推理路径。</p><span class="trust-note">⌁ AI 生成内容仅供学习参考，请核对关键推导</span></div>
-        <form id="askForm" class="ask-form"><textarea id="question" placeholder="例如：证明紧集在连续映射下的像是紧集" required></textarea><div class="form-footer"><span>支持中文数学问题</span><button type="submit" id="askButton">开始推理 <span>→</span></button></div></form>
+        <form id="askForm" class="ask-form"><textarea id="question" placeholder="例如：证明紧集在连续映射下的像是紧集" required></textarea><div class="form-footer"><span>支持中文数学问题</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton">生成相关图谱 <span>◎</span></button><button type="submit" id="askButton">开始推理 <span>→</span></button></div></div></form>
       </section>
       <div id="message" class="message hidden"></div>
       <section class="proof-workbench" id="proof">

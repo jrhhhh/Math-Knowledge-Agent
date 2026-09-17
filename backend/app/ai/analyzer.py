@@ -13,7 +13,7 @@ load_dotenv()
 client = OpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
     base_url="https://api.deepseek.com",
-    timeout=30.0,
+    timeout=20.0,
     max_retries=0,
 )
 
