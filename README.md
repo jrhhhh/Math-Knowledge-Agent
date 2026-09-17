@@ -56,6 +56,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 前端知识图谱区域会展示这些指标，并每 30 秒自动刷新。
 首 token 超过 3 秒或平均响应超过 20 秒时，监控面板会显示慢请求告警。
 每次问答响应都包含 `request_id`，后端耗时日志使用同一 ID，便于端到端排查。
+`GET /ai/requests/{request_id}` 可查询本地请求成功记录、耗时和错误信息。
 - `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
 - `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 - `GET /ai/retry-queue`：查看最近后台重试任务

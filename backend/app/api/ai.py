@@ -28,6 +28,7 @@ from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
+from app.models.ai_request_log import AIRequestLog
 
 from app.ai.analyzer import client
 from app.ai.concept_matcher import (
@@ -132,6 +133,14 @@ def ai_health():
     metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
     return metrics
+
+
+@router.get("/requests/{request_id}")
+def get_request_log(request_id: str, db: Session = Depends(get_db)):
+    logs = db.query(AIRequestLog).filter(AIRequestLog.request_id == request_id).order_by(AIRequestLog.created_at.desc()).all()
+    if not logs:
+        raise HTTPException(status_code=404, detail="请求追踪记录不存在。")
+    return {"request_id": request_id, "items": [{"status": log.status, "duration_seconds": log.duration_seconds, "error_code": log.error_code, "error_detail": log.error_detail, "created_at": log.created_at.isoformat() if log.created_at else None} for log in logs]}
 
 
 @router.post("/retry-queue")
@@ -2092,6 +2101,8 @@ def _ask_impl(
     }
     result["cache_hit"] = False
     _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
+    db.add(AIRequestLog(request_id=request_id or "unknown", question=question, status="succeeded", duration_seconds=round(time.perf_counter() - started_at, 3)))
+    db.commit()
     return result
 
 
