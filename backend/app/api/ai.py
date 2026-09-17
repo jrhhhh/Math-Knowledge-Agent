@@ -2152,7 +2152,7 @@ def _ask_impl(
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
           except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
-            answer = local_math_answer(question)
+            answer = local_math_answer(question, db)
             answer_source = "local_fallback"
             print("[AI] using deterministic local fallback")
 

@@ -13,16 +13,24 @@ LOCAL_TEMPLATES = (
 )
 
 
-def match_local_template(question: str):
+def match_local_template(question: str, db=None):
     text = question.strip()
+    if db is not None:
+        from app.models.local_template import LocalTemplate
+        for item in db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True)).order_by(LocalTemplate.id.asc()).all():
+            try:
+                if re.search(item.pattern, text, re.I):
+                    return {"id": item.template_id, "answer": item.answer}
+            except re.error:
+                continue
     for template_id, pattern, answer in LOCAL_TEMPLATES:
         if pattern.search(text):
             return {"id": template_id, "answer": answer}
     return None
 
 
-def local_math_answer(question: str) -> str:
-    matched = match_local_template(question)
+def local_math_answer(question: str, db=None) -> str:
+    matched = match_local_template(question, db)
     if matched:
         return matched["answer"]
     return ("建议按以下顺序作答：先写出定义和全部条件，再指出直接适用的定理，逐步完成推导并检查结论。"

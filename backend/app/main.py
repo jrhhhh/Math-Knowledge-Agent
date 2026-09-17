@@ -15,12 +15,14 @@ from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
+from app.models.local_template import LocalTemplate
 from app.ai.retry_queue import resume_pending_jobs
 
 
 from app.api.concepts import router
 from app.api.problems import router as problem_router
 from app.api.problem_concepts import router as problem_concept_router
+from app.api.templates import router as template_router
 
 
 Base.metadata.create_all(
@@ -46,6 +48,7 @@ app.include_router(knowledge_router)
 app.include_router(router)
 app.include_router(problem_router)
 app.include_router(problem_concept_router)
+app.include_router(template_router)
 
 
 @app.get("/")
