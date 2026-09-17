@@ -2064,24 +2064,29 @@ def ask(request: AskRequest, db: Session = Depends(get_db)):
 async def ask_stream(request: AskRequest):
     """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
     async def events():
-        yield f"event: progress\ndata: {json.dumps({'stage': '检索知识点'}, ensure_ascii=False)}\n\n"
+        sequence = 0
+        def emit(event, payload):
+            nonlocal sequence
+            sequence += 1
+            return f"id: {sequence}\nevent: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        yield emit("progress", {"stage": "检索知识点"})
         chunks = queue.Queue()
         try:
             db = SessionLocal()
             task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put))
-            yield f"event: progress\ndata: {json.dumps({'stage': '召回历史题目'}, ensure_ascii=False)}\n\n"
-            yield f"event: progress\ndata: {json.dumps({'stage': '生成数学解答'}, ensure_ascii=False)}\n\n"
+            yield emit("progress", {"stage": "召回历史题目"})
+            yield emit("progress", {"stage": "生成数学解答"})
             while not task.done():
                 while not chunks.empty():
-                    yield f"event: token\ndata: {json.dumps({'text': chunks.get_nowait()}, ensure_ascii=False)}\n\n"
+                    yield emit("token", {"text": chunks.get_nowait()})
                 await asyncio.sleep(0.1)
             while not chunks.empty():
-                yield f"event: token\ndata: {json.dumps({'text': chunks.get_nowait()}, ensure_ascii=False)}\n\n"
+                yield emit("token", {"text": chunks.get_nowait()})
             result = await task
-            yield f"event: result\ndata: {json.dumps(result, ensure_ascii=False)}\n\n"
+            yield emit("result", result)
         except Exception as exc:
             detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
-            yield f"event: error\ndata: {json.dumps({'detail': detail}, ensure_ascii=False)}\n\n"
+            yield emit("error", {"detail": detail})
         finally:
             if 'db' in locals():
                 db.close()
