@@ -53,6 +53,11 @@ function ensureBatchAuditButton() {
   button.textContent = '批量校验当前列表';
   button.addEventListener('click', batchValidateCandidates);
   filter.parentElement?.appendChild(button);
+  const saveButton = button.cloneNode(false);
+  saveButton.id = 'batchSaveCandidates';
+  saveButton.textContent = '预览并保存已校验';
+  saveButton.addEventListener('click', batchSaveCandidates);
+  filter.parentElement?.appendChild(saveButton);
 }
 
 async function batchValidateCandidates() {
@@ -74,6 +79,35 @@ async function batchValidateCandidates() {
   } finally {
     button.disabled = false;
     button.textContent = '批量校验当前列表';
+  }
+}
+
+async function batchSaveCandidates() {
+  const ids = [...document.querySelectorAll('.candidate-item')].map(item => Number(item.dataset.candidateId)).filter(Number.isInteger);
+  if (!ids.length) { showMessage('当前没有候选图谱可保存。'); return; }
+  const button = $('batchSaveCandidates');
+  button.disabled = true;
+  button.textContent = '读取保存预览…';
+  try {
+    const previewResponse = await fetch(`${API}/ai/graph-candidates/batch-save-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate_ids: ids }) });
+    const preview = await previewResponse.json();
+    if (!previewResponse.ok) throw new Error(preview.detail || '预览失败');
+    const validated = (preview.items || []).filter(item => item.status === 'validated');
+    if (!validated.length) throw new Error('当前列表没有已通过校验的候选图谱。');
+    const confirmed = window.confirm(`将保存 ${validated.length} 张图谱，新增约 ${preview.summary?.new_concepts || 0} 个知识点。是否继续？`);
+    if (!confirmed) return;
+    button.textContent = '批量保存中…';
+    const response = await fetch(`${API}/ai/graph-candidates/batch-save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ candidate_ids: validated.map(item => item.candidate_id) }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '批量保存失败');
+    showMessage(`批量保存完成：新增 ${data.summary.created_concepts} 个知识点、${data.summary.created_relations} 条关系。`);
+    await loadCandidateStats();
+    await loadCandidateHistory();
+  } catch (error) {
+    showMessage(`批量保存未完成：${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = '预览并保存已校验';
   }
 }
 

@@ -886,6 +886,64 @@ def batch_validate_graph_candidates(
     return {"results": results, "summary": summary}
 
 
+@router.post("/graph-candidates/batch-save-preview")
+def batch_save_preview(
+    request: GraphCandidateBatchRequest,
+    db: Session = Depends(get_db),
+):
+    """预览批量保存将新增、替换或跳过的概念和关系。"""
+    candidate_ids = list(dict.fromkeys(request.candidate_ids))[:50]
+    preview = []
+    for candidate_id in candidate_ids:
+        candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+        if candidate is None:
+            preview.append({"candidate_id": candidate_id, "status": "missing"})
+            continue
+        if candidate.status != "validated":
+            preview.append({"candidate_id": candidate_id, "status": "not_validated"})
+            continue
+        graph = json.loads(candidate.graph_json)
+        names = {str(node.get("name", "")).strip() for node in graph.get("nodes", []) if node.get("name")}
+        existing_names = {name for (name,) in db.query(Concept.name).filter(Concept.name.in_(names)).all()}
+        node_ids = {node.get("id"): node.get("name", "").strip() for node in graph.get("nodes", [])}
+        relation_counts = {"new": 0, "replace": 0, "skip": 0}
+        for edge in graph.get("edges", []):
+            source = db.query(Concept).filter(Concept.name == node_ids.get(edge.get("source"))).first()
+            target = db.query(Concept).filter(Concept.name == node_ids.get(edge.get("target"))).first()
+            relation = normalize_relation(edge.get("relation"))
+            if source is None or target is None or relation is None or source.id == target.id:
+                relation_counts["new"] += 1
+                continue
+            existing = db.query(ConceptRelation).filter_by(source_concept_id=source.id, target_concept_id=target.id).all()
+            if not existing:
+                relation_counts["new"] += 1
+            elif any(normalize_relation(item.relation) == relation for item in existing):
+                relation_counts["skip"] += 1
+            elif RELATION_PRIORITY.get(relation, 0) > max(RELATION_PRIORITY.get(normalize_relation(item.relation), 0) for item in existing):
+                relation_counts["replace"] += 1
+            else:
+                relation_counts["skip"] += 1
+        preview.append({"candidate_id": candidate.id, "status": "validated", "new_concepts": len(names - existing_names), "existing_concepts": len(existing_names), "relations": relation_counts})
+    return {"items": preview, "summary": {"candidates": len(preview), "new_concepts": sum(item.get("new_concepts", 0) for item in preview), "new_relations": sum(item.get("relations", {}).get("new", 0) for item in preview)}}
+
+
+@router.post("/graph-candidates/batch-save")
+def batch_save_graph_candidates(
+    request: GraphCandidateBatchRequest,
+    db: Session = Depends(get_db),
+):
+    """批量幂等保存已通过校验的候选图谱。"""
+    candidate_ids = list(dict.fromkeys(request.candidate_ids))[:50]
+    results = []
+    for candidate_id in candidate_ids:
+        try:
+            results.append(save_graph_candidate(candidate_id, db))
+        except HTTPException as exc:
+            results.append({"candidate_id": candidate_id, "status": "skipped", "error": exc.detail})
+    summary = {"created_concepts": sum(item.get("created_concepts", 0) for item in results), "created_relations": sum(item.get("created_relations", 0) for item in results)}
+    return {"results": results, "summary": summary}
+
+
 @router.get("/graph-candidates/{candidate_id}")
 def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()

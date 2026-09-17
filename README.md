@@ -117,6 +117,8 @@ Backend
 - `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
 - `GET /ai/graph-candidates/stats`：查看各审核状态的候选数量
 - `POST /ai/graph-candidates/batch-validate`：批量执行候选图谱校验，单条失败不影响其他记录
+- `POST /ai/graph-candidates/batch-save-preview`：预览批量保存将新增、替换和跳过的内容
+- `POST /ai/graph-candidates/batch-save`：批量幂等保存已通过校验的候选图谱
 - `GET /ai/graph-candidates/{candidate_id}`：查看候选图谱及校验状态
 - `PUT /ai/graph-candidates/{candidate_id}`：审核者修改候选图谱；修改后自动回到 `pending`
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
