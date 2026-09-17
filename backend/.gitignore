@@ -1,12 +1,2 @@
-# Python virtual environment
-.venv/
-
-# Python cache
-__pycache__/
-*.pyc
-
-# Database
-*.db
-
-# macOS
-.DS_Store
+math_agent.log
+math_agent.log.*
