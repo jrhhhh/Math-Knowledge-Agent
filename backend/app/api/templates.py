@@ -9,6 +9,7 @@ from app.api.ai import get_db
 from app.models.local_template import LocalTemplate
 from app.models.local_template_event import LocalTemplateEvent
 from app.models.question_sample import QuestionSample
+from app.models.template_audit_log import TemplateAuditLog
 
 router = APIRouter(prefix="/local-templates", tags=["Local answer templates"])
 
@@ -81,11 +82,18 @@ def sample_recommendations(db: Session = Depends(get_db)):
     return {"unmatched": len(samples), "length_buckets": buckets, "recommendation": "收集更多未命中问题后，人工归纳主题并创建模板。" if samples else "暂无需要补充的模板。"}
 
 
+@router.get("/audit-log")
+def audit_log(db: Session = Depends(get_db)):
+    items = db.query(TemplateAuditLog).order_by(TemplateAuditLog.created_at.desc()).limit(200).all()
+    return {"items": [{"id": item.id, "action": item.action, "detail": item.detail, "created_at": item.created_at.isoformat()} for item in items], "total": len(items)}
+
+
 @router.delete("/samples")
 def cleanup_samples(retention_days: int = Query(default=90, ge=1, le=3650), db: Session = Depends(get_db)):
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=retention_days)
     deleted = db.query(QuestionSample).filter(QuestionSample.created_at < cutoff).delete(synchronize_session=False)
     db.commit()
+    admin_audit(db, "sample_cleanup", f"deleted={deleted},retention_days={retention_days}"); db.commit()
     return {"deleted": deleted, "retention_days": retention_days, "cutoff": cutoff.isoformat()}
 
 
@@ -103,6 +111,9 @@ def template_ab_test(request: TemplateABTest, db: Session = Depends(get_db)):
 
 def audit(db, template_id, action, detail="", snapshot=None):
     db.add(LocalTemplateEvent(template_id=template_id, action=action, detail=detail, snapshot=json.dumps(snapshot, ensure_ascii=False) if snapshot else None))
+
+def admin_audit(db, action, detail=""):
+    db.add(TemplateAuditLog(action=action, detail=detail))
 
 def snapshot_of(item):
     return {"template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled}
@@ -158,6 +169,7 @@ def preview_template(request: TemplatePreview, db: Session = Depends(get_db)):
 @router.get("/export")
 def export_templates(db: Session = Depends(get_db)):
     items = db.query(LocalTemplate).order_by(LocalTemplate.id.asc()).all()
+    admin_audit(db, "export", f"count={len(items)}"); db.commit()
     return {"version": 1, "items": [serialize(item) for item in items]}
 
 

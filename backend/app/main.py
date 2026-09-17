@@ -18,6 +18,7 @@ from app.models.ai_request_log import AIRequestLog
 from app.models.local_template import LocalTemplate
 from app.models.local_template_event import LocalTemplateEvent
 from app.models.question_sample import QuestionSample
+from app.models.template_audit_log import TemplateAuditLog
 from app.ai.retry_queue import resume_pending_jobs
 from sqlalchemy import inspect, text
 
