@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -565,6 +566,16 @@ def get_related_graph(
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空。")
 
+    cached = (
+        db.query(GraphCandidate)
+        .filter(GraphCandidate.question == question)
+        .order_by(GraphCandidate.created_at.desc())
+        .first()
+    )
+    if cached and cached.created_at and datetime.utcnow() - cached.created_at < timedelta(hours=24):
+        graph = json.loads(cached.graph_json)
+        return graph_candidate_response(cached, graph, "已复用 24 小时内的 AI 图谱缓存。")
+
     return generate_ai_related_graph(db, question)
 
 
@@ -580,6 +591,25 @@ def parse_ai_graph_json(raw: str):
     if start < 0 or end < start:
         raise json.JSONDecodeError("No JSON object found", text, 0)
     return json.loads(text[start:end + 1])
+
+
+def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: str):
+    return {
+        "candidate_id": candidate.id,
+        "question": candidate.question,
+        "concepts": [
+            {
+                "id": node["id"],
+                "name": node["name"],
+                "type": node["type"],
+                "similarity": 1.0,
+                "source": node.get("source", "ai_generated"),
+            }
+            for node in graph.get("nodes", [])
+        ],
+        "knowledge_graph": graph,
+        "message": message,
+    }
 
 
 def generate_ai_related_graph(db: Session, question: str):
@@ -752,16 +782,11 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
     db.commit()
     db.refresh(candidate)
 
-    return {
-        "candidate_id": candidate.id,
-        "question": question,
-        "concepts": [
-            {"id": node["id"], "name": node["name"], "type": node["type"], "similarity": 1.0, "source": node["source"]}
-            for node in nodes
-        ],
-        "knowledge_graph": {"nodes": nodes, "edges": edges},
-        "message": "AI 已根据问题生成相关知识图谱。",
-    }
+    return graph_candidate_response(
+        candidate,
+        {"nodes": nodes, "edges": edges},
+        "AI 已根据问题生成相关知识图谱。",
+    )
 
 
 @router.get("/graph-candidates/{candidate_id}")
@@ -793,11 +818,78 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
             invalid_edges.append({"index": index, "reason": "边端点不存在"})
         elif edge.get("source") == edge.get("target") or relation is None:
             invalid_edges.append({"index": index, "reason": "自环或非法关系"})
+
     validation = {"valid": not invalid_edges and len(graph.get("nodes", [])) >= 2, "invalid_edges": invalid_edges}
+    if validation["valid"]:
+        try:
+            semantic = validate_graph_semantics(graph)
+            validation.update({
+                "semantic_valid": semantic["valid"],
+                "confidence": semantic["confidence"],
+                "semantic_issues": semantic["issues"],
+            })
+            validation["valid"] = validation["valid"] and semantic["valid"] and semantic["confidence"] >= 0.80
+            if not validation["valid"]:
+                validation["invalid_edges"].extend(semantic["invalid_edges"])
+        except Exception as exc:
+            print("[AI] graph semantic validation failed:", repr(exc))
+            candidate.validation_json = json.dumps({**validation, "semantic_valid": False, "confidence": 0.0, "semantic_issues": ["AI 语义校验未完成，请重试"]}, ensure_ascii=False)
+            candidate.status = "needs_review"
+            db.commit()
+            raise HTTPException(status_code=503, detail="AI 数学语义校验暂时不可用，请稍后重试。") from exc
+
     candidate.validation_json = json.dumps(validation, ensure_ascii=False)
     candidate.status = "validated" if validation["valid"] else "rejected"
     db.commit()
     return {"candidate_id": candidate.id, "status": candidate.status, "validation": validation}
+
+
+def validate_graph_semantics(graph: dict):
+    """批量判断图谱关系的数学方向和含义，返回可审计的校验结果。"""
+    nodes = {str(node.get("id")): node.get("name", "") for node in graph.get("nodes", [])}
+    edges = [
+        {
+            "index": index,
+            "source": nodes.get(str(edge.get("source")), ""),
+            "target": nodes.get(str(edge.get("target")), ""),
+            "relation": edge.get("relation"),
+        }
+        for index, edge in enumerate(graph.get("edges", []))
+    ]
+    prompt = f"""请校验这张数学知识图谱是否适合学习。只输出 JSON：
+{{"valid":true,"confidence":0.9,"issues":[],"invalid_edges":[]}}
+
+节点：{json.dumps(nodes, ensure_ascii=False)}
+关系：{json.dumps(edges, ensure_ascii=False)}
+
+检查每条关系的数学含义和方向；不要因表述风格不同而否定正确关系。
+confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例如 [{{"index":1,"reason":"方向相反"}}]。
+只有存在明显数学错误或缺少必要条件时才判 valid=false。"""
+    raw = call_deepseek(
+        messages=[
+            {"role": "system", "content": "你是严格的数学知识图谱审校器，只输出完整合法 JSON。"},
+            {"role": "user", "content": prompt},
+        ],
+        response_format={"type": "json_object"},
+        max_retries=2,
+        max_tokens=3000,
+        timeout=70.0,
+        extra_body={"thinking": {"type": "enabled"}},
+    )
+    result = parse_ai_graph_json(raw)
+    try:
+        confidence = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
+    except (TypeError, ValueError):
+        confidence = 0.0
+    invalid_edges = result.get("invalid_edges", [])
+    if not isinstance(invalid_edges, list):
+        invalid_edges = []
+    return {
+        "valid": bool(result.get("valid", False)),
+        "confidence": confidence,
+        "issues": result.get("issues", []) if isinstance(result.get("issues", []), list) else [],
+        "invalid_edges": invalid_edges,
+    }
 
 
 @router.post("/graph-candidates/{candidate_id}/save")
