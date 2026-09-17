@@ -82,6 +82,8 @@ async function ask(event) {
   }
 }
 async function recoverTaskResult(requestId) { if (!requestId) return null; for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 1500)); try { const response = await nativeFetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`); const task = await response.json(); if (!response.ok) return null; $('answerStatus').textContent = task.stage || '恢复任务状态'; if (task.result?.answer) return task.result; if (['failed', 'cancelled'].includes(task.status)) return null; } catch (error) { return null; } } return null; }
+function ensureTaskDetailPanel() { if ($('taskDetail')) return; const panel = document.createElement('details'); panel.id = 'taskDetail'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>任务详情</summary><div class="task-detail-info"><span class="muted">选择一个任务查看详情</span></div>'; $('graph').appendChild(panel); }
+function renderTaskDetail(task) { ensureTaskDetailPanel(); const result = task.result || {}; const degradation = (result.degradation || []).join(' → ') || '无'; $('taskDetail').open = true; $('taskDetail').querySelector('.task-detail-info').innerHTML = `<div><b>${escapeHtml(task.status || '未知')}</b> · ${escapeHtml(task.stage || '')}</div><div>请求 ID：<code>${escapeHtml(task.request_id || '')}</code></div><div>更新时间：${escapeHtml(task.updated_at || '—')}</div>${result.generation_elapsed_seconds != null ? `<div>生成耗时：${result.generation_elapsed_seconds}s / 预算 ${result.generation_budget_seconds || '—'}s</div>` : ''}<div>降级链路：${escapeHtml(degradation)}</div>${task.error_detail || task.detail ? `<div class="task-error">错误：${escapeHtml(task.error_detail || task.detail)}</div>` : ''}`; }
 function cancelAsk() { askController?.abort(); }
 function ensureAskCancelButton() { const button = document.createElement('button'); button.type = 'button'; button.id = 'cancelAskButton'; button.className = 'cancel-ask hidden'; button.textContent = '取消推理'; button.addEventListener('click', cancelAsk); $('askButton').parentElement?.appendChild(button); }
 async function pollGraphRetry(jobId) { for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.knowledge_graph) { activeCandidateId = job.result.candidate_id; $('graphEditor').value = JSON.stringify(job.result.knowledge_graph, null, 2); $('saveGraphButton').classList.remove('hidden'); renderGraph(job.result.knowledge_graph); loadCandidateStats(); loadCandidateHistory(); showMessage('后台重试成功，相关知识图谱已自动载入。'); return; } if (job.status === 'failed') { showMessage(`后台重试仍未成功：${job.error || '未知错误'}`); return; } $('graphStatus').textContent = `后台重试中（第 ${job.attempts || 0} 次）`; } catch (error) { return; } } showMessage('后台重试仍在进行，可稍后查看候选图谱历史。'); }
@@ -272,6 +274,16 @@ ensureAuditExport();
 ensureTemplateAB();
 setInterval(loadHealthMetrics, 30000);
 setInterval(loadTaskHistory, 15000);
+const restoreTaskBase = restoreTask;
+restoreTask = async function (requestId) {
+  try {
+    const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`);
+    const task = await response.json();
+    if (response.ok) renderTaskDetail(task);
+  } catch (error) { /* 原恢复逻辑会显示可用的错误 */ }
+  return restoreTaskBase(requestId);
+};
+ensureTaskDetailPanel();
 
 // 统一将本次问答的追踪 ID 放入查询面板，便于故障后立即定位。
 const originalAsk = ask;
