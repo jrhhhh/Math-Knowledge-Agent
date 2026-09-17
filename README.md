@@ -114,6 +114,7 @@ Backend
 - `POST /ai/ask`：数学问答、知识点检索和历史题推荐
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
 - `POST /ai/related-graph`：由 AI 根据问题生成候选知识图谱；相同问题 24 小时内复用缓存
+- `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
 - `GET /ai/graph-candidates/{candidate_id}`：查看候选图谱及校验状态
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库

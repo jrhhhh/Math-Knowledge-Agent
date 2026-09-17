@@ -2,7 +2,7 @@ import json
 import time
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -811,6 +811,37 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
         {"nodes": nodes, "edges": edges},
         "AI 已根据问题生成相关知识图谱。",
     )
+
+
+@router.get("/graph-candidates")
+def list_graph_candidates(
+    status: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """分页查看候选图谱，供审核界面使用。"""
+    allowed_statuses = {"pending", "validated", "rejected", "needs_review", "saved"}
+    if status is not None and status not in allowed_statuses:
+        raise HTTPException(status_code=400, detail="无效的候选图谱状态。")
+    query = db.query(GraphCandidate)
+    if status is not None:
+        query = query.filter(GraphCandidate.status == status)
+    total = query.count()
+    candidates = query.order_by(GraphCandidate.created_at.desc()).offset(offset).limit(limit).all()
+    items = []
+    for candidate in candidates:
+        graph = json.loads(candidate.graph_json)
+        items.append({
+            "id": candidate.id,
+            "question": candidate.question,
+            "status": candidate.status,
+            "node_count": len(graph.get("nodes", [])),
+            "edge_count": len(graph.get("edges", [])),
+            "validation": json.loads(candidate.validation_json or "{}"),
+            "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
+        })
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/graph-candidates/{candidate_id}")
