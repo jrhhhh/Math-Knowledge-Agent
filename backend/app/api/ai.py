@@ -438,6 +438,28 @@ def ai_health():
     return metrics
 
 
+@router.get("/tasks")
+def list_task_statuses(status: str | None = None, offset: int = Query(default=0, ge=0), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+    query = db.query(AITaskStatus)
+    if status:
+        query = query.filter(AITaskStatus.status == status)
+    total = query.count()
+    items = query.order_by(AITaskStatus.updated_at.desc()).offset(offset).limit(limit).all()
+    return {"items": [{"request_id": item.request_id, "question": item.question, "status": item.status,
+                        "stage": item.stage, "detail": item.detail,
+                        "updated_at": item.updated_at.isoformat() if item.updated_at else None} for item in items],
+            "total": total, "offset": offset, "limit": limit}
+
+
+@router.post("/tasks/cleanup")
+def cleanup_task_statuses(older_than_days: int = Query(default=30, ge=1, le=3650), db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=older_than_days)
+    terminal = ("succeeded", "failed", "cancelled")
+    deleted = db.query(AITaskStatus).filter(AITaskStatus.status.in_(terminal), AITaskStatus.updated_at < cutoff).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted, "older_than_days": older_than_days, "cutoff": cutoff.isoformat()}
+
+
 @router.get("/tasks/{request_id}")
 def task_status(request_id: str, db: Session = Depends(get_db)):
     """Return the live in-process state plus the durable request-log result."""

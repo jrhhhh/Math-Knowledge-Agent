@@ -73,6 +73,11 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(persisted.json()["status"], "generating")
         missing = self.client.get("/ai/tasks/not-found-task")
         self.assertEqual(missing.status_code, 404)
+        listing = self.client.get("/ai/tasks?offset=0&limit=5")
+        self.assertEqual(listing.status_code, 200)
+        self.assertIn("items", listing.json())
+        cleanup = self.client.post("/ai/tasks/cleanup?older_than_days=3650")
+        self.assertEqual(cleanup.status_code, 200)
 
     def test_retry_validation_contract(self):
         response = self.client.post("/ai/retry-queue", json={"operation": "unsupported", "question": "x"})
