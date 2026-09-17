@@ -460,6 +460,18 @@ def cleanup_task_statuses(older_than_days: int = Query(default=30, ge=1, le=3650
     return {"deleted": deleted, "older_than_days": older_than_days, "cutoff": cutoff.isoformat()}
 
 
+@router.post("/tasks/{request_id}/retry")
+def retry_task(request_id: str, db: Session = Depends(get_db)):
+    item = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="未找到该问答任务。")
+    if item.status not in {"failed", "cancelled"}:
+        raise HTTPException(status_code=409, detail="只有失败或取消的任务可以重新执行。")
+    job_id = enqueue("answer", item.question, max_attempts=2, priority=8)
+    set_task_status(request_id, "queued", "已重新加入重试队列", f"retry_job_id={job_id}", db=db, question=item.question)
+    return {"request_id": request_id, "job_id": job_id, "status": "queued"}
+
+
 @router.get("/tasks/{request_id}")
 def task_status(request_id: str, db: Session = Depends(get_db)):
     """Return the live in-process state plus the durable request-log result."""
