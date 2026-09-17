@@ -59,6 +59,9 @@ class TemplateAPIContractTests(unittest.TestCase):
         response = self.client.get("/local-templates/audit-log")
         self.assertEqual(response.status_code, 200)
         self.assertIn("items", response.json())
+        exported = self.client.get("/local-templates/audit-log/export")
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("text/csv", exported.headers.get("content-type", ""))
 
     def test_template_preview_contract(self):
         response = self.client.post("/local-templates/preview", json={"question": "不存在的模板问题"})
