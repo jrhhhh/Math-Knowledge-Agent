@@ -17,6 +17,18 @@ class CircuitBreakerTests(unittest.TestCase):
         before_call()
         self.assertEqual(snapshot()["failure_streak"], 0)
 
+    def test_only_one_recovery_probe_is_allowed(self):
+        import app.ai.circuit_breaker as breaker
+        breaker._opened_at = breaker.time.monotonic() - breaker._cooldown - 1
+        breaker._half_open = False
+        breaker._failures = 3
+        breaker.before_call()
+        self.assertEqual(snapshot()["state"], "half_open")
+        with self.assertRaises(CircuitOpenError):
+            breaker.before_call()
+        breaker.success()
+        self.assertEqual(snapshot()["state"], "closed")
+
 
 if __name__ == "__main__":
     unittest.main()
