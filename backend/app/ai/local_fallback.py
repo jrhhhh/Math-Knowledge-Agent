@@ -1,5 +1,6 @@
 """可扩展的确定性数学回答模板；模型不可用时提供可靠的基础答案。"""
 import re
+import hashlib
 from datetime import datetime, timezone
 
 LOCAL_TEMPLATES = (
@@ -21,8 +22,12 @@ def match_local_template(question: str, db=None):
         for item in db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True), LocalTemplate.review_status == "approved").order_by(LocalTemplate.id.asc()).all():
             try:
                 if re.search(item.pattern, text, re.I):
+                    from app.models.question_sample import QuestionSample
                     item.hit_count += 1
                     item.last_hit_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                    sample = db.query(QuestionSample).filter(QuestionSample.question_hash == hashlib.sha256(text.encode("utf-8")).hexdigest()).order_by(QuestionSample.id.desc()).first()
+                    if sample:
+                        sample.matched_template_id = item.template_id
                     db.commit()
                     return {"id": item.template_id, "answer": item.answer}
             except re.error:

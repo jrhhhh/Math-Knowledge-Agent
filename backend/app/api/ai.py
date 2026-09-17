@@ -5,6 +5,7 @@ import asyncio
 import queue
 import csv
 import io
+import hashlib
 from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
@@ -31,6 +32,7 @@ from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
+from app.models.question_sample import QuestionSample
 
 from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
@@ -1814,6 +1816,9 @@ def _ask_impl(
             status_code=400,
             detail="问题不能为空。"
         )
+
+    db.add(QuestionSample(question_hash=hashlib.sha256(question.encode("utf-8")).hexdigest(), question_length=len(question), source="ask"))
+    db.commit()
 
     cached = cached_answer(question)
     if cached is not None:

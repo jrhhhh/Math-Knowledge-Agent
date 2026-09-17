@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.ai import get_db
 from app.models.local_template import LocalTemplate
 from app.models.local_template_event import LocalTemplateEvent
+from app.models.question_sample import QuestionSample
 
 router = APIRouter(prefix="/local-templates", tags=["Local answer templates"])
 
@@ -57,6 +58,16 @@ def template_recommendations(db: Session = Depends(get_db)):
         elif item.review_status == "approved" and item.hit_count == 0:
             recommendations.append({"template_id": item.template_id, "reason": "尚未命中，建议用典型问题测试正则。"})
     return {"items": recommendations, "total": len(recommendations)}
+
+
+@router.get("/samples/stats")
+def sample_stats(db: Session = Depends(get_db)):
+    samples = db.query(QuestionSample).all()
+    by_template = {}
+    for sample in samples:
+        key = sample.matched_template_id or "unmatched"
+        by_template[key] = by_template.get(key, 0) + 1
+    return {"total": len(samples), "matched": len(samples) - by_template.get("unmatched", 0), "by_template": by_template}
 
 
 @router.post("/ab-test")
