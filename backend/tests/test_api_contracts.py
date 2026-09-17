@@ -34,6 +34,7 @@ class APIContractTests(unittest.TestCase):
         payload = response.json()
         self.assertIn("items", payload)
         self.assertEqual(payload["limit"], 2)
+        self.assertGreaterEqual(payload["total"], len(payload["items"]))
 
     def test_request_log_filters_and_export_contract(self):
         invalid_status = self.client.get("/ai/requests?status=unknown")

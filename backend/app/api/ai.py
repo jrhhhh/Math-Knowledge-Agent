@@ -181,8 +181,10 @@ def _request_log_item(log):
 
 @router.get("/requests")
 def list_request_logs(status: str | None = Query(default=None), since: str | None = Query(default=None), until: str | None = Query(default=None), limit: int = Query(default=50, ge=1, le=500), db: Session = Depends(get_db)):
-    items = _request_log_query(db, status, since, until).limit(limit).all()
-    return {"items": [_request_log_item(log) for log in items], "total": len(items), "limit": limit}
+    filtered = _request_log_query(db, status, since, until)
+    total = filtered.count()
+    items = filtered.limit(limit).all()
+    return {"items": [_request_log_item(log) for log in items], "total": total, "limit": limit}
 
 
 @router.get("/requests/export")
