@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import asyncio
+import queue
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -271,6 +272,7 @@ def call_deepseek(
     max_tokens: int | None = None,
     timeout: float | None = None,
     extra_body: dict | None = None,
+    on_chunk=None,
 ):
     """
     调用 DeepSeek API。
@@ -307,10 +309,19 @@ def call_deepseek(
 
             if extra_body is not None:
                 kwargs["extra_body"] = extra_body
+            if on_chunk is not None:
+                kwargs["stream"] = True
 
-            response = client.chat.completions.create(
-                **kwargs
-            )
+            response = client.chat.completions.create(**kwargs)
+            if on_chunk is not None:
+                text_parts = []
+                for chunk in response:
+                    content = chunk.choices[0].delta.content if chunk.choices and chunk.choices[0].delta else None
+                    if content:
+                        text_parts.append(content)
+                        on_chunk(content)
+                record_request(True, attempts - 1)
+                return "".join(text_parts)
 
             if (
                 response.choices
@@ -1661,10 +1672,10 @@ def format_graph_relations(
 # Main AI endpoint
 # ============================================================
 
-@router.post("/ask")
-def ask(
+def _ask_impl(
     request: AskRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    stream_callback=None,
 ):
     started_at = time.perf_counter()
     question = request.question.strip()
@@ -1949,6 +1960,7 @@ def ask(
             max_retries=1,
             max_tokens=primary_max_tokens,
             timeout=primary_timeout,
+            on_chunk=stream_callback,
         )
         print("[Timing] final answer: %.2fs" % (time.perf_counter() - started_at))
 
@@ -1981,6 +1993,7 @@ def ask(
                 max_retries=1,
                 max_tokens=1600,
                 timeout=70.0,
+                on_chunk=stream_callback,
             )
             answer_source = "deepseek_extended"
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
@@ -2042,17 +2055,28 @@ def ask(
     return result
 
 
+@router.post("/ask")
+def ask(request: AskRequest, db: Session = Depends(get_db)):
+    return _ask_impl(request, db)
+
+
 @router.post("/ask-stream")
 async def ask_stream(request: AskRequest):
     """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
     async def events():
         yield f"event: progress\ndata: {json.dumps({'stage': '检索知识点'}, ensure_ascii=False)}\n\n"
+        chunks = queue.Queue()
         try:
             db = SessionLocal()
-            task = asyncio.create_task(asyncio.to_thread(ask, request, db))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, request, db, stream_callback=chunks.put))
             yield f"event: progress\ndata: {json.dumps({'stage': '召回历史题目'}, ensure_ascii=False)}\n\n"
-            await asyncio.sleep(0)
             yield f"event: progress\ndata: {json.dumps({'stage': '生成数学解答'}, ensure_ascii=False)}\n\n"
+            while not task.done():
+                while not chunks.empty():
+                    yield f"event: token\ndata: {json.dumps({'text': chunks.get_nowait()}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.1)
+            while not chunks.empty():
+                yield f"event: token\ndata: {json.dumps({'text': chunks.get_nowait()}, ensure_ascii=False)}\n\n"
             result = await task
             yield f"event: result\ndata: {json.dumps(result, ensure_ascii=False)}\n\n"
         except Exception as exc:
