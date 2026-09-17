@@ -22,6 +22,15 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("matched", response.json())
 
+    def test_template_export_import_contract(self):
+        exported = self.client.get("/local-templates/export")
+        self.assertEqual(exported.status_code, 200)
+        self.assertIn("items", exported.json())
+        imported = self.client.post("/local-templates/import", json={"items": [{"template_id": "ci-template", "pattern": "ci", "answer": "CI"}]})
+        self.assertEqual(imported.status_code, 200)
+        self.assertEqual(imported.json()["total"], 1)
+        self.assertEqual(imported.json()["created"] + imported.json()["updated"], 1)
+
     def test_template_events_contract(self):
         response = self.client.get("/local-templates/not-found/events")
         self.assertEqual(response.status_code, 200)

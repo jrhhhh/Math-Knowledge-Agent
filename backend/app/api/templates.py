@@ -27,6 +27,9 @@ class TemplatePreview(BaseModel):
     question: str = Field(min_length=1)
     template_id: str | None = None
 
+class TemplateImport(BaseModel):
+    items: list[TemplateRequest] = Field(min_length=1, max_length=500)
+
 
 def serialize(item):
     return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
@@ -69,6 +72,27 @@ def preview_template(request: TemplatePreview, db: Session = Depends(get_db)):
         except re.error:
             continue
     return {"matched": False, "template_id": request.template_id, "answer": None}
+
+
+@router.get("/export")
+def export_templates(db: Session = Depends(get_db)):
+    items = db.query(LocalTemplate).order_by(LocalTemplate.id.asc()).all()
+    return {"version": 1, "items": [serialize(item) for item in items]}
+
+
+@router.post("/import")
+def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
+    created = updated = 0
+    for incoming in request.items:
+        item = db.query(LocalTemplate).filter(LocalTemplate.template_id == incoming.template_id).first()
+        if item is None:
+            item = LocalTemplate(**incoming.model_dump()); db.add(item); audit(db, incoming.template_id, "imported"); created += 1
+        else:
+            before = snapshot_of(item)
+            item.pattern, item.answer, item.enabled = incoming.pattern, incoming.answer, incoming.enabled
+            audit(db, incoming.template_id, "imported_update", "import", before); updated += 1
+    db.commit()
+    return {"created": created, "updated": updated, "total": len(request.items)}
 
 
 @router.put("/{template_id}")
