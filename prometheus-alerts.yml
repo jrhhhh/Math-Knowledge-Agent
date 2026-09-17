@@ -1,0 +1,24 @@
+groups:
+  - name: math-agent
+    rules:
+      - alert: MathAgentLowSuccessRate
+        expr: math_agent_requests_total > 5 and math_agent_success_ratio < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Math Agent 成功率过低
+      - alert: MathAgentSlowRequests
+        expr: rate(math_agent_slow_requests_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Math Agent 出现慢请求
+      - alert: MathAgentRetryQueueBacklog
+        expr: sum(math_agent_retry_queue_jobs{status=~"queued|running|retrying"}) > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Math Agent 重试队列堆积

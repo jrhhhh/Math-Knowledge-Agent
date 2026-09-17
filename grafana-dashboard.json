@@ -1,0 +1,12 @@
+{
+  "title": "Math Agent Overview",
+  "schemaVersion": 39,
+  "panels": [
+    {"type": "stat", "title": "Requests", "targets": [{"expr": "math_agent_requests_total"}]},
+    {"type": "stat", "title": "Success Ratio", "targets": [{"expr": "math_agent_success_ratio"}]},
+    {"type": "stat", "title": "Cache Hit Rate", "targets": [{"expr": "math_agent_cache_hits_total / (math_agent_cache_hits_total + math_agent_cache_misses_total)"}]},
+    {"type": "timeseries", "title": "Request Rate", "targets": [{"expr": "rate(math_agent_requests_total[5m])"}]},
+    {"type": "timeseries", "title": "Retry Queue", "targets": [{"expr": "sum by (status) (math_agent_retry_queue_jobs)"}]}
+  ],
+  "templating": {"list": []}
+}
