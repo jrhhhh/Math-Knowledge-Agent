@@ -49,6 +49,10 @@ class GraphCandidateUpdateRequest(BaseModel):
     graph: dict
 
 
+class GraphCandidateBatchRequest(BaseModel):
+    candidate_ids: list[int]
+
+
 class ProofAnalyzeRequest(BaseModel):
     question: str
     proof: str
@@ -846,6 +850,40 @@ def list_graph_candidates(
             "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
         })
     return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+
+@router.get("/graph-candidates/stats")
+def graph_candidate_stats(db: Session = Depends(get_db)):
+    """返回候选图谱各审核状态的数量。"""
+    rows = db.query(GraphCandidate.status).all()
+    counts = {status: 0 for status in {"pending", "validated", "rejected", "needs_review", "saved"}}
+    for (status,) in rows:
+        counts[status] = counts.get(status, 0) + 1
+    return {"total": len(rows), "by_status": counts}
+
+
+@router.post("/graph-candidates/batch-validate")
+def batch_validate_graph_candidates(
+    request: GraphCandidateBatchRequest,
+    db: Session = Depends(get_db),
+):
+    """批量执行候选图谱校验，单条失败不会阻断其余候选。"""
+    candidate_ids = list(dict.fromkeys(request.candidate_ids))[:50]
+    results = []
+    for candidate_id in candidate_ids:
+        candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+        if candidate is None:
+            results.append({"candidate_id": candidate_id, "status": "missing", "error": "候选图谱不存在。"})
+            continue
+        try:
+            result = validate_graph_candidate(candidate_id, db)
+            results.append({"candidate_id": candidate_id, "status": result["status"], "validation": result["validation"]})
+        except HTTPException as exc:
+            results.append({"candidate_id": candidate_id, "status": candidate.status, "error": exc.detail})
+    summary = {}
+    for result in results:
+        summary[result["status"]] = summary.get(result["status"], 0) + 1
+    return {"results": results, "summary": summary}
 
 
 @router.get("/graph-candidates/{candidate_id}")

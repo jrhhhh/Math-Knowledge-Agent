@@ -21,6 +21,27 @@ async function analyzeProof(event) { event.preventDefault(); const question = $(
 async function loadGraph() { $('graphStatus').textContent = '加载中'; try { const response = await fetch(`${API}/concepts/graph`); if (!response.ok) throw Error('图谱请求失败'); renderGraph(await response.json()); } catch (error) { $('graphStatus').textContent = '暂不可用'; $('graphCanvas').innerHTML = '<div class="empty-state">请先启动后端服务</div>'; } }
 function graphHash(value) { return [...String(value)].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0; }
 
+async function loadCandidateStats() {
+  const filter = $('candidateStatusFilter');
+  if (!filter) return;
+  let summary = $('candidateStats');
+  if (!summary) {
+    summary = document.createElement('div');
+    summary.id = 'candidateStats';
+    summary.className = 'candidate-summary';
+    filter.parentElement?.insertBefore(summary, filter.parentElement.firstChild);
+  }
+  try {
+    const response = await fetch(`${API}/ai/graph-candidates/stats`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '统计读取失败');
+    const counts = data.by_status || {};
+    summary.textContent = `待审核 ${counts.pending || 0} · 需复核 ${counts.needs_review || 0} · 已保存 ${counts.saved || 0} · 共 ${data.total || 0}`;
+  } catch (error) {
+    summary.textContent = '候选统计暂不可用';
+  }
+}
+
 function renderGraph(graph) {
   const nodes = (graph.nodes || []).slice(0, 28), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target })).slice(0, 45);
   if (!nodes.length) { $('graphCanvas').innerHTML = '<div class="empty-state">知识图谱暂无数据</div>'; return; }
@@ -38,9 +59,10 @@ $('askForm').addEventListener('submit', ask);
 $('generateGraphButton').addEventListener('click', generateRelatedGraph);
 $('saveGraphButton').addEventListener('click', validateAndSaveGraph);
 $('applyGraphEdit').addEventListener('click', applyGraphEdit);
-$('graphHistory').addEventListener('toggle', () => { if ($('graphHistory').open) loadCandidateHistory(); });
+$('graphHistory').addEventListener('toggle', () => { if ($('graphHistory').open) { loadCandidateStats(); loadCandidateHistory(); } });
 $('candidateStatusFilter').addEventListener('change', loadCandidateHistory);
 $('proofForm').addEventListener('submit', analyzeProof);
 $('refreshGraph').addEventListener('click', loadGraph);
 loadGraph();
+loadCandidateStats();
 loadCandidateHistory();
