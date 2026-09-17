@@ -1,14 +1,20 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
+from app.models.concept_alias import ConceptAlias
 
 router = APIRouter(
     prefix="/concepts",
     tags=["Concepts"]
 )
+
+
+class AliasRequest(BaseModel):
+    alias: str
 
 
 def get_db():
@@ -53,6 +59,26 @@ def get_concepts(
 ):
 
     return db.query(Concept).all()
+
+
+@router.post("/{concept_id}/aliases")
+def add_concept_alias(concept_id: int, request: AliasRequest, db: Session = Depends(get_db)):
+    concept = db.query(Concept).filter(Concept.id == concept_id).first()
+    alias = request.alias.strip()
+    if concept is None:
+        raise HTTPException(status_code=404, detail="Concept not found")
+    if not alias:
+        raise HTTPException(status_code=400, detail="alias 不能为空。")
+    existing = db.query(ConceptAlias).filter(ConceptAlias.alias == alias).first()
+    if existing is not None:
+        if existing.concept_id == concept_id:
+            return {"id": existing.id, "concept_id": concept_id, "alias": existing.alias}
+        raise HTTPException(status_code=409, detail="该别名已绑定到其他知识点。")
+    item = ConceptAlias(concept_id=concept_id, alias=alias)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "concept_id": item.concept_id, "alias": item.alias}
 @router.delete("/{concept_id}")
 def delete_concept(
     concept_id: int,

@@ -19,12 +19,14 @@ from app.models.concept_relation import ConceptRelation
 from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
+from app.models.concept_alias import ConceptAlias
 
 from app.ai.analyzer import client
 from app.ai.concept_matcher import (
     semantic_retrieve_concepts,
     search_similar_problems,
     normalize_relation,
+    find_concept_by_name_or_alias,
 )
 
 
@@ -283,8 +285,23 @@ def safe_semantic_retrieve_concepts(
                 "similarity": 1.0,
                 "reason": "知识点名称在问题中直接出现。",
             })
+    concepts_by_id = {concept.id: concept for concept in db.query(Concept).all()}
+    for alias in db.query(ConceptAlias).all():
+        normalized_alias = "".join((alias.alias or "").lower().split())
+        concept = concepts_by_id.get(alias.concept_id)
+        if normalized_alias and normalized_alias in normalized_question and concept is not None:
+            local_matches.append({
+                "concept": concept,
+                "similarity": 0.98,
+                "reason": f"通过知识点别名“{alias.alias}”匹配。",
+            })
     if local_matches:
-        return local_matches[:5]
+        unique_matches = {}
+        for item in local_matches:
+            concept_id = item["concept"].id
+            if concept_id not in unique_matches or item["similarity"] > unique_matches[concept_id]["similarity"]:
+                unique_matches[concept_id] = item
+        return sorted(unique_matches.values(), key=lambda item: item["similarity"], reverse=True)[:5]
 
     # 短输入通常是“定理/概念名称”查询。若本地库未收录，直接交给
     # 数学回答模型比先等待一次全库语义检索更快，也不会丢失答案质量。
@@ -679,6 +696,12 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
         "".join((concept.name or "").lower().split()): concept
         for concept in database_concepts
     }
+    by_normalized_name.update({
+        "".join((alias.alias or "").lower().split()): concept
+        for alias in db.query(ConceptAlias).all()
+        for concept in database_concepts
+        if concept.id == alias.concept_id
+    })
     nodes = []
     node_id_map = {}
     used_ids = set()
