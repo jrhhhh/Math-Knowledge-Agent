@@ -23,6 +23,11 @@ class APIContractTests(unittest.TestCase):
         self.assertTrue(preview.json()["read_only"])
         repair = self.client.post("/maintenance/integrity/repair", json={})
         self.assertEqual(repair.status_code, 422)
+        prepared = self.client.post("/maintenance/integrity/repair/prepare", json={"orphan_relation_ids": [999999]})
+        self.assertEqual(prepared.status_code, 200)
+        token = prepared.json()["confirmation_token"]
+        mismatch = self.client.post("/maintenance/integrity/repair", json={"confirmation_token": token, "orphan_relation_ids": [999998]})
+        self.assertEqual(mismatch.status_code, 409)
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)

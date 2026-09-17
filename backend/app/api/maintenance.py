@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import secrets
+import time
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -12,9 +14,16 @@ from app.database import engine
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
 
 class RepairRequest(BaseModel):
+    confirmation_token: str | None = None
     orphan_problem_concept_ids: list[int] = Field(default_factory=list, max_length=200)
     orphan_relation_ids: list[int] = Field(default_factory=list, max_length=200)
     duplicate_relation_ids: list[int] = Field(default_factory=list, max_length=200)
+
+_repair_tokens = {}
+
+def _repair_key(request):
+    data = request.model_dump(exclude={"confirmation_token"})
+    return repr({key: sorted(set(value)) for key, value in data.items()})
 
 @router.get("/integrity")
 def integrity_report(db: Session = Depends(get_db)):
@@ -38,10 +47,13 @@ def repair_preview(limit: int = 100, db: Session = Depends(get_db)):
 
 @router.post("/integrity/repair")
 def repair_integrity(request: RepairRequest, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
-    ids = {key: sorted(set(values)) for key, values in request.model_dump().items()}
+    ids = {key: sorted(set(values)) for key, values in request.model_dump(exclude={"confirmation_token"}).items()}
     total = sum(len(values) for values in ids.values())
     if total == 0:
         raise HTTPException(status_code=422, detail="至少指定一条待修复记录。")
+    token_data = _repair_tokens.pop(request.confirmation_token or "", None)
+    if not token_data or token_data["expires_at"] <= time.time() or token_data["key"] != _repair_key(request):
+        raise HTTPException(status_code=409, detail="确认令牌无效、已过期或与修复内容不匹配。")
     backup_dir = os.getenv("MATH_AGENT_BACKUP_DIR", "backups")
     os.makedirs(backup_dir, exist_ok=True)
     backup_path = os.path.join(backup_dir, f"math_agent-before-repair-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db")
@@ -59,3 +71,11 @@ def repair_integrity(request: RepairRequest, db: Session = Depends(get_db), _: b
             deleted[key.replace("_ids", "")] = result.rowcount
     db.commit()
     return {"deleted": deleted, "backup_path": backup_path, "message": "修复完成，已先生成备份。"}
+
+@router.post("/integrity/repair/prepare")
+def prepare_integrity_repair(request: RepairRequest, _: bool = Depends(require_admin)):
+    if sum(len(values) for key, values in request.model_dump(exclude={"confirmation_token"}).items()) == 0:
+        raise HTTPException(status_code=422, detail="至少指定一条待修复记录。")
+    token = secrets.token_urlsafe(24)
+    _repair_tokens[token] = {"key": _repair_key(request), "expires_at": time.time() + 600}
+    return {"confirmation_token": token, "expires_in": 600, "message": "请核对修复内容后，将令牌用于执行接口。"}
