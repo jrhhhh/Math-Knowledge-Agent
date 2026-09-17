@@ -48,6 +48,7 @@ _answer_cache = {}
 _ANSWER_CACHE_TTL = 300
 _knowledge_version = 0
 _cache_metrics = {"hits": 0, "misses": 0}
+_stream_results = {}
 
 
 def cached_answer(question: str):
@@ -2061,7 +2062,7 @@ def ask(request: AskRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/ask-stream")
-async def ask_stream(request: AskRequest):
+async def ask_stream(request: AskRequest, request_id: str | None = None):
     """以 SSE 发送阶段进度，最后发送与 /ask 相同的完整结果。"""
     async def events():
         sequence = 0
@@ -2069,6 +2070,9 @@ async def ask_stream(request: AskRequest):
             nonlocal sequence
             sequence += 1
             return f"id: {sequence}\nevent: {event}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        if request_id and request_id in _stream_results:
+            yield emit("result", _stream_results[request_id])
+            return
         yield emit("progress", {"stage": "检索知识点"})
         chunks = queue.Queue()
         try:
@@ -2083,6 +2087,8 @@ async def ask_stream(request: AskRequest):
             while not chunks.empty():
                 yield emit("token", {"text": chunks.get_nowait()})
             result = await task
+            if request_id:
+                _stream_results[request_id] = result
             yield emit("result", result)
         except Exception as exc:
             detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
