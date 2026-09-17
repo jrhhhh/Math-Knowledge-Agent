@@ -26,7 +26,7 @@ from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 from app.logging_config import configure_logging
 from app.ai.retry_queue import resume_pending_jobs
-from sqlalchemy import inspect, text
+from app.migrations import run_schema_migrations
 
 
 from app.api.concepts import router
@@ -42,17 +42,7 @@ logger = configure_logging()
 
 # 保持旧 SQLite 数据兼容：create_all 不会给已有表补列。
 with engine.begin() as connection:
-    columns = {column["name"] for column in inspect(connection).get_columns("local_answer_template_events")}
-    if "snapshot" not in columns:
-        connection.execute(text("ALTER TABLE local_answer_template_events ADD COLUMN snapshot TEXT"))
-    template_columns = {column["name"] for column in inspect(connection).get_columns("local_answer_templates")}
-    if "review_status" not in template_columns:
-        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN review_status VARCHAR(20) NOT NULL DEFAULT 'approved'"))
-    template_columns = {column["name"] for column in inspect(connection).get_columns("local_answer_templates")}
-    if "hit_count" not in template_columns:
-        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN hit_count INTEGER NOT NULL DEFAULT 0"))
-    if "last_hit_at" not in template_columns:
-        connection.execute(text("ALTER TABLE local_answer_templates ADD COLUMN last_hit_at DATETIME"))
+    run_schema_migrations(connection)
 resume_pending_jobs()
 
 

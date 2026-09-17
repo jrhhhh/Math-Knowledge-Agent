@@ -7,6 +7,12 @@ from app.main import app
 
 
 class APIContractTests(unittest.TestCase):
+
+    def test_schema_version_table_exists(self):
+        from sqlalchemy import inspect
+        from app.database import engine
+        inspector = inspect(engine)
+        self.assertIn("schema_versions", inspector.get_table_names())
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
