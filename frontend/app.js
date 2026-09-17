@@ -262,6 +262,17 @@ loadRetryAlerts = async function () {
     if (panel && (rates || trend)) panel.querySelector('.retry-alert-info').insertAdjacentHTML('beforeend', `<small class="retry-analytics">供应商：${escapeHtml(rates || '暂无调用')} ${trend ? ` · 每小时失败：${trend}` : ''}</small>`);
   } catch (error) { /* 基础告警已渲染 */ }
 };
+let operationsWindowMinutes = 60;
+const loadOperationsDashboardBase = loadOperationsDashboard;
+loadOperationsDashboard = async function () {
+  await loadOperationsDashboardBase();
+  const panel = $('operationsDashboard');
+  if (!panel) return;
+  let controls = panel.querySelector('.ops-controls');
+  if (!controls) { controls = document.createElement('div'); controls.className = 'ops-controls'; controls.innerHTML = '<label>时间范围 <select><option value="60">1 小时</option><option value="360">6 小时</option><option value="1440">24 小时</option><option value="10080">7 天</option></select></label><a target="_blank">导出 CSV</a>'; panel.querySelector('summary').after(controls); controls.querySelector('select').value = String(operationsWindowMinutes); controls.querySelector('select').onchange = () => { operationsWindowMinutes = Number(controls.querySelector('select').value); loadOperationsDashboard(); }; }
+  controls.querySelector('a').href = `${API}/ai/ops-dashboard/export?window_minutes=${operationsWindowMinutes}`;
+  try { const response = await fetch(`${API}/ai/ops-dashboard?window_minutes=${operationsWindowMinutes}`); const data = await response.json(); if (!response.ok) throw new Error(); const sources = Object.entries(data.by_source || {}).map(([name, value]) => `${escapeHtml(name)} ${Math.round((value.average_quality || 0) * 100)}%/${value.count}次`).join(' · ') || '暂无回答'; const providers = Object.entries(data.provider_failure_rates || {}).map(([name, value]) => `${escapeHtml(name)} ${value.failure_rate == null ? '—' : `${Math.round(value.failure_rate * 100)}%`}`).join(' · '); panel.querySelector('.ops-dashboard-info').innerHTML = `<b class="ops-${escapeHtml(data.health || 'healthy')}">${data.health === 'degraded' ? '需要关注' : '运行正常'}</b><div>回答 ${data.answer_count || 0} · 平均质量 ${data.average_quality == null ? '—' : `${Math.round(data.average_quality * 100)}%`} · 平均耗时 ${data.average_duration_seconds == null ? '—' : `${data.average_duration_seconds}s`} · 失败重试 ${data.failed_retry_jobs || 0}</div><div>来源：${sources}</div><div>供应商失败率：${providers || '暂无调用'}</div>`; } catch (error) { /* 基础面板已处理错误 */ }
+};
 loadRetryJobs();
 loadRetryAlerts();
 loadOperationsDashboard();

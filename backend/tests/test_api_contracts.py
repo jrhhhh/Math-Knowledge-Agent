@@ -101,6 +101,9 @@ class APIContractTests(unittest.TestCase):
         self.assertIn("average_quality", dashboard.json())
         self.assertIn("by_source", dashboard.json())
         self.assertIn("health", dashboard.json())
+        exported_dashboard = self.client.get("/ai/ops-dashboard/export?window_minutes=60")
+        self.assertEqual(exported_dashboard.status_code, 200)
+        self.assertIn("text/csv", exported_dashboard.headers.get("content-type", ""))
         self.assertIn("detail", response.json())
 
     def test_missing_retry_job_contract(self):

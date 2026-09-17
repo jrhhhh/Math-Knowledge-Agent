@@ -698,6 +698,24 @@ def operations_dashboard(window_minutes: int = Query(default=60, ge=1, le=10080)
             "health": "degraded" if failed_jobs else "healthy"}
 
 
+@router.get("/ops-dashboard/export")
+def export_operations_dashboard(window_minutes: int = Query(default=60, ge=1, le=10080), db: Session = Depends(get_db)):
+    data = operations_dashboard(window_minutes=window_minutes, db=db)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["metric", "value"])
+    for key in ("window_minutes", "answer_count", "average_quality", "average_duration_seconds", "failed_retry_jobs", "health"):
+        writer.writerow([key, data.get(key)])
+    for source, value in data.get("by_source", {}).items():
+        writer.writerow([f"source.{source}.count", value.get("count")])
+        writer.writerow([f"source.{source}.average_quality", value.get("average_quality")])
+        writer.writerow([f"source.{source}.average_duration_seconds", value.get("average_duration_seconds")])
+    for provider, value in data.get("provider_failure_rates", {}).items():
+        writer.writerow([f"provider.{provider}.failure_rate", value.get("failure_rate")])
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv; charset=utf-8",
+                             headers={"Content-Disposition": "attachment; filename=ai-operations-dashboard.csv"})
+
+
 
 
 class AskRequest(BaseModel):
