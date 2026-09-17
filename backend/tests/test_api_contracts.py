@@ -71,6 +71,19 @@ class APIContractTests(unittest.TestCase):
         _stream_results.pop("test-task-status", None)
         persisted = self.client.get("/ai/tasks/test-task-status")
         self.assertEqual(persisted.json()["status"], "generating")
+        from app.database import SessionLocal
+        from app.models.ai_task_status import AITaskStatus
+        db = SessionLocal()
+        stored = db.query(AITaskStatus).filter(AITaskStatus.request_id == "test-task-status").first()
+        if stored is None:
+            stored = AITaskStatus(request_id="test-task-status", question="测试", status="succeeded", stage="完成", result_json='{"answer":"持久化答案"}')
+            db.add(stored)
+        else:
+            stored.status, stored.stage, stored.result_json = "succeeded", "完成", '{"answer":"持久化答案"}'
+        db.commit()
+        db.close()
+        persisted_result = self.client.get("/ai/tasks/test-task-status")
+        self.assertEqual(persisted_result.json()["result"]["answer"], "持久化答案")
         missing = self.client.get("/ai/tasks/not-found-task")
         self.assertEqual(missing.status_code, 404)
         listing = self.client.get("/ai/tasks?offset=0&limit=5")
@@ -78,8 +91,6 @@ class APIContractTests(unittest.TestCase):
         self.assertIn("items", listing.json())
         cleanup = self.client.post("/ai/tasks/cleanup?older_than_days=3650")
         self.assertEqual(cleanup.status_code, 200)
-        from app.database import SessionLocal
-        from app.models.ai_task_status import AITaskStatus
         db = SessionLocal()
         db.query(AITaskStatus).filter(AITaskStatus.request_id == "test-task-conflict").delete(synchronize_session=False)
         db.add(AITaskStatus(request_id="test-task-conflict", question="测试问题", status="generating", stage="生成中"))

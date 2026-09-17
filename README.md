@@ -56,7 +56,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 前端知识图谱区域会展示这些指标，并每 30 秒自动刷新。
 首 token 超过 3 秒或平均响应超过 20 秒时，监控面板会显示慢请求告警。
 每次问答响应都包含 `request_id`，后端耗时日志使用同一 ID，便于端到端排查。
-`GET /ai/tasks/{request_id}` 可查询问答实时状态和最终日志；状态包括 `queued`、`retrieving`、`generating`、`degraded`、`succeeded`、`failed`、`cancelled`，适合前端在流式连接中断后恢复展示。状态同时持久化到 `ai_task_statuses`，后端重启或页面刷新后仍可查询最近任务阶段。
+`GET /ai/tasks/{request_id}` 可查询问答实时状态和最终日志；状态包括 `queued`、`retrieving`、`generating`、`degraded`、`succeeded`、`failed`、`cancelled`，适合前端在流式连接中断后恢复展示。状态和最终结果快照同时持久化到 `ai_task_statuses`，后端重启或页面刷新后仍可查询阶段，并恢复答案、知识点和知识图谱。
 `GET /ai/tasks?status=...&offset=...&limit=...` 支持任务历史分页；管理员可调用 `POST /ai/tasks/cleanup?older_than_days=30` 清理保留期以前的已结束任务，不会删除进行中的任务。
 `GET /ai/requests/{request_id}` 可查询本地请求成功记录、耗时和错误信息；`GET /ai/requests` 支持按 `status`、`since`、`until` 筛选最近日志，`GET /ai/requests/export` 可导出 CSV（最多 5000 条），便于分析慢请求趋势。
 

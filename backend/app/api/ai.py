@@ -98,7 +98,7 @@ def check_request_cancelled(cancel_event):
         raise RequestCancelledError("客户端已断开，已取消本次问答收尾。")
 
 
-def set_task_status(request_id: str | None, status: str, stage: str, detail: str | None = None, db: Session | None = None, question: str = ""):
+def set_task_status(request_id: str | None, status: str, stage: str, detail: str | None = None, db: Session | None = None, question: str = "", result: dict | None = None):
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     if not request_id:
         return
@@ -117,6 +117,8 @@ def set_task_status(request_id: str | None, status: str, stage: str, detail: str
             db.add(item)
         else:
             item.status, item.stage, item.detail, item.updated_at = status, stage, detail, now
+        if result is not None:
+            item.result_json = json.dumps(result, ensure_ascii=False)
         db.commit()
 
 
@@ -482,6 +484,11 @@ def task_status(request_id: str, db: Session = Depends(get_db)):
         live.update({"request_id": persisted.request_id, "status": persisted.status, "stage": persisted.stage,
                      "detail": persisted.detail, "question": persisted.question,
                      "updated_at": persisted.updated_at.isoformat() if persisted.updated_at else live.get("updated_at")})
+        if persisted.result_json:
+            try:
+                live["result"] = json.loads(persisted.result_json)
+            except json.JSONDecodeError:
+                pass
     log = db.query(AIRequestLog).filter(AIRequestLog.request_id == request_id).order_by(AIRequestLog.id.desc()).first()
     if log:
         live.update({
@@ -2291,7 +2298,7 @@ def _ask_impl(
         cached = dict(cached)
         cached["request_id"] = request_id
         cached["cache_hit"] = True
-        set_task_status(request_id, "succeeded", "缓存命中", db=db, question=question)
+        set_task_status(request_id, "succeeded", "缓存命中", db=db, question=question, result=cached)
         return cached
 
     # ========================================================
@@ -2733,7 +2740,7 @@ def _ask_impl(
     db.commit()
     db.refresh(answer_record)
     result["answer_id"] = answer_record.id
-    set_task_status(request_id, "succeeded", "回答完成", db=db, question=question)
+    set_task_status(request_id, "succeeded", "回答完成", db=db, question=question, result=result)
     return result
 
 

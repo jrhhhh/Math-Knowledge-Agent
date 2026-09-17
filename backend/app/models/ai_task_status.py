@@ -14,4 +14,5 @@ class AITaskStatus(Base):
     status = Column(String, nullable=False, index=True)
     stage = Column(String, nullable=False)
     detail = Column(Text, nullable=True)
+    result_json = Column(Text, nullable=True)
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
