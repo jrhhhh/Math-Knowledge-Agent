@@ -22,3 +22,17 @@ groups:
           severity: warning
         annotations:
           summary: Math Agent 重试队列堆积
+      - alert: MathAgentBackupFailed
+        expr: increase(math_agent_backups_failed_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Math Agent 数据库备份失败
+      - alert: MathAgentBackupStale
+        expr: math_agent_last_backup_timestamp == 0 or time() - math_agent_last_backup_timestamp > 86400
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: Math Agent 超过 24 小时未完成备份
