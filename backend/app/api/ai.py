@@ -1290,6 +1290,7 @@ def graph_candidate_stats(db: Session = Depends(get_db)):
 def batch_validate_graph_candidates(
     request: GraphCandidateBatchRequest,
     db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
 ):
     """批量执行候选图谱校验，单条失败不会阻断其余候选。"""
     candidate_ids = list(dict.fromkeys(request.candidate_ids))[:50]
@@ -1314,6 +1315,7 @@ def batch_validate_graph_candidates(
 def batch_save_preview(
     request: GraphCandidateBatchRequest,
     db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
 ):
     """预览批量保存将新增、替换或跳过的概念和关系。"""
     candidate_ids = list(dict.fromkeys(request.candidate_ids))[:50]
@@ -1397,6 +1399,7 @@ def update_graph_candidate(
     candidate_id: int,
     request: GraphCandidateUpdateRequest,
     db: Session = Depends(get_db),
+    _: bool = Depends(require_admin),
 ):
     """保存审核者对候选图谱的修改，并强制重新校验。"""
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
@@ -1465,7 +1468,7 @@ def update_graph_candidate(
 
 
 @router.post("/graph-candidates/{candidate_id}/validate")
-def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
+def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
     if candidate is None:
         raise HTTPException(status_code=404, detail="候选图谱不存在。")
@@ -1555,7 +1558,7 @@ confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例�
 
 
 @router.post("/graph-candidates/{candidate_id}/save")
-def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
+def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
     if candidate is None:
         raise HTTPException(status_code=404, detail="候选图谱不存在。")

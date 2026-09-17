@@ -177,7 +177,7 @@ def template_stats(db: Session = Depends(get_db)):
 
 
 @router.post("", status_code=201)
-def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
+def create_template(request: TemplateRequest, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     validate_answer_content(request.answer)
     try: re.compile(request.pattern)
     except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
@@ -211,7 +211,7 @@ def export_templates(db: Session = Depends(get_db)):
 
 
 @router.post("/import")
-def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
+def import_templates(request: TemplateImport, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     created = updated = 0
     for incoming in request.items:
         validate_answer_content(incoming.answer)
@@ -229,7 +229,7 @@ def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
 
 
 @router.put("/{template_id}")
-def update_template(template_id: str, request: TemplateUpdate, db: Session = Depends(get_db)):
+def update_template(template_id: str, request: TemplateUpdate, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
@@ -246,7 +246,7 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
 
 
 @router.post("/{template_id}/review")
-def review_template(template_id: str, status: str = Query(..., pattern="^(approved|rejected|pending)$"), db: Session = Depends(get_db)):
+def review_template(template_id: str, status: str = Query(..., pattern="^(approved|rejected|pending)$"), db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None: raise HTTPException(status_code=404, detail="模板不存在。")
     item.review_status = status
@@ -255,7 +255,7 @@ def review_template(template_id: str, status: str = Query(..., pattern="^(approv
 
 
 @router.delete("/{template_id}")
-def delete_template(template_id: str, db: Session = Depends(get_db)):
+def delete_template(template_id: str, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
@@ -270,7 +270,7 @@ def template_events(template_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{template_id}/rollback/{event_id}")
-def rollback_template(template_id: str, event_id: int, db: Session = Depends(get_db)):
+def rollback_template(template_id: str, event_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
     event = db.query(LocalTemplateEvent).filter(LocalTemplateEvent.id == event_id, LocalTemplateEvent.template_id == template_id).first()
     if event is None or not event.snapshot:
         raise HTTPException(status_code=404, detail="没有可回滚的模板快照。")
