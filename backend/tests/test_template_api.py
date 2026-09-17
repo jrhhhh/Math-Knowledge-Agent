@@ -18,6 +18,8 @@ class TemplateAPIContractTests(unittest.TestCase):
         self.assertEqual(invalid.status_code, 422)
         invalid_pattern = self.client.post("/local-templates", json={"template_id": "bad-pattern", "pattern": "[", "answer": "x"})
         self.assertEqual(invalid_pattern.status_code, 422)
+        invalid_content = self.client.post("/local-templates", json={"template_id": "bad-content", "pattern": "x", "answer": "<script>alert(1)</script>"})
+        self.assertEqual(invalid_content.status_code, 422)
 
     def test_template_preview_contract(self):
         response = self.client.post("/local-templates/preview", json={"question": "不存在的模板问题"})

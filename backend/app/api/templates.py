@@ -14,13 +14,13 @@ router = APIRouter(prefix="/local-templates", tags=["Local answer templates"])
 class TemplateRequest(BaseModel):
     template_id: str = Field(min_length=1, max_length=100)
     pattern: str = Field(min_length=1, max_length=500)
-    answer: str = Field(min_length=1)
+    answer: str = Field(min_length=1, max_length=20000)
     enabled: bool = True
 
 
 class TemplateUpdate(BaseModel):
     pattern: str | None = Field(default=None, min_length=1, max_length=500)
-    answer: str | None = Field(default=None, min_length=1)
+    answer: str | None = Field(default=None, min_length=1, max_length=20000)
     enabled: bool | None = None
 
 
@@ -41,6 +41,10 @@ def audit(db, template_id, action, detail="", snapshot=None):
 def snapshot_of(item):
     return {"template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled}
 
+def validate_answer_content(answer: str):
+    if re.search(r"<\s*/?\s*script\b|javascript\s*:", answer, re.I):
+        raise HTTPException(status_code=422, detail="模板答案包含不允许的脚本内容。")
+
 
 @router.get("")
 def list_templates(enabled: bool | None = Query(default=None), db: Session = Depends(get_db)):
@@ -53,6 +57,7 @@ def list_templates(enabled: bool | None = Query(default=None), db: Session = Dep
 
 @router.post("", status_code=201)
 def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
+    validate_answer_content(request.answer)
     try: re.compile(request.pattern)
     except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
     if db.query(LocalTemplate).filter(LocalTemplate.template_id == request.template_id).first():
@@ -87,6 +92,7 @@ def export_templates(db: Session = Depends(get_db)):
 def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
     created = updated = 0
     for incoming in request.items:
+        validate_answer_content(incoming.answer)
         try: re.compile(incoming.pattern)
         except re.error as exc: raise HTTPException(status_code=422, detail=f"模板 {incoming.template_id} 的正则无效：{exc}") from exc
         item = db.query(LocalTemplate).filter(LocalTemplate.template_id == incoming.template_id).first()
@@ -108,6 +114,8 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
     if request.pattern is not None:
         try: re.compile(request.pattern)
         except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
+    if request.answer is not None:
+        validate_answer_content(request.answer)
     before = snapshot_of(item)
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
