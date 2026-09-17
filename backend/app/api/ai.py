@@ -7,6 +7,8 @@ import csv
 import io
 import hashlib
 import re
+import os
+import hmac
 from uuid import uuid4
 import time
 from datetime import datetime, timedelta, timezone
@@ -53,7 +55,7 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
-from app.security import require_admin
+from app.security import require_admin, issue_admin_token
 
 
 router = APIRouter(
@@ -140,6 +142,16 @@ def get_db():
 class FeedbackRequest(BaseModel):
     rating: int
     feedback: str | None = None
+
+class AdminLoginRequest(BaseModel):
+    key: str
+
+@router.post("/auth/login")
+def admin_login(request: AdminLoginRequest):
+    configured = os.getenv("MATH_AGENT_ADMIN_KEY", "").strip()
+    if not configured or not hmac.compare_digest(request.key, configured):
+        raise HTTPException(status_code=401, detail="管理员密钥无效。")
+    return {"access_token": issue_admin_token(configured), "token_type": "bearer", "expires_in": 3600}
 
 class ReviewRequest(BaseModel):
     status: str

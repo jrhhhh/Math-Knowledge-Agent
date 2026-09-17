@@ -52,6 +52,15 @@ class AnswerRecordContractTests(unittest.TestCase):
             denied = self.client.post("/ai/answers/999999/review", json={"status": "fixed"})
             self.assertEqual(denied.status_code, 403)
 
+    def test_admin_login_returns_bearer_token(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"MATH_AGENT_ADMIN_KEY": "test-secret"}):
+            invalid = self.client.post("/ai/auth/login", json={"key": "bad"})
+            self.assertEqual(invalid.status_code, 401)
+            valid = self.client.post("/ai/auth/login", json={"key": "test-secret"})
+            self.assertEqual(valid.status_code, 200)
+            self.assertEqual(valid.json()["token_type"], "bearer")
+
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})
         self.assertEqual(invalid.status_code, 422)
