@@ -74,9 +74,9 @@ def cancel_job(job_id: str):
 
 
 def _run(job_id: str):
-    from app.api.ai import get_related_graph
+    from app.api.ai import get_related_graph, _ask_impl
     from app.database import SessionLocal
-    from app.api.ai import RelatedGraphRequest
+    from app.api.ai import RelatedGraphRequest, AskRequest
 
     with _lock:
         job = _jobs.get(job_id)
@@ -97,11 +97,15 @@ def _run(job_id: str):
         _last_attempt = time.monotonic()
         db = SessionLocal()
         try:
-            if job["operation"] != "related_graph":
+            if job["operation"] == "answer":
+                result = _ask_impl(AskRequest(question=job["question"]), db, request_id=f"retry-{job_id}")
+            elif job["operation"] == "related_graph":
+                result = get_related_graph(RelatedGraphRequest(question=job["question"]), db)
+            else:
                 raise ValueError("不支持的重试操作")
-            result = get_related_graph(RelatedGraphRequest(question=job["question"]), db)
             job["status"] = "succeeded"
-            job["result"] = {"candidate_id": result.get("candidate_id"), "knowledge_graph": result.get("knowledge_graph")}
+            job["result"] = {"answer": result.get("answer"), "answer_quality": result.get("answer_quality"),
+                              "candidate_id": result.get("candidate_id"), "knowledge_graph": result.get("knowledge_graph")}
             job["error"] = None
             break
         except Exception as exc:

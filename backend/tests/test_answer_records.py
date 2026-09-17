@@ -29,5 +29,10 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertIn("formula_valid", body)
         self.assertEqual(body["missing_points"], [])
 
+    def test_answer_retry_queue_contract(self):
+        response = self.client.post("/ai/retry-queue", json={"operation": "answer", "question": "证明连续函数有界", "priority": 0})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["operation"], "answer")
+
 if __name__ == "__main__":
     unittest.main()

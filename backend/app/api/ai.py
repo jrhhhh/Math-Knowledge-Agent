@@ -287,8 +287,8 @@ def log_request_failure(db: Session, request_id: str, question: str, started_at:
 
 @router.post("/retry-queue")
 def create_retry_job(request: RetryRequest):
-    if request.operation != "related_graph" or not request.question.strip() or request.priority not in {0, 10}:
-        raise HTTPException(status_code=422, detail="仅支持对非空问题重试相关知识图谱。")
+    if request.operation not in {"related_graph", "answer"} or not request.question.strip() or request.priority not in {0, 10}:
+        raise HTTPException(status_code=422, detail="仅支持对非空问题重试回答或相关知识图谱。")
     return enqueue(request.operation, request.question.strip(), priority=request.priority)
 
 
@@ -2298,6 +2298,8 @@ def _ask_impl(
     result["cache_hit"] = False
     _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
     quality = result["answer_quality"]
+    if quality.get("score", 1.0) < 0.75 and not (request_id or "").startswith("retry-"):
+        result["quality_retry_job"] = enqueue("answer", question, max_attempts=2, priority=5)
     db.add(AnswerRecord(request_id=request_id or "unknown", question=question, answer=answer,
                         answer_source=answer_source, quality_score=quality.get("score"),
                         duration_seconds=round(time.perf_counter() - started_at, 3)))
