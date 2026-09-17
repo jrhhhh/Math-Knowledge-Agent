@@ -28,6 +28,23 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertIn("detail", response.json())
 
+    def test_request_log_list_contract(self):
+        response = self.client.get("/ai/requests?limit=2")
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("items", payload)
+        self.assertEqual(payload["limit"], 2)
+
+    def test_request_log_filters_and_export_contract(self):
+        invalid_status = self.client.get("/ai/requests?status=unknown")
+        self.assertEqual(invalid_status.status_code, 400)
+        invalid_time = self.client.get("/ai/requests?since=not-a-date")
+        self.assertEqual(invalid_time.status_code, 400)
+        export = self.client.get("/ai/requests/export?status=failed")
+        self.assertEqual(export.status_code, 200)
+        self.assertIn("text/csv", export.headers.get("content-type", ""))
+        self.assertIn("request_id,question,status", export.text)
+
     def test_stream_error_event_contract(self):
         response = self.client.post("/ai/ask-stream", json={"question": ""})
         self.assertEqual(response.status_code, 200)
