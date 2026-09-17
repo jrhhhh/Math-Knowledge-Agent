@@ -1,4 +1,5 @@
 import json
+import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -52,6 +53,8 @@ def list_templates(enabled: bool | None = Query(default=None), db: Session = Dep
 
 @router.post("", status_code=201)
 def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
+    try: re.compile(request.pattern)
+    except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
     if db.query(LocalTemplate).filter(LocalTemplate.template_id == request.template_id).first():
         raise HTTPException(status_code=409, detail="模板 ID 已存在。")
     item = LocalTemplate(**request.model_dump())
@@ -84,6 +87,8 @@ def export_templates(db: Session = Depends(get_db)):
 def import_templates(request: TemplateImport, db: Session = Depends(get_db)):
     created = updated = 0
     for incoming in request.items:
+        try: re.compile(incoming.pattern)
+        except re.error as exc: raise HTTPException(status_code=422, detail=f"模板 {incoming.template_id} 的正则无效：{exc}") from exc
         item = db.query(LocalTemplate).filter(LocalTemplate.template_id == incoming.template_id).first()
         if item is None:
             item = LocalTemplate(**incoming.model_dump()); db.add(item); audit(db, incoming.template_id, "imported"); created += 1
@@ -100,6 +105,9 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
+    if request.pattern is not None:
+        try: re.compile(request.pattern)
+        except re.error as exc: raise HTTPException(status_code=422, detail=f"匹配正则无效：{exc}") from exc
     before = snapshot_of(item)
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
