@@ -120,6 +120,7 @@ Backend
 - `POST /ai/graph-candidates/batch-save-preview`：预览批量保存将新增、替换和跳过的内容
 - `POST /ai/graph-candidates/batch-save`：批量幂等保存已通过校验的候选图谱
 - `GET /ai/graph-candidates/{candidate_id}`：查看候选图谱及校验状态
+- `GET /ai/graph-candidates/{candidate_id}/events`：查看候选图谱生成、编辑、校验和保存时间线
 - `PUT /ai/graph-candidates/{candidate_id}`：审核者修改候选图谱；修改后自动回到 `pending`
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库

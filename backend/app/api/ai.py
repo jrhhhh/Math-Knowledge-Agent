@@ -20,6 +20,7 @@ from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
+from app.models.graph_candidate_event import GraphCandidateEvent
 
 from app.ai.analyzer import client
 from app.ai.concept_matcher import (
@@ -51,6 +52,10 @@ class GraphCandidateUpdateRequest(BaseModel):
 
 class GraphCandidateBatchRequest(BaseModel):
     candidate_ids: list[int]
+
+
+def record_candidate_event(db: Session, candidate_id: int, action: str, detail: dict | None = None):
+    db.add(GraphCandidateEvent(candidate_id=candidate_id, action=action, detail_json=json.dumps(detail or {}, ensure_ascii=False)))
 
 
 class ProofAnalyzeRequest(BaseModel):
@@ -812,6 +817,8 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
     )
     db.add(candidate)
     db.commit()
+    record_candidate_event(db, candidate.id, "generated", {"node_count": len(nodes), "edge_count": len(edges)})
+    db.commit()
     db.refresh(candidate)
 
     return graph_candidate_response(
@@ -944,6 +951,15 @@ def batch_save_graph_candidates(
     return {"results": results, "summary": summary}
 
 
+@router.get("/graph-candidates/{candidate_id}/events")
+def get_graph_candidate_events(candidate_id: int, db: Session = Depends(get_db)):
+    candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    events = db.query(GraphCandidateEvent).filter(GraphCandidateEvent.candidate_id == candidate_id).order_by(GraphCandidateEvent.created_at.asc(), GraphCandidateEvent.id.asc()).all()
+    return {"candidate_id": candidate_id, "events": [{"id": event.id, "action": event.action, "detail": json.loads(event.detail_json or "{}"), "created_at": event.created_at.isoformat() if event.created_at else None} for event in events]}
+
+
 @router.get("/graph-candidates/{candidate_id}")
 def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
@@ -1021,6 +1037,7 @@ def update_graph_candidate(
     candidate.graph_json = json.dumps({"nodes": clean_nodes, "edges": clean_edges}, ensure_ascii=False)
     candidate.validation_json = json.dumps({"valid": False, "reason": "图谱已修改，需要重新进行 AI 语义校验。"}, ensure_ascii=False)
     candidate.status = "pending"
+    record_candidate_event(db, candidate.id, "edited", {"node_count": len(clean_nodes), "edge_count": len(clean_edges)})
     db.commit()
     return {
         "candidate_id": candidate.id,
@@ -1061,11 +1078,13 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
             print("[AI] graph semantic validation failed:", repr(exc))
             candidate.validation_json = json.dumps({**validation, "semantic_valid": False, "confidence": 0.0, "semantic_issues": ["AI 语义校验未完成，请重试"]}, ensure_ascii=False)
             candidate.status = "needs_review"
+            record_candidate_event(db, candidate.id, "validation_failed", {"error": str(exc.detail)})
             db.commit()
             raise HTTPException(status_code=503, detail="AI 数学语义校验暂时不可用，请稍后重试。") from exc
 
     candidate.validation_json = json.dumps(validation, ensure_ascii=False)
     candidate.status = "validated" if validation["valid"] else "rejected"
+    record_candidate_event(db, candidate.id, "validated" if validation["valid"] else "rejected", validation)
     db.commit()
     return {"candidate_id": candidate.id, "status": candidate.status, "validation": validation}
 
@@ -1168,6 +1187,7 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         db.add(ConceptRelation(source_concept_id=source_id, target_concept_id=target_id, relation=relation, weight=weight))
         created_relations += 1
     candidate.status = "saved"
+    record_candidate_event(db, candidate.id, "saved", {"created_concepts": created_concepts, "created_relations": created_relations})
     db.commit()
     return {"candidate_id": candidate.id, "status": candidate.status, "created_concepts": created_concepts, "created_relations": created_relations}
 

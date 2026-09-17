@@ -12,6 +12,7 @@ from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
+from app.models.graph_candidate_event import GraphCandidateEvent
 
 
 from app.api.concepts import router

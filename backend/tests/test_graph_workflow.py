@@ -10,6 +10,7 @@ from app.api.ai import (
     GraphCandidateUpdateRequest,
     RelatedGraphRequest,
     generate_ai_related_graph,
+    get_graph_candidate_events,
     get_related_graph,
     save_graph_candidate,
     update_graph_candidate,
@@ -76,6 +77,8 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertEqual(first["created_relations"], 2)
         self.assertEqual(second["created_concepts"], 0)
         self.assertEqual(second["created_relations"], 0)
+        events = get_graph_candidate_events(generated["candidate_id"], self.db)["events"]
+        self.assertEqual([event["action"] for event in events], ["generated", "validated", "saved"])
 
     def test_low_confidence_candidate_cannot_be_saved(self):
         semantic = {"valid": True, "confidence": 0.61, "issues": ["方向不确定"], "invalid_edges": []}
