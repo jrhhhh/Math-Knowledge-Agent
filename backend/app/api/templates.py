@@ -147,7 +147,7 @@ def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
     if db.query(LocalTemplate).filter(LocalTemplate.template_id == request.template_id).first():
         raise HTTPException(status_code=409, detail="模板 ID 已存在。")
     item = LocalTemplate(**request.model_dump(), review_status="pending")
-    db.add(item); audit(db, request.template_id, "created"); db.commit(); db.refresh(item)
+    db.add(item); audit(db, request.template_id, "created"); admin_audit(db, "template_created", request.template_id); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -204,7 +204,7 @@ def update_template(template_id: str, request: TemplateUpdate, db: Session = Dep
     before = snapshot_of(item)
     for key, value in request.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
-    audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys()), before); db.commit(); db.refresh(item)
+    audit(db, template_id, "updated", ",".join(request.model_dump(exclude_unset=True).keys()), before); admin_audit(db, "template_updated", template_id); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -213,7 +213,7 @@ def review_template(template_id: str, status: str = Query(..., pattern="^(approv
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None: raise HTTPException(status_code=404, detail="模板不存在。")
     item.review_status = status
-    audit(db, template_id, "reviewed", status); db.commit(); db.refresh(item)
+    audit(db, template_id, "reviewed", status); admin_audit(db, "template_reviewed", f"{template_id}:{status}"); db.commit(); db.refresh(item)
     return serialize(item)
 
 
@@ -222,7 +222,7 @@ def delete_template(template_id: str, db: Session = Depends(get_db)):
     item = db.query(LocalTemplate).filter(LocalTemplate.template_id == template_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="模板不存在。")
-    db.delete(item); audit(db, template_id, "deleted", snapshot=snapshot_of(item)); db.commit()
+    db.delete(item); audit(db, template_id, "deleted", snapshot=snapshot_of(item)); admin_audit(db, "template_deleted", template_id); db.commit()
     return {"deleted": True, "template_id": template_id}
 
 
@@ -244,6 +244,6 @@ def rollback_template(template_id: str, event_id: int, db: Session = Depends(get
     else:
         before = snapshot_of(item)
         item.pattern, item.answer, item.enabled = data["pattern"], data["answer"], data["enabled"]
-        audit(db, template_id, "rollback", f"from_event={event_id}", before)
+        audit(db, template_id, "rollback", f"from_event={event_id}", before); admin_audit(db, "template_rollback", f"{template_id}:{event_id}")
     db.commit(); db.refresh(item)
     return serialize(item)
