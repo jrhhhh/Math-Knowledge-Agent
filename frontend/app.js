@@ -250,6 +250,17 @@ ensureBatchAuditButton();
 loadGraph();
 loadCandidateStats();
 loadCandidateHistory();
+const loadRetryAlertsBase = loadRetryAlerts;
+loadRetryAlerts = async function () {
+  await loadRetryAlertsBase();
+  try {
+    const data = await (await fetch(`${API}/ai/retry-alerts?window_minutes=60`)).json();
+    const panel = $('retryAlerts');
+    const rates = Object.entries(data.provider_failure_rates || {}).map(([name, value]) => `${name} 失败率 ${value.failure_rate == null ? '—' : `${Math.round(value.failure_rate * 100)}%`}`).join(' · ');
+    const trend = (data.trend_by_hour || []).slice(-4).map(item => `${escapeHtml(item.hour.slice(11, 16))} ${item.failed_count}`).join(' · ');
+    if (panel && (rates || trend)) panel.querySelector('.retry-alert-info').insertAdjacentHTML('beforeend', `<small class="retry-analytics">供应商：${escapeHtml(rates || '暂无调用')} ${trend ? ` · 每小时失败：${trend}` : ''}</small>`);
+  } catch (error) { /* 基础告警已渲染 */ }
+};
 loadRetryJobs();
 loadRetryAlerts();
 loadCacheStatus();

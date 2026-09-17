@@ -649,7 +649,21 @@ def list_retry_jobs(limit: int = Query(default=20, ge=1, le=100), db: Session = 
 def retry_alerts(window_minutes: int = Query(default=60, ge=1, le=10080), db: Session = Depends(get_db)):
     cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=window_minutes)
     jobs = db.query(AIRetryJob).filter(AIRetryJob.status == "failed", AIRetryJob.updated_at >= cutoff).order_by(AIRetryJob.updated_at.desc()).limit(20).all()
+    trend = {}
+    for job in jobs:
+        if job.updated_at:
+            bucket = job.updated_at.replace(minute=0, second=0, microsecond=0).isoformat()
+            trend[bucket] = trend.get(bucket, 0) + 1
+    provider_stats = snapshot().get("providers", {})
+    provider_failure_rates = {}
+    for name, value in provider_stats.items():
+        total = (value.get("successes") or 0) + (value.get("failures") or 0)
+        provider_failure_rates[name] = {"successes": value.get("successes", 0), "failures": value.get("failures", 0),
+                                        "failure_rate": round(value.get("failures", 0) / total, 4) if total else None,
+                                        "state": value.get("state", "unknown")}
     return {"window_minutes": window_minutes, "alert": bool(jobs), "failed_count": len(jobs),
+            "trend_by_hour": [{"hour": hour, "failed_count": count} for hour, count in sorted(trend.items())],
+            "provider_failure_rates": provider_failure_rates,
             "items": [{"id": job.id, "question": job.question, "attempts": job.attempts,
                        "max_attempts": job.max_attempts, "error": job.error,
                        "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
