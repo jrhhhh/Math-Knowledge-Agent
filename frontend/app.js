@@ -159,3 +159,20 @@ loadCacheStatus();
 loadHealthMetrics();
 ensureTracePanel();
 setInterval(loadHealthMetrics, 30000);
+
+// 统一将本次问答的追踪 ID 放入查询面板，便于故障后立即定位。
+const originalAsk = ask;
+const originalRequestAskStream = requestAskStream;
+requestAskStream = async function (...args) {
+  const result = await originalRequestAskStream(...args);
+  if (result?.request_id) $('answer').dataset.requestId = result.request_id;
+  return result;
+};
+ask = async function (event) {
+  await originalAsk(event);
+  const answer = $('answer');
+  const requestId = answer.dataset.requestId;
+  if (requestId && $('traceRequestId')) $('traceRequestId').value = requestId;
+};
+$('askForm').removeEventListener('submit', originalAsk);
+$('askForm').addEventListener('submit', ask);
