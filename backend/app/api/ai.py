@@ -44,12 +44,15 @@ router = APIRouter(
 _answer_cache = {}
 _ANSWER_CACHE_TTL = 300
 _knowledge_version = 0
+_cache_metrics = {"hits": 0, "misses": 0}
 
 
 def cached_answer(question: str):
     entry = _answer_cache.get(question.casefold())
     if entry and entry["version"] == _knowledge_version and time.monotonic() - entry["at"] < _ANSWER_CACHE_TTL:
+        _cache_metrics["hits"] += 1
         return entry["value"]
+    _cache_metrics["misses"] += 1
     if entry:
         _answer_cache.pop(question.casefold(), None)
     return None
@@ -58,6 +61,25 @@ def cached_answer(question: str):
 def invalidate_answer_cache():
     global _knowledge_version
     _knowledge_version += 1
+
+
+@router.get("/cache")
+def cache_status():
+    total = _cache_metrics["hits"] + _cache_metrics["misses"]
+    return {"entries": len(_answer_cache), "ttl_seconds": _ANSWER_CACHE_TTL, "knowledge_version": _knowledge_version, "hits": _cache_metrics["hits"], "misses": _cache_metrics["misses"], "hit_rate": round(_cache_metrics["hits"] / total, 4) if total else None}
+
+
+@router.delete("/cache")
+def clear_answer_cache():
+    _answer_cache.clear()
+    invalidate_answer_cache()
+    return {"cleared": True, "entries": 0, "knowledge_version": _knowledge_version}
+
+
+@router.delete("/cache/{question}")
+def invalidate_question_cache(question: str):
+    removed = _answer_cache.pop(question.casefold(), None) is not None
+    return {"question": question, "removed": removed}
 
 
 def get_db():
