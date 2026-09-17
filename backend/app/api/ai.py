@@ -36,6 +36,7 @@ from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 from app.models.question_sample import QuestionSample
 from app.models.answer_record import AnswerRecord, AnswerFeedback
+from app.models.answer_review import AnswerReview
 
 from app.ai.analyzer import client, backup_client, backup_model
 from app.ai.concept_matcher import (
@@ -138,6 +139,10 @@ class FeedbackRequest(BaseModel):
     rating: int
     feedback: str | None = None
 
+class ReviewRequest(BaseModel):
+    status: str
+    note: str | None = None
+
 
 class EvaluateRequest(BaseModel):
     question: str
@@ -217,9 +222,38 @@ def submit_answer_feedback(answer_id: int, request: FeedbackRequest, db: Session
         raise HTTPException(status_code=404, detail="回答记录不存在。")
     item = AnswerFeedback(answer_id=answer_id, rating=request.rating, feedback=request.feedback)
     db.add(item)
+    if request.rating <= 2 and db.query(AnswerReview).filter(AnswerReview.answer_id == answer_id, AnswerReview.status == "pending").first() is None:
+        db.add(AnswerReview(answer_id=answer_id, note="用户评分较低，建议人工核对。"))
     db.commit()
     db.refresh(item)
     return {"id": item.id, "answer_id": item.answer_id, "rating": item.rating, "feedback": item.feedback}
+
+
+@router.get("/reviews")
+def list_answer_reviews(status: str = Query(default="pending"), limit: int = Query(default=50, ge=1, le=200), db: Session = Depends(get_db)):
+    query = db.query(AnswerReview).order_by(AnswerReview.created_at.desc())
+    if status != "all":
+        query = query.filter(AnswerReview.status == status)
+    items = query.limit(limit).all()
+    return {"items": [{"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note,
+                       "created_at": item.created_at.isoformat(), "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None}
+                      for item in items], "total": len(items)}
+
+
+@router.post("/answers/{answer_id}/review")
+def review_answer(answer_id: int, request: ReviewRequest, db: Session = Depends(get_db)):
+    if request.status not in {"pending", "fixed", "false_positive"}:
+        raise HTTPException(status_code=422, detail="status 必须是 pending、fixed 或 false_positive。")
+    if db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first() is None:
+        raise HTTPException(status_code=404, detail="回答记录不存在。")
+    item = db.query(AnswerReview).filter(AnswerReview.answer_id == answer_id, AnswerReview.status == "pending").order_by(AnswerReview.id.desc()).first()
+    if item is None:
+        item = AnswerReview(answer_id=answer_id)
+        db.add(item)
+    item.status, item.note = request.status, request.note
+    item.reviewed_at = datetime.now(timezone.utc).replace(tzinfo=None) if request.status != "pending" else None
+    db.commit()
+    return {"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note}
 
 
 @router.post("/evaluate")
@@ -2358,6 +2392,9 @@ def _ask_impl(
                                  answer_source=answer_source, quality_score=quality.get("score"),
                                  duration_seconds=round(time.perf_counter() - started_at, 3))
     db.add(answer_record)
+    db.flush()
+    if (quality.get("score") or 0.0) < 0.5:
+        db.add(AnswerReview(answer_id=answer_record.id, note="自动质量评估为低质量，建议人工核对。"))
     db.add(AIRequestLog(request_id=request_id or "unknown", question=question, status="succeeded", duration_seconds=round(time.perf_counter() - started_at, 3)))
     db.commit()
     db.refresh(answer_record)
