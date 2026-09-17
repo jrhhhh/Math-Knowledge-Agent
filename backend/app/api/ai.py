@@ -42,6 +42,7 @@ from app.ai.concept_matcher import (
 )
 from app.ai.telemetry import record_request, snapshot
 from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
+from app.ai.local_fallback import local_math_answer
 
 
 router = APIRouter(
@@ -2115,10 +2116,9 @@ def _ask_impl(
             print("[Timing] extended answer: %.2fs" % (time.perf_counter() - started_at))
         except Exception as retry_exc:
             print("[AI] extended answer generation failed:", repr(retry_exc))
-            raise HTTPException(
-                status_code=503,
-                detail="DeepSeek 在较长回答时间内仍未返回结果，请稍后重试。",
-            )
+            answer = local_math_answer(question)
+            answer_source = "local_fallback"
+            print("[AI] using deterministic local fallback")
 
     # ========================================================
     # 8. 返回完整结果
