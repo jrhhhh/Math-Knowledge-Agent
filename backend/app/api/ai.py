@@ -171,6 +171,22 @@ def security_events(event: str | None = None, ip: str | None = None, limit: int 
     return {"items": [{"id": item.id, "event": item.event, "ip_address": item.ip_address,
                        "path": item.path, "detail": item.detail, "created_at": item.created_at.isoformat()} for item in items], "total": len(items)}
 
+@router.get("/security-alerts")
+def security_alerts(db: Session = Depends(get_db)):
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=10)
+    recent = db.query(SecurityEvent).filter(SecurityEvent.created_at >= cutoff).all()
+    counts = {}
+    by_ip = {}
+    for item in recent:
+        counts[item.event] = counts.get(item.event, 0) + 1
+        if item.ip_address and item.event in {"login_failed", "login_rate_limited", "admin_denied"}:
+            by_ip[item.ip_address] = by_ip.get(item.ip_address, 0) + 1
+    alerts = [{"severity": "high", "type": "ip_abuse", "ip_address": ip, "count": count,
+               "message": "该 IP 最近 10 分钟出现多次管理安全事件。"} for ip, count in by_ip.items() if count >= 3]
+    if counts.get("login_rate_limited", 0):
+        alerts.append({"severity": "high", "type": "login_rate_limit", "count": counts["login_rate_limited"], "message": "检测到登录限流事件。"})
+    return {"window_minutes": 10, "alert": bool(alerts), "alerts": alerts, "counts": counts}
+
 class ReviewRequest(BaseModel):
     status: str
     note: str | None = None

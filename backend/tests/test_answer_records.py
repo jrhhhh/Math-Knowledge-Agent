@@ -77,6 +77,9 @@ class AnswerRecordContractTests(unittest.TestCase):
             self.assertIn("items", events.json())
             filtered = self.client.get("/ai/security-events?event=login_failed&ip=127.0.0.1")
             self.assertEqual(filtered.status_code, 200)
+            alerts = self.client.get("/ai/security-alerts")
+            self.assertEqual(alerts.status_code, 200)
+            self.assertIn("alerts", alerts.json())
 
     def test_feedback_validation_and_missing_answer(self):
         invalid = self.client.post("/ai/answers/999999/feedback", json={"rating": 6})
