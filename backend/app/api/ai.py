@@ -45,6 +45,10 @@ class RelatedGraphRequest(BaseModel):
     question: str
 
 
+class GraphCandidateUpdateRequest(BaseModel):
+    graph: dict
+
+
 class ProofAnalyzeRequest(BaseModel):
     question: str
     proof: str
@@ -856,6 +860,77 @@ def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
         "validation": json.loads(candidate.validation_json or "{}"),
         "knowledge_graph": json.loads(candidate.graph_json),
         "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
+    }
+
+
+@router.put("/graph-candidates/{candidate_id}")
+def update_graph_candidate(
+    candidate_id: int,
+    request: GraphCandidateUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """保存审核者对候选图谱的修改，并强制重新校验。"""
+    candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    graph = request.graph
+    nodes = graph.get("nodes")
+    edges = graph.get("edges")
+    if not isinstance(nodes, list) or not isinstance(edges, list) or len(nodes) < 2:
+        raise HTTPException(status_code=422, detail="图谱至少需要两个节点和合法的 nodes/edges 数组。")
+
+    node_ids = set()
+    clean_nodes = []
+    for node in nodes[:16]:
+        if not isinstance(node, dict):
+            continue
+        node_id = str(node.get("id", "")).strip()
+        name = str(node.get("name", "")).strip()[:48]
+        node_type = str(node.get("type", "concept")).strip().lower()
+        if not node_id or not name or node_id in node_ids or node_type not in {"concept", "theorem", "property", "method"}:
+            raise HTTPException(status_code=422, detail="节点 ID、名称或类型不合法。")
+        node_ids.add(node_id)
+        clean_nodes.append({
+            "id": node_id,
+            "name": name,
+            "type": node_type,
+            "description": str(node.get("description", "")).strip()[:160],
+            "field": str(node.get("field", "数学")).strip()[:32] or "数学",
+            "level": max(1, min(5, int(node.get("level", 1)) if str(node.get("level", "")).isdigit() else 1)),
+            "source": node.get("source", "human_review"),
+        })
+    if len(clean_nodes) < 2:
+        raise HTTPException(status_code=422, detail="图谱至少需要两个有效节点。")
+
+    clean_edges = []
+    seen_edges = set()
+    for edge in edges[:24]:
+        if not isinstance(edge, dict):
+            continue
+        source = str(edge.get("source", "")).strip()
+        target = str(edge.get("target", "")).strip()
+        relation = normalize_relation(edge.get("relation"))
+        if source not in node_ids or target not in node_ids or source == target or relation is None:
+            raise HTTPException(status_code=422, detail="边端点、自环或关系类型不合法。")
+        key = (source, target, relation)
+        if key in seen_edges:
+            continue
+        seen_edges.add(key)
+        try:
+            weight = max(0.0, min(1.0, float(edge.get("weight", 0.8))))
+        except (TypeError, ValueError):
+            weight = 0.8
+        clean_edges.append({"source": source, "target": target, "relation": relation, "weight": weight})
+
+    candidate.graph_json = json.dumps({"nodes": clean_nodes, "edges": clean_edges}, ensure_ascii=False)
+    candidate.validation_json = json.dumps({"valid": False, "reason": "图谱已修改，需要重新进行 AI 语义校验。"}, ensure_ascii=False)
+    candidate.status = "pending"
+    db.commit()
+    return {
+        "candidate_id": candidate.id,
+        "status": candidate.status,
+        "knowledge_graph": json.loads(candidate.graph_json),
+        "message": "图谱修改已保存，请重新执行 AI 校验。",
     }
 
 

@@ -116,6 +116,7 @@ Backend
 - `POST /ai/related-graph`：由 AI 根据问题生成候选知识图谱；相同问题 24 小时内复用缓存
 - `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
 - `GET /ai/graph-candidates/{candidate_id}`：查看候选图谱及校验状态
+- `PUT /ai/graph-candidates/{candidate_id}`：审核者修改候选图谱；修改后自动回到 `pending`
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库
 - `GET /concepts/graph`：获取知识图谱节点和关系
