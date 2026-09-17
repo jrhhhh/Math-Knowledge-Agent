@@ -2114,6 +2114,8 @@ async def ask_stream(request: AskRequest, request_id: str | None = None):
             while not chunks.empty():
                 yield emit("token", {"text": chunks.get_nowait()})
             result = await task
+            if not result.get("answer", "").strip():
+                result = await asyncio.to_thread(_ask_impl, request, db)
             if request_id:
                 _stream_results[request_id] = {"at": time.monotonic(), "value": result}
             yield emit("result", result)
