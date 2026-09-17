@@ -43,7 +43,7 @@ from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 
-from app.ai.analyzer import client, backup_client, backup_model
+from app.ai.analyzer import client, backup_client, backup_model, primary_api_key, primary_base_url, primary_model, primary_timeout
 from app.ai.concept_matcher import (
     semantic_retrieve_concepts,
     search_similar_problems,
@@ -381,6 +381,10 @@ def ai_health():
     metrics["average_first_token_seconds"] = round(metrics.pop("first_token_total") / samples, 3) if samples else None
     metrics["retry_queue"] = queue_stats()
     metrics["model_circuit"] = circuit_snapshot()
+    metrics["primary_model_configured"] = bool(primary_api_key)
+    metrics["primary_model"] = primary_model
+    metrics["primary_base_url"] = primary_base_url
+    metrics["primary_timeout_seconds"] = primary_timeout
     metrics["backup_model_configured"] = backup_client is not None
     metrics["request_logs_deleted"] = cleanup_request_logs()
     return metrics
@@ -665,7 +669,7 @@ def call_deepseek(
     on_chunk=None,
     circuit_enabled: bool = False,
     provider_client=None,
-    model: str = "deepseek-v4-pro",
+    model: str = primary_model,
 ):
     """
     调用 DeepSeek API。

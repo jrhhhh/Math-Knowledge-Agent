@@ -46,6 +46,12 @@ class APIContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("success_rate", response.json())
         self.assertIn("retry_queue", response.json())
+        health = response.json()
+        self.assertIn("primary_model_configured", health)
+        self.assertIn("primary_model", health)
+        self.assertIn("primary_base_url", health)
+        self.assertIn("primary_timeout_seconds", health)
+        self.assertNotIn("api_key", health)
         self.assertIn("request_logs_deleted", response.json())
 
     def test_retry_validation_contract(self):

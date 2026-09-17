@@ -10,10 +10,18 @@ from app.ai.prompts import SYSTEM_PROMPT
 load_dotenv()
 
 
+primary_api_key = os.getenv("DEEPSEEK_API_KEY")
+primary_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+primary_model = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
+try:
+    primary_timeout = max(1.0, float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "20")))
+except (TypeError, ValueError):
+    primary_timeout = 20.0
+
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com",
-    timeout=20.0,
+    api_key=primary_api_key,
+    base_url=primary_base_url,
+    timeout=primary_timeout,
     max_retries=0,
 )
 
