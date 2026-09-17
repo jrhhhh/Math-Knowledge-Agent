@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import time
 from datetime import datetime, timedelta, timezone
@@ -31,6 +33,7 @@ from app.ai.concept_matcher import (
     RELATION_PRIORITY,
 )
 from app.ai.telemetry import record_request, snapshot
+from app.ai.retry_queue import enqueue, get_job
 
 
 router = APIRouter(
@@ -48,6 +51,21 @@ def ai_health():
     return metrics
 
 
+@router.post("/retry-queue")
+def create_retry_job(request: RetryRequest):
+    if request.operation != "related_graph" or not request.question.strip():
+        raise HTTPException(status_code=422, detail="仅支持对非空问题重试相关知识图谱。")
+    return enqueue(request.operation, request.question.strip())
+
+
+@router.get("/retry-queue/{job_id}")
+def retry_job_status(job_id: str):
+    job = get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="重试任务不存在或已过期。")
+    return job
+
+
 class AskRequest(BaseModel):
     question: str
 
@@ -62,6 +80,11 @@ class GraphCandidateUpdateRequest(BaseModel):
 
 class GraphCandidateBatchRequest(BaseModel):
     candidate_ids: list[int]
+
+
+class RetryRequest(BaseModel):
+    operation: str = "related_graph"
+    question: str
 
 
 def record_candidate_event(db: Session, candidate_id: int, action: str, detail: dict | None = None):

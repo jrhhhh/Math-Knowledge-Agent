@@ -48,6 +48,8 @@ Current Version: v0.3
 Math-Agent
 Backend
 - `GET /ai/health`：查看 DeepSeek 调用成功率、重试次数和最近失败原因
+- `POST /ai/retry-queue`：将失败的相关图谱请求加入后台重试队列
+- `GET /ai/retry-queue/{job_id}`：查询后台重试任务状态和结果
 │
 ├── FastAPI
 │
