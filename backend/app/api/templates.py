@@ -21,6 +21,11 @@ class TemplateUpdate(BaseModel):
     enabled: bool | None = None
 
 
+class TemplatePreview(BaseModel):
+    question: str = Field(min_length=1)
+    template_id: str | None = None
+
+
 def serialize(item):
     return {"id": item.id, "template_id": item.template_id, "pattern": item.pattern, "answer": item.answer, "enabled": item.enabled, "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat()}
 
@@ -41,6 +46,21 @@ def create_template(request: TemplateRequest, db: Session = Depends(get_db)):
     item = LocalTemplate(**request.model_dump())
     db.add(item); db.commit(); db.refresh(item)
     return serialize(item)
+
+
+@router.post("/preview")
+def preview_template(request: TemplatePreview, db: Session = Depends(get_db)):
+    query = db.query(LocalTemplate).filter(LocalTemplate.enabled.is_(True))
+    if request.template_id:
+        query = query.filter(LocalTemplate.template_id == request.template_id)
+    import re
+    for item in query.order_by(LocalTemplate.id.asc()).all():
+        try:
+            if re.search(item.pattern, request.question, re.I):
+                return {"matched": True, "template_id": item.template_id, "answer": item.answer}
+        except re.error:
+            continue
+    return {"matched": False, "template_id": request.template_id, "answer": None}
 
 
 @router.put("/{template_id}")
