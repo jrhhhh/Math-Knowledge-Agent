@@ -58,6 +58,7 @@ AI 错误响应包含 `error_code`：`timeout`、`rate_limit`、`network`、`ser
 每次问答响应都包含 `request_id`，后端耗时日志使用同一 ID，便于端到端排查。
 `GET /ai/tasks/{request_id}` 可查询问答实时状态和最终日志；状态包括 `queued`、`retrieving`、`generating`、`degraded`、`succeeded`、`failed`、`cancelled`，适合前端在流式连接中断后恢复展示。状态和最终结果快照同时持久化到 `ai_task_statuses`，后端重启或页面刷新后仍可查询阶段，并恢复答案、知识点和知识图谱。
 `GET /ai/tasks?status=...&offset=...&limit=...` 支持任务历史分页；管理员可调用 `POST /ai/tasks/cleanup?older_than_days=30` 清理保留期以前的已结束任务，不会删除进行中的任务。
+SQLite 默认固定存储在 `backend/math_agent.db`，不再随启动目录变化；如需存到其他持久化卷，可在启动后端和执行备份脚本前设置 `MATH_AGENT_DB_PATH=/absolute/path/math-agent.db`。应用、备份、恢复演练会使用同一个数据库路径。
 `GET /ai/requests/{request_id}` 可查询本地请求成功记录、耗时和错误信息；`GET /ai/requests` 支持按 `status`、`since`、`until` 筛选最近日志，`GET /ai/requests/export` 可导出 CSV（最多 5000 条），便于分析慢请求趋势。
 
 可选备用模型：设置 `MATH_AGENT_BACKUP_API_KEY`、`MATH_AGENT_BACKUP_BASE_URL` 和可选的 `MATH_AGENT_BACKUP_MODEL`（OpenAI 兼容接口）。主模型失败后会优先切换备用模型，再进入本地兜底；是否配置可通过 `/ai/health` 的 `backup_model_configured` 查看。

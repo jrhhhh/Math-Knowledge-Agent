@@ -99,3 +99,21 @@
 - date
 - object
 - progress
+# Database storage
+
+Math Agent persists its SQLite data in `backend/math_agent.db` by default.
+The location is independent of the directory from which Uvicorn is started,
+so task history, completed answers, graph candidates, feedback, and local
+templates continue to use one database file.
+
+To store the data elsewhere, set the same environment variable used by the
+backup scripts before starting the application:
+
+```bash
+export MATH_AGENT_DB_PATH="/absolute/path/to/math-agent.db"
+./.venv/bin/python -m uvicorn app.main:app --reload
+```
+
+The parent directory is created automatically. Backups and restore rehearsal
+commands read `MATH_AGENT_DB_PATH` as well, ensuring they target this same
+file.
