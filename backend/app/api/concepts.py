@@ -1,11 +1,14 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
 from app.models.concept_alias import ConceptAlias
+from app.models.concept_learning_progress import ConceptLearningProgress
 
 router = APIRouter(
     prefix="/concepts",
@@ -15,6 +18,11 @@ router = APIRouter(
 
 class AliasRequest(BaseModel):
     alias: str
+
+
+class LearningProgressRequest(BaseModel):
+    status: str = Field(pattern="^(learning|completed)$")
+    profile_id: str = Field(default="local", min_length=1, max_length=80)
 
 
 def get_db():
@@ -59,6 +67,51 @@ def get_concepts(
 ):
 
     return db.query(Concept).all()
+
+
+@router.get("/learning-progress")
+def get_learning_progress(profile_id: str = "local", db: Session = Depends(get_db)):
+    items = db.query(ConceptLearningProgress).filter(ConceptLearningProgress.profile_id == profile_id).order_by(ConceptLearningProgress.updated_at.desc()).all()
+    return {
+        "profile_id": profile_id,
+        "items": [
+            {
+                "concept_id": item.concept_id,
+                "status": item.status,
+                "updated_at": item.updated_at.isoformat(),
+                "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+            }
+            for item in items
+        ],
+        "completed_concept_ids": [item.concept_id for item in items if item.status == "completed"],
+    }
+
+
+@router.put("/{concept_id}/learning-progress")
+def set_learning_progress(concept_id: int, request: LearningProgressRequest, db: Session = Depends(get_db)):
+    if db.query(Concept).filter(Concept.id == concept_id).first() is None:
+        raise HTTPException(status_code=404, detail="Concept not found")
+    item = db.query(ConceptLearningProgress).filter(
+        ConceptLearningProgress.profile_id == request.profile_id,
+        ConceptLearningProgress.concept_id == concept_id,
+    ).first()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if item is None:
+        item = ConceptLearningProgress(profile_id=request.profile_id, concept_id=concept_id, status=request.status)
+        db.add(item)
+    else:
+        item.status = request.status
+    item.completed_at = now if request.status == "completed" else None
+    item.updated_at = now
+    db.commit()
+    db.refresh(item)
+    return {
+        "concept_id": item.concept_id,
+        "profile_id": item.profile_id,
+        "status": item.status,
+        "updated_at": item.updated_at.isoformat(),
+        "completed_at": item.completed_at.isoformat() if item.completed_at else None,
+    }
 
 
 @router.post("/{concept_id}/aliases")

@@ -25,6 +25,7 @@ from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
+from app.models.concept_learning_progress import ConceptLearningProgress
 from app.logging_config import configure_logging
 from app.ai.retry_queue import resume_pending_jobs
 from app.migrations import run_schema_migrations

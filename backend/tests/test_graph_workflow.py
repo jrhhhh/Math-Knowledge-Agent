@@ -16,7 +16,7 @@ from app.api.ai import (
     update_graph_candidate,
     validate_graph_candidate,
 )
-from app.api.concepts import AliasRequest, add_concept_alias, get_learning_path
+from app.api.concepts import AliasRequest, LearningProgressRequest, add_concept_alias, get_learning_path, get_learning_progress, set_learning_progress
 from app.database import Base
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
@@ -141,6 +141,18 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertEqual([step["name"] for step in path["steps"]], ["集合", "拓扑空间", "紧致性"])
         self.assertEqual(path["steps"][-1]["stage"], "focus")
         self.assertTrue(path["cycle_detected"])
+
+    def test_learning_progress_is_persisted_per_local_profile(self):
+        concept = Concept(name="开集", type="concept")
+        self.db.add(concept)
+        self.db.commit()
+        completed = set_learning_progress(concept.id, LearningProgressRequest(status="completed"), self.db)
+        self.assertEqual(completed["status"], "completed")
+        self.assertIsNotNone(completed["completed_at"])
+        progress = get_learning_progress(db=self.db)
+        self.assertEqual(progress["completed_concept_ids"], [concept.id])
+        learning = set_learning_progress(concept.id, LearningProgressRequest(status="learning"), self.db)
+        self.assertIsNone(learning["completed_at"])
 
 
 if __name__ == "__main__":

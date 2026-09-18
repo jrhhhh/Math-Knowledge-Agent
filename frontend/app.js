@@ -243,20 +243,35 @@ async function openGraphConceptCard(concept) {
   card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-path"><b>推荐学习顺序</b><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
   card.querySelector('.graph-card-close').onclick = () => card.classList.add('hidden');
   try {
-    const [response, pathResponse] = await Promise.all([
+    const [response, pathResponse, progressResponse] = await Promise.all([
       fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/relations`),
       fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/learning-path`),
+      fetch(`${API}/concepts/learning-progress`),
     ]);
-    const [data, path] = await Promise.all([response.json(), pathResponse.json()]);
+    const [data, path, progress] = await Promise.all([response.json(), pathResponse.json(), progressResponse.json()]);
     if (!response.ok) throw new Error(data.detail || '关联读取失败');
     const links = [...(data.prerequisites || []), ...(data.next_concepts || []), ...(data.related || [])].slice(0, 8);
     card.querySelector('.graph-card-links').innerHTML = links.length
       ? links.map(item => `<span>${escapeHtml(item.name)} · ${escapeHtml(item.relation || 'related')}</span>`).join('')
       : '<span>暂无已保存的直接关联</span>';
     const pathElement = card.querySelector('.graph-card-path');
+    const completedIds = new Set(progress.completed_concept_ids || []);
     pathElement.innerHTML = pathResponse.ok
-      ? `<b>推荐学习顺序</b><div>${(path.steps || []).map((item, index) => `<span>${index + 1}. ${escapeHtml(item.name)}</span>`).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
+      ? `<b>推荐学习顺序</b><div>${(path.steps || []).map((item, index) => `<button type="button" class="learning-step${completedIds.has(item.id) ? ' is-complete' : ''}" data-learning-concept="${item.id}">${completedIds.has(item.id) ? '✓ ' : ''}${index + 1}. ${escapeHtml(item.name)}</button>`).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
       : '<b>推荐学习顺序</b><span>暂时无法生成路径</span>';
+    pathElement.querySelectorAll('[data-learning-concept]').forEach(button => button.addEventListener('click', async () => {
+      const conceptId = Number(button.dataset.learningConcept);
+      const done = button.classList.contains('is-complete');
+      button.disabled = true;
+      try {
+        const saveResponse = await fetch(`${API}/concepts/${conceptId}/learning-progress`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: done ? 'learning' : 'completed' }) });
+        if (!saveResponse.ok) throw new Error('保存失败');
+        await openGraphConceptCard(concept);
+      } catch (error) {
+        showMessage('学习进度保存失败，请稍后重试。');
+        button.disabled = false;
+      }
+    }));
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
   }
