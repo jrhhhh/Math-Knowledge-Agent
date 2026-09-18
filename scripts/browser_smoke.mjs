@@ -17,6 +17,7 @@ try {
   await page.locator('#graphCanvas .graph-node').click();
   await page.waitForFunction(() => document.querySelector('#graphConceptCard')?.textContent.includes('紧致性'));
   if (await page.locator('#graphConceptCard.hidden').count()) throw new Error('graph concept card did not open');
+  if (!(await page.locator('#graphConceptCard').textContent()).includes('推荐学习顺序')) throw new Error('learning path missing from graph concept card');
   console.log(`Browser smoke passed: ${formulaCount} MathJax formulas rendered.`);
 } finally {
   await browser.close();

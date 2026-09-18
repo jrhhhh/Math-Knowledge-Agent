@@ -16,7 +16,7 @@ from app.api.ai import (
     update_graph_candidate,
     validate_graph_candidate,
 )
-from app.api.concepts import AliasRequest, add_concept_alias
+from app.api.concepts import AliasRequest, add_concept_alias, get_learning_path
 from app.database import Base
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
@@ -123,6 +123,24 @@ class GraphWorkflowTests(unittest.TestCase):
         events = get_graph_candidate_events(candidate["candidate_id"], self.db)["events"]
         conflict = next(event for event in events if event["action"] == "relation_conflict")
         self.assertEqual(conflict["detail"]["action"], "replaced")
+
+    def test_learning_path_is_prerequisite_first_and_cycle_safe(self):
+        basics = Concept(name="集合", type="concept")
+        topology = Concept(name="拓扑空间", type="concept")
+        compactness = Concept(name="紧致性", type="concept")
+        self.db.add_all([basics, topology, compactness])
+        self.db.commit()
+        self.db.add_all([
+            ConceptRelation(source_concept_id=basics.id, target_concept_id=topology.id, relation="prerequisite", weight=0.8),
+            ConceptRelation(source_concept_id=topology.id, target_concept_id=compactness.id, relation="prerequisite", weight=0.9),
+            ConceptRelation(source_concept_id=compactness.id, target_concept_id=topology.id, relation="prerequisite", weight=0.1),
+        ])
+        self.db.commit()
+
+        path = get_learning_path(compactness.id, max_depth=4, db=self.db)
+        self.assertEqual([step["name"] for step in path["steps"]], ["集合", "拓扑空间", "紧致性"])
+        self.assertEqual(path["steps"][-1]["stage"], "focus")
+        self.assertTrue(path["cycle_detected"])
 
 
 if __name__ == "__main__":

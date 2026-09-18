@@ -321,3 +321,64 @@ def get_prerequisites(
         },
         "prerequisites": result
     }
+
+
+@router.get("/{concept_id}/learning-path")
+def get_learning_path(concept_id: int, max_depth: int = 4, db: Session = Depends(get_db)):
+    """Return a deterministic prerequisite-first path for one concept.
+
+    The graph can contain imperfect imported relations, so cycles are detected
+    and reported instead of recursing forever. The target itself is always the
+    final step, which makes the result directly usable by the learning UI.
+    """
+    max_depth = min(max(1, max_depth), 8)
+    concept = db.query(Concept).filter(Concept.id == concept_id).first()
+    if concept is None:
+        raise HTTPException(status_code=404, detail="Concept not found")
+
+    concepts = {item.id: item for item in db.query(Concept).all()}
+    parent_relations = {}
+    for relation in db.query(ConceptRelation).filter(ConceptRelation.relation == "prerequisite").all():
+        parent_relations.setdefault(relation.target_concept_id, []).append(relation)
+    for relations in parent_relations.values():
+        relations.sort(key=lambda item: (-float(item.weight or 0), item.source_concept_id))
+
+    visited, visiting, steps = set(), set(), []
+    cycle_detected = False
+
+    def visit(current_id: int, depth: int):
+        nonlocal cycle_detected
+        if current_id in visiting:
+            cycle_detected = True
+            return
+        if current_id in visited or depth > max_depth:
+            return
+        visiting.add(current_id)
+        for relation in parent_relations.get(current_id, []):
+            visit(relation.source_concept_id, depth + 1)
+        visiting.remove(current_id)
+        visited.add(current_id)
+        current = concepts.get(current_id)
+        if current is not None and current_id != concept_id:
+            steps.append({
+                "id": current.id,
+                "name": current.name,
+                "type": current.type,
+                "depth": depth,
+                "stage": "foundation" if depth > 1 else "bridge",
+            })
+
+    visit(concept_id, 0)
+    steps.append({
+        "id": concept.id,
+        "name": concept.name,
+        "type": concept.type,
+        "depth": 0,
+        "stage": "focus",
+    })
+    return {
+        "concept": {"id": concept.id, "name": concept.name, "type": concept.type},
+        "steps": steps,
+        "cycle_detected": cycle_detected,
+        "max_depth": max_depth,
+    }

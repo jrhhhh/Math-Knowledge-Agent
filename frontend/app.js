@@ -240,16 +240,23 @@ async function openGraphConceptCard(concept) {
   const card = $('graphConceptCard');
   if (!card || !concept) return;
   card.classList.remove('hidden');
-  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-path"><b>推荐学习顺序</b><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
   card.querySelector('.graph-card-close').onclick = () => card.classList.add('hidden');
   try {
-    const response = await fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/relations`);
-    const data = await response.json();
+    const [response, pathResponse] = await Promise.all([
+      fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/relations`),
+      fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/learning-path`),
+    ]);
+    const [data, path] = await Promise.all([response.json(), pathResponse.json()]);
     if (!response.ok) throw new Error(data.detail || '关联读取失败');
     const links = [...(data.prerequisites || []), ...(data.next_concepts || []), ...(data.related || [])].slice(0, 8);
     card.querySelector('.graph-card-links').innerHTML = links.length
       ? links.map(item => `<span>${escapeHtml(item.name)} · ${escapeHtml(item.relation || 'related')}</span>`).join('')
       : '<span>暂无已保存的直接关联</span>';
+    const pathElement = card.querySelector('.graph-card-path');
+    pathElement.innerHTML = pathResponse.ok
+      ? `<b>推荐学习顺序</b><div>${(path.steps || []).map((item, index) => `<span>${index + 1}. ${escapeHtml(item.name)}</span>`).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
+      : '<b>推荐学习顺序</b><span>暂时无法生成路径</span>';
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
   }
