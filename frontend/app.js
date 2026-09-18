@@ -236,6 +236,44 @@ function renderGraph(graph) {
 
 async function loadRetryAlerts() { let panel = $('retryAlerts'); if (!panel) { panel = document.createElement('details'); panel.id = 'retryAlerts'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>重试失败告警</summary><div class="retry-alert-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/retry-alerts?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); panel.querySelector('.retry-alert-info').innerHTML = data.alert ? `<b class="health-warning">⚠ 最近 1 小时有 ${data.failed_count} 个任务最终失败</b>${(data.items || []).slice(0, 3).map(item => `<div class="retry-alert-item"><span>${escapeHtml(item.question)}</span><small>${escapeHtml(item.error || '未知错误')}</small></div>`).join('')}` : '<span class="muted">最近 1 小时没有最终失败任务</span>'; } catch (error) { panel.querySelector('.retry-alert-info').textContent = '重试告警暂不可用'; } }
 async function loadOperationsDashboard() { let panel = $('operationsDashboard'); if (!panel) { panel = document.createElement('details'); panel.id = 'operationsDashboard'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>运营健康总览</summary><div class="ops-dashboard-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/ops-dashboard?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); const sources = Object.entries(data.by_source || {}).map(([name, value]) => `${escapeHtml(name)} ${Math.round((value.average_quality || 0) * 100)}%/${value.count}次`).join(' · ') || '暂无回答'; const providers = Object.entries(data.provider_failure_rates || {}).map(([name, value]) => `${escapeHtml(name)} ${value.failure_rate == null ? '—' : `${Math.round(value.failure_rate * 100)}%`}`).join(' · '); panel.querySelector('.ops-dashboard-info').innerHTML = `<b class="ops-${escapeHtml(data.health || 'healthy')}">${data.health === 'degraded' ? '需要关注' : '运行正常'}</b><div>回答 ${data.answer_count || 0} · 平均质量 ${data.average_quality == null ? '—' : `${Math.round(data.average_quality * 100)}%`} · 平均耗时 ${data.average_duration_seconds == null ? '—' : `${data.average_duration_seconds}s`} · 失败重试 ${data.failed_retry_jobs || 0}</div><div>来源：${sources}</div><div>供应商失败率：${providers || '暂无调用'}</div>`; } catch (error) { panel.querySelector('.ops-dashboard-info').textContent = '运营统计暂不可用'; } }
+async function openGraphConceptCard(concept) {
+  const card = $('graphConceptCard');
+  if (!card || !concept) return;
+  card.classList.remove('hidden');
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.querySelector('.graph-card-close').onclick = () => card.classList.add('hidden');
+  try {
+    const response = await fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/relations`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '关联读取失败');
+    const links = [...(data.prerequisites || []), ...(data.next_concepts || []), ...(data.related || [])].slice(0, 8);
+    card.querySelector('.graph-card-links').innerHTML = links.length
+      ? links.map(item => `<span>${escapeHtml(item.name)} · ${escapeHtml(item.relation || 'related')}</span>`).join('')
+      : '<span>暂无已保存的直接关联</span>';
+  } catch (error) {
+    card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
+  }
+}
+
+const renderGraphBase = renderGraph;
+renderGraph = function (graph) {
+  renderGraphBase(graph);
+  const nodes = (graph.nodes || []).slice(0, 28);
+  document.querySelectorAll('#graphCanvas .graph-node').forEach((element, index) => {
+    const concept = nodes[index];
+    if (!concept) return;
+    element.setAttribute('role', 'button');
+    element.setAttribute('tabindex', '0');
+    element.setAttribute('aria-label', `查看知识点：${concept.name}`);
+    const open = () => openGraphConceptCard(concept);
+    element.addEventListener('click', open);
+    element.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+    });
+  });
+  $('legend').querySelector('em')?.replaceChildren('点击节点查看定义与关联');
+};
+
 $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();

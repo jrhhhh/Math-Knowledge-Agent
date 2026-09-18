@@ -10,6 +10,13 @@ try {
   if (formulaCount < 5) throw new Error(`expected at least 5 rendered formulas, got ${formulaCount}`);
   await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
   if (!(await page.getByRole('heading', { name: '推理结果' }).isVisible())) throw new Error('main response panel missing');
+  await page.evaluate(() => renderGraph({
+    nodes: [{ id: 1, name: '紧致性', type: 'concept', field: '拓扑学', description: '每个开覆盖都有有限子覆盖。' }],
+    edges: [],
+  }));
+  await page.locator('#graphCanvas .graph-node').click();
+  await page.waitForFunction(() => document.querySelector('#graphConceptCard')?.textContent.includes('紧致性'));
+  if (await page.locator('#graphConceptCard.hidden').count()) throw new Error('graph concept card did not open');
   console.log(`Browser smoke passed: ${formulaCount} MathJax formulas rendered.`);
 } finally {
   await browser.close();
