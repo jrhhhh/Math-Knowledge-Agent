@@ -179,6 +179,9 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库
 - `GET /concepts/graph`：获取知识图谱节点和关系
 - `POST /concepts/{concept_id}/aliases`：为已有知识点添加别名
+- `GET /concepts/{concept_id}/learning-path`：按前置关系生成“基础 → 当前目标”的学习路径，并检测关系环
+- `GET /concepts/learning-progress`：读取本地学习档案的掌握状态、完成比例和下一步建议
+- `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。
 
@@ -189,6 +192,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 ```
 
 候选图谱中的新概念在保存前只作为临时节点展示；保存时会按标准名称和别名去重，并按关系优先级处理冲突。已有数据库不会被首次启动或生成操作删除。
+
+知识图谱中的节点可点击或使用键盘 Enter/空格打开概念卡片。卡片会显示定义、关联知识和推荐学习顺序；学习顺序中的知识点可标记为“已掌握”。学习总览会显示完成比例和下一步建议，状态保存在 SQLite 的 `concept_learning_progress` 表中，重启后端或重新打开页面仍会保留。
 
 启动前端展示页：
 

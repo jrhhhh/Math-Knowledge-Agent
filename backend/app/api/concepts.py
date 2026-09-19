@@ -72,6 +72,9 @@ def get_concepts(
 @router.get("/learning-progress")
 def get_learning_progress(profile_id: str = "local", db: Session = Depends(get_db)):
     items = db.query(ConceptLearningProgress).filter(ConceptLearningProgress.profile_id == profile_id).order_by(ConceptLearningProgress.updated_at.desc()).all()
+    completed_ids = [item.concept_id for item in items if item.status == "completed"]
+    total_concepts = db.query(Concept).count()
+    next_concepts = db.query(Concept).filter(~Concept.id.in_(completed_ids)).order_by(Concept.level.asc(), Concept.id.asc()).limit(3).all()
     return {
         "profile_id": profile_id,
         "items": [
@@ -83,7 +86,13 @@ def get_learning_progress(profile_id: str = "local", db: Session = Depends(get_d
             }
             for item in items
         ],
-        "completed_concept_ids": [item.concept_id for item in items if item.status == "completed"],
+        "completed_concept_ids": completed_ids,
+        "summary": {
+            "completed": len(completed_ids),
+            "total": total_concepts,
+            "percent": round((len(completed_ids) / total_concepts * 100) if total_concepts else 0),
+            "next_concepts": [{"id": item.id, "name": item.name, "type": item.type} for item in next_concepts],
+        },
     }
 
 

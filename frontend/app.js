@@ -267,6 +267,7 @@ async function openGraphConceptCard(concept) {
         const saveResponse = await fetch(`${API}/concepts/${conceptId}/learning-progress`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: done ? 'learning' : 'completed' }) });
         if (!saveResponse.ok) throw new Error('保存失败');
         await openGraphConceptCard(concept);
+        loadLearningPulse();
       } catch (error) {
         showMessage('学习进度保存失败，请稍后重试。');
         button.disabled = false;
@@ -274,6 +275,31 @@ async function openGraphConceptCard(concept) {
     }));
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
+  }
+}
+
+async function loadLearningPulse() {
+  const panel = $('learningPulse');
+  if (!panel) return;
+  try {
+    const response = await fetch(`${API}/concepts/learning-progress`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '读取失败');
+    const summary = data.summary || {};
+    panel.querySelector('.learning-pulse-track i').style.width = `${summary.percent || 0}%`;
+    panel.querySelector('strong').textContent = summary.total ? `已掌握 ${summary.completed || 0} / ${summary.total} · ${summary.percent || 0}%` : '知识库尚未加入可学习的知识点';
+    const next = panel.querySelector('.learning-pulse-next');
+    const concepts = summary.next_concepts || [];
+    next.innerHTML = concepts.length ? concepts.map(item => `<button type="button" data-pulse-concept="${item.id}">下一步：${escapeHtml(item.name)}</button>`).join('') : '<span class="muted">已完成当前知识库</span>';
+    next.querySelectorAll('[data-pulse-concept]').forEach(button => button.addEventListener('click', async () => {
+      const response = await fetch(`${API}/concepts/${encodeURIComponent(button.dataset.pulseConcept)}`);
+      const concept = await response.json();
+      if (!response.ok || !concept.id) { showMessage('知识点暂不可用。'); return; }
+      $('graph').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      openGraphConceptCard(concept);
+    }));
+  } catch (error) {
+    panel.querySelector('strong').textContent = '学习进度暂不可用';
   }
 }
 
@@ -309,6 +335,7 @@ $('proofForm').addEventListener('submit', analyzeProof);
 $('refreshGraph').addEventListener('click', loadGraph);
 ensureBatchAuditButton();
 loadGraph();
+loadLearningPulse();
 loadCandidateStats();
 loadCandidateHistory();
 const loadRetryAlertsBase = loadRetryAlerts;

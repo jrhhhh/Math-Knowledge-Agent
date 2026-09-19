@@ -151,6 +151,8 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertIsNotNone(completed["completed_at"])
         progress = get_learning_progress(db=self.db)
         self.assertEqual(progress["completed_concept_ids"], [concept.id])
+        self.assertEqual(progress["summary"]["percent"], 100)
+        self.assertEqual(progress["summary"]["next_concepts"], [])
         learning = set_learning_progress(concept.id, LearningProgressRequest(status="learning"), self.db)
         self.assertIsNone(learning["completed_at"])
 

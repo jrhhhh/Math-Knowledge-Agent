@@ -25,6 +25,7 @@ try {
   if (!(await page.locator('#graphConceptCard').textContent()).includes('推荐学习顺序')) throw new Error('learning path missing from graph concept card');
   await page.locator('[data-learning-concept]').click();
   await page.waitForFunction(() => document.querySelector('[data-learning-concept]')?.classList.contains('is-complete'));
+  await page.waitForFunction(() => document.querySelector('#learningPulse strong')?.textContent.includes('已掌握'));
   console.log(`Browser smoke passed: ${formulaCount} MathJax formulas rendered.`);
 } finally {
   await browser.close();
