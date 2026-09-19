@@ -416,6 +416,19 @@ renderTaskDetail = function (task) {
   }
 };
 
+function ensureUtilityDrawer() {
+  if ($('utilityDrawer')) return;
+  const graph = $('graph');
+  const drawer = document.createElement('details');
+  drawer.id = 'utilityDrawer';
+  drawer.className = 'utility-drawer';
+  drawer.innerHTML = '<summary><span><b>更多工具</b><small>运维、历史、模板与审核功能</small></span><em>按需展开</em></summary><div class="utility-grid"></div>';
+  const grid = drawer.querySelector('.utility-grid');
+  [...graph.children].filter(element => element.matches('details.retry-jobs, details.graph-history, details.graph-editor')).forEach(element => grid.appendChild(element));
+  graph.appendChild(drawer);
+}
+ensureUtilityDrawer();
+
 // 统一将本次问答的追踪 ID 放入查询面板，便于故障后立即定位。
 const originalAsk = ask;
 const originalRequestAskStream = requestAskStream;
