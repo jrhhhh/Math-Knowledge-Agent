@@ -26,9 +26,17 @@
     </aside>
     <main class="main-content">
       <header class="topbar"><div><p class="eyebrow">MATH LEARNING WORKSPACE</p><h1>把难题，变成清晰的思路。</h1></div><button class="ghost-btn" id="refreshGraph">↻ 刷新图谱</button></header>
-      <section class="hero" id="ask">
-        <div class="hero-copy"><span class="pill">AI PROOF ASSISTANT</span><h2>今天想探索什么数学问题？</h2><p>输入题目、定义或证明请求，Math Agent 会结合知识图谱，为你拆解关键概念与推理路径。</p><span class="trust-note">⌁ AI 生成内容仅供学习参考，请核对关键推导</span></div>
-        <form id="askForm" class="ask-form"><textarea id="question" placeholder="例如：证明紧集在连续映射下的像是紧集" required></textarea><div class="form-footer"><span>支持中文数学问题</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton">生成相关图谱 <span>◎</span></button><button type="submit" id="askButton">开始推理 <span>→</span></button></div></div></form>
+      <section class="chat-workbench" id="ask" aria-label="数学对话工作台">
+        <aside class="conversation-rail">
+          <div class="conversation-rail-head"><span class="section-label">CONVERSATIONS</span><button type="button" id="newConversation" aria-label="新建对话">＋</button></div>
+          <div id="conversationList" class="conversation-list"><span>正在载入对话…</span></div>
+          <div class="conversation-rail-foot">对话与学习线索保存在本地知识库</div>
+        </aside>
+        <div class="chat-stage">
+          <div class="chat-stage-head"><div><span class="pill">CONTEXTUAL MATH ASSISTANT</span><h2 id="conversationTitle">新的数学对话</h2></div><div class="chat-stage-actions"><button type="button" id="renameConversation">重命名</button><button type="button" id="deleteConversation" aria-label="删除当前对话">⌫</button></div></div>
+          <div id="chatTimeline" class="chat-timeline" aria-live="polite"><div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div></div>
+          <form id="askForm" class="chat-composer"><textarea id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton">生成图谱 <span>◎</span></button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div></form>
+        </div>
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
       <div id="message" class="message hidden"></div>

@@ -485,3 +485,198 @@ ask = async function (event) {
 };
 $('askForm').removeEventListener('submit', originalAsk);
 $('askForm').addEventListener('submit', ask);
+
+// Conversation workspace: the legacy /ai/ask flow remains available, while the
+// primary UI writes each turn to a durable context-aware conversation.
+let activeConversationId = Number(localStorage.getItem('math-agent-conversation-id')) || null;
+
+function conversationTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+}
+
+function appendChatMessage(message, pending = false) {
+  const timeline = $('chatTimeline');
+  if (!timeline) return null;
+  timeline.querySelector('.chat-welcome')?.remove();
+  const item = document.createElement('article');
+  item.className = `chat-message ${message.role === 'user' ? 'user' : 'assistant'}${pending ? ' pending' : ''}`;
+  item.dataset.messageId = message.id || '';
+  const label = document.createElement('span');
+  label.className = 'chat-message-label';
+  label.textContent = message.role === 'user' ? 'YOU' : 'MATH AGENT';
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.textContent = normalizeMathText(message.content || '');
+  item.append(label, bubble);
+  if (message.created_at) {
+    const meta = document.createElement('small');
+    meta.className = 'chat-message-meta';
+    meta.textContent = conversationTime(message.created_at);
+    item.appendChild(meta);
+  }
+  timeline.appendChild(item);
+  timeline.scrollTop = timeline.scrollHeight;
+  if (!pending && message.role !== 'user') typesetMath(bubble);
+  return item;
+}
+
+function renderConversation(data) {
+  $('chatTimeline').replaceChildren();
+  $('conversationTitle').textContent = data.conversation.title || '新的数学对话';
+  const messages = data.messages || [];
+  if (!messages.length) {
+    $('chatTimeline').innerHTML = '<div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div>';
+    return;
+  }
+  messages.forEach(message => appendChatMessage(message));
+}
+
+async function loadConversationList() {
+  const list = $('conversationList');
+  try {
+    const response = await fetch(`${API}/conversations`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '读取失败');
+    list.innerHTML = (data.items || []).map(item => `<button type="button" class="conversation-item ${item.id === activeConversationId ? 'is-active' : ''}" data-conversation-id="${item.id}"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.topic || `${item.message_count || 0} 条消息`)} · ${conversationTime(item.updated_at)}</small></button>`).join('') || '<span>还没有保存的对话</span>';
+    list.querySelectorAll('[data-conversation-id]').forEach(button => button.addEventListener('click', () => selectConversation(Number(button.dataset.conversationId))));
+  } catch (error) {
+    list.innerHTML = '<span>对话服务暂不可用</span>';
+  }
+}
+
+async function selectConversation(conversationId) {
+  try {
+    const response = await fetch(`${API}/conversations/${conversationId}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '读取失败');
+    activeConversationId = conversationId;
+    localStorage.setItem('math-agent-conversation-id', String(conversationId));
+    renderConversation(data);
+    await loadConversationList();
+  } catch (error) { showMessage(`无法打开对话：${error.message}`); }
+}
+
+async function createConversation() {
+  try {
+    const response = await fetch(`${API}/conversations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const item = await response.json();
+    if (!response.ok) throw new Error(item.detail || '创建失败');
+    activeConversationId = item.id;
+    localStorage.setItem('math-agent-conversation-id', String(item.id));
+    renderConversation({ conversation: item, messages: [] });
+    await loadConversationList();
+    $('question').focus();
+  } catch (error) { showMessage(`无法新建对话：${error.message}`); }
+}
+
+async function ensureConversation() {
+  if (activeConversationId) {
+    try { await selectConversation(activeConversationId); return; } catch (error) { activeConversationId = null; }
+  }
+  await createConversation();
+}
+
+async function renameActiveConversation() {
+  if (!activeConversationId) return;
+  const title = window.prompt('为这段数学对话命名', $('conversationTitle').textContent);
+  if (!title?.trim()) return;
+  try {
+    const response = await fetch(`${API}/conversations/${activeConversationId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: title.trim() }) });
+    const item = await response.json();
+    if (!response.ok) throw new Error(item.detail || '重命名失败');
+    $('conversationTitle').textContent = item.title;
+    loadConversationList();
+  } catch (error) { showMessage(error.message); }
+}
+
+async function deleteActiveConversation() {
+  if (!activeConversationId || !window.confirm('删除这段对话及其消息？此操作不能撤销。')) return;
+  try {
+    const response = await fetch(`${API}/conversations/${activeConversationId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('删除失败');
+    activeConversationId = null;
+    localStorage.removeItem('math-agent-conversation-id');
+    await createConversation();
+  } catch (error) { showMessage(error.message); }
+}
+
+async function requestConversationStream(question, signal) {
+  const response = await fetch(`${API}/conversations/${activeConversationId}/messages/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: question }), signal });
+  if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let assistantItem = null;
+  let result = null;
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
+    const frames = buffer.split('\n\n');
+    buffer = frames.pop();
+    for (const frame of frames) {
+      const event = frame.match(/event: (.+)/)?.[1];
+      const raw = frame.split('\n').find(line => line.startsWith('data: '));
+      if (!raw) continue;
+      const data = JSON.parse(raw.slice(6));
+      if (event === 'user') appendChatMessage(data);
+      if (event === 'token') {
+        if (!assistantItem) assistantItem = appendChatMessage({ role: 'assistant', content: '' }, true);
+        const bubble = assistantItem.querySelector('.chat-bubble');
+        bubble.textContent += data.text || '';
+        $('chatTimeline').scrollTop = $('chatTimeline').scrollHeight;
+        $('answerStatus').textContent = '正在输出';
+      }
+      if (event === 'result') {
+        result = data.result;
+        if (assistantItem) assistantItem.remove();
+        appendChatMessage(data.assistant_message);
+      }
+      if (event === 'error') throw new Error(data.detail || '生成失败');
+    }
+  }
+  if (!result) throw new Error('未收到完整回答');
+  return result;
+}
+
+async function conversationAsk(event) {
+  event.preventDefault();
+  const question = $('question').value.trim();
+  if (!question || !activeConversationId) return;
+  clearMessage();
+  askController = new AbortController();
+  $('askButton').disabled = true;
+  $('askButton').innerHTML = '推理中 <span>···</span>';
+  $('cancelAskButton').classList.remove('hidden');
+  $('answerStatus').textContent = '结合上下文推理中';
+  $('chatContextStatus').textContent = '正在保存并构建上下文…';
+  try {
+    const data = await requestConversationStream(question, askController.signal);
+    lastAskResult = data;
+    renderAnswer(data.answer);
+    renderConcepts(data.concepts || []);
+    if (data.knowledge_graph) renderGraph(data.knowledge_graph);
+    $('answerStatus').textContent = data.answer_source === 'local_fallback' ? '本地数学推导完成' : '本轮推理完成';
+    $('chatContextStatus').textContent = '本轮内容已保存到对话上下文';
+    $('question').value = '';
+    loadConversationList();
+  } catch (error) {
+    $('chatContextStatus').textContent = '本轮未完成保存';
+    if (error.name === 'AbortError') { $('answerStatus').textContent = '已停止生成'; showMessage('推理已停止。'); }
+    else { $('answerStatus').textContent = '生成失败'; showMessage(`暂时无法完成本轮对话：${error.message}`); }
+  } finally {
+    askController = null;
+    $('askButton').disabled = false;
+    $('askButton').innerHTML = '发送 <span>↑</span>';
+    $('cancelAskButton').classList.add('hidden');
+  }
+}
+
+$('askForm').removeEventListener('submit', ask);
+$('askForm').addEventListener('submit', conversationAsk);
+$('newConversation').addEventListener('click', createConversation);
+$('renameConversation').addEventListener('click', renameActiveConversation);
+$('deleteConversation').addEventListener('click', deleteActiveConversation);
+ensureConversation();

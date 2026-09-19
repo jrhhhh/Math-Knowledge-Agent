@@ -160,11 +160,15 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - 知识图谱可视化
 - 分步证明审查与错误定位
 - MathJax 数学公式排版
+- 可持续追问的会话工作台：保存消息、自动压缩旧上下文并恢复历史对话
 - 响应式布局与移动端适配
 
 ### AI API
 
 - `POST /ai/ask`：数学问答、知识点检索和历史题推荐
+- `POST /conversations`、`GET /conversations`：创建及查询本地持久化对话
+- `GET/PATCH/DELETE /conversations/{conversation_id}`：恢复、命名或删除对话
+- `POST /conversations/{conversation_id}/messages/stream`：按会话上下文流式生成下一轮数学回答
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
 - `POST /ai/related-graph`：由 AI 根据问题生成候选知识图谱；相同问题 24 小时内复用缓存
 - `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
@@ -186,6 +190,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。
+
+会话工作台会把每一轮用户问题、AI 回答与相关知识点写入 SQLite。每次新提问时，后端结合最近 8 条消息和压缩后的早期摘要构建上下文；因此可直接追问“继续第二步”或“换一种证明”，同时避免把无上限的完整历史持续发送给模型。现有 `/ai/ask` 接口仍保留，方便旧客户端继续使用。
 
 图谱面板中的“查询已有知识点”可以直接检索 SQLite 中已经保存的知识网络；选择结果后会加载该节点及其关系，不会再次调用 AI。问答反馈也已收紧为与回答面板一致的轻量控件，避免占用大块屏幕空间。
 

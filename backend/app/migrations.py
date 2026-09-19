@@ -1,6 +1,6 @@
 from sqlalchemy import inspect, text
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 def run_schema_migrations(connection):
     connection.execute(text("CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
