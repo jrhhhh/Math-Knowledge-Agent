@@ -178,12 +178,16 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库
 - `GET /concepts/graph`：获取知识图谱节点和关系
+- `GET /concepts/search?q=...&limit=12`：查询已持久化的知识点，不触发模型生成
+- `GET /concepts/{concept_id}/network`：加载指定知识点及其直接关联网络
 - `POST /concepts/{concept_id}/aliases`：为已有知识点添加别名
 - `GET /concepts/{concept_id}/learning-path`：按前置关系生成“基础 → 当前目标”的学习路径，并检测关系环
 - `GET /concepts/learning-progress`：读取本地学习档案的掌握状态、完成比例和下一步建议
 - `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。
+
+图谱面板中的“查询已有知识点”可以直接检索 SQLite 中已经保存的知识网络；选择结果后会加载该节点及其关系，不会再次调用 AI。问答反馈也已收紧为与回答面板一致的轻量控件，避免占用大块屏幕空间。
 
 相关图谱的典型流程：
 

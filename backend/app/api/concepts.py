@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -67,6 +67,56 @@ def get_concepts(
 ):
 
     return db.query(Concept).all()
+
+
+@router.get("/search")
+def search_concepts(q: str = Query(default="", max_length=120), limit: int = Query(default=12, ge=1, le=50), db: Session = Depends(get_db)):
+    """Search persisted concepts without asking the model to regenerate a graph."""
+    query = db.query(Concept)
+    term = q.strip()
+    if term:
+        pattern = f"%{term}%"
+        query = query.filter(
+            (Concept.name.ilike(pattern))
+            | (Concept.description.ilike(pattern))
+            | (Concept.field.ilike(pattern))
+        )
+    concepts = query.order_by(Concept.level.asc(), Concept.name.asc()).limit(limit).all()
+    return {
+        "query": term,
+        "items": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "type": item.type,
+                "field": item.field,
+                "description": item.description,
+            }
+            for item in concepts
+        ],
+        "total": len(concepts),
+    }
+
+
+@router.get("/{concept_id}/network")
+def get_concept_network(concept_id: int, db: Session = Depends(get_db)):
+    """Return one persisted concept and its directly connected network."""
+    concept = db.query(Concept).filter(Concept.id == concept_id).first()
+    if concept is None:
+        raise HTTPException(status_code=404, detail="Concept not found")
+    relations = db.query(ConceptRelation).filter(
+        (ConceptRelation.source_concept_id == concept_id)
+        | (ConceptRelation.target_concept_id == concept_id)
+    ).all()
+    node_ids = {concept_id}
+    for relation in relations:
+        node_ids.update((relation.source_concept_id, relation.target_concept_id))
+    nodes = db.query(Concept).filter(Concept.id.in_(node_ids)).order_by(Concept.level.asc(), Concept.id.asc()).all()
+    return {
+        "focus_id": concept_id,
+        "nodes": [{"id": item.id, "name": item.name, "type": item.type, "field": item.field, "description": item.description} for item in nodes],
+        "edges": [{"source": item.source_concept_id, "target": item.target_concept_id, "relation": item.relation, "weight": item.weight} for item in relations],
+    }
 
 
 @router.get("/learning-progress")

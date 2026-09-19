@@ -15,6 +15,12 @@ try {
     if (!response.ok) throw new Error('unable to create smoke-test concept');
     return response.json();
   });
+  await page.locator('#conceptSearch').fill('紧致性冒烟测试');
+  await page.locator('#conceptSearchButton').click();
+  await page.waitForFunction(() => document.querySelector('#conceptSearchResults')?.classList.contains('is-visible'));
+  if (!(await page.locator('#conceptSearchResults [data-concept-id]').count())) throw new Error('persisted concept search returned no result');
+  await page.locator('#conceptSearchResults [data-concept-id]').first().click();
+  await page.waitForFunction(() => document.querySelector('#graphStatus')?.textContent.includes('已加载'));
   await page.evaluate(concept => renderGraph({
     nodes: [{ id: concept.id, name: concept.name, type: concept.type, field: concept.field, description: concept.description }],
     edges: [],

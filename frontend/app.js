@@ -97,6 +97,42 @@ async function loadCandidateEvents(candidateId) { try { const response = await f
 async function loadCandidateHistory() { try { const status = $('candidateStatusFilter').value; const query = status ? `?status=${encodeURIComponent(status)}&limit=12` : '?limit=12'; const response = await fetch(`${API}/ai/graph-candidates${query}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选记录读取失败'); const statusNames = { pending: '待审核', needs_review: '需复核', validated: '已校验', saved: '已保存', rejected: '已拒绝' }; $('candidateList').innerHTML = data.items.length ? data.items.map(item => `<button type="button" class="candidate-item" data-candidate-id="${item.id}"><span class="candidate-question">${escapeHtml(item.question)}</span><span class="candidate-meta"><b class="candidate-status status-${escapeHtml(item.status)}">${escapeHtml(statusNames[item.status] || item.status)}</b><span>${item.node_count} 节点 · ${item.edge_count} 关系</span></span></button>`).join('') : '<span class="muted">暂无符合条件的候选图谱</span>'; document.querySelectorAll('.candidate-item').forEach(item => item.addEventListener('click', () => loadCandidate(item.dataset.candidateId))); } catch (error) { $('candidateList').innerHTML = '<span class="muted">候选记录暂不可用</span>'; } }
 async function validateAndSaveGraph() { if (!activeCandidateId) return; const button = $('saveGraphButton'); button.disabled = true; button.textContent = 'AI 校验中…'; $('graphStatus').textContent = '正在校验数学关系'; try { const validationResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/validate`, { method: 'POST' }); const validation = await validationResponse.json(); if (!validationResponse.ok) throw new Error(validation.detail || '校验失败'); if (validation.status !== 'validated') throw new Error('AI 判定存在需要复核的数学关系，暂未保存。'); const saveResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/save`, { method: 'POST' }); const saved = await saveResponse.json(); if (!saveResponse.ok) throw new Error(saved.detail || '保存失败'); $('graphStatus').textContent = `已保存 · 新增 ${saved.created_concepts} 个知识点`; button.textContent = '已保存到知识库'; showMessage(`图谱已通过 AI 校验并保存：新增 ${saved.created_concepts} 个知识点、${saved.created_relations} 条关系。`); } catch (error) { button.textContent = '校验并保存'; $('graphStatus').textContent = '待复核'; showMessage(`图谱暂未保存：${error.message}`); } finally { button.disabled = false; } }
 async function analyzeProof(event) { event.preventDefault(); const question = $('proofQuestion').value.trim(), proof = $('proofDraft').value.trim(); if (!question || !proof) return; clearMessage(); $('proofButton').disabled = true; $('proofButton').innerHTML = '审查中…'; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = '<div class="proof-loading">正在逐步核对证明链…</div>'; try { const response = await fetch(`${API}/ai/proof-analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, proof }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '请求失败'); renderProof(data); } catch (error) { showMessage(`证明审查暂不可用：${error.message}`); $('proofResult').innerHTML = '<div class="empty-state">请检查后端服务或稍后重试。</div>'; } finally { $('proofButton').disabled = false; $('proofButton').innerHTML = '检查证明 <span>→</span>'; } }
+function ensureConceptSearch() {
+  if ($('conceptSearch')) return;
+  const tools = $('graph').querySelector('.graph-tools');
+  const search = document.createElement('div');
+  search.className = 'concept-search';
+  search.innerHTML = '<input id="conceptSearch" type="search" placeholder="查询已有知识点" aria-label="查询已有知识点"><button type="button" id="conceptSearchButton">查询网络</button><div id="conceptSearchResults" class="concept-search-results" role="listbox"></div>';
+  tools?.parentElement?.insertAdjacentElement('afterend', search);
+  const input = $('conceptSearch');
+  const results = $('conceptSearchResults');
+  const runSearch = async () => {
+    const query = input.value.trim();
+    results.innerHTML = '<span>查询中…</span>';
+    try {
+      const response = await fetch(`${API}/concepts/search?q=${encodeURIComponent(query)}&limit=12`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || '查询失败');
+      results.innerHTML = data.items.length ? data.items.map(item => `<button type="button" role="option" data-concept-id="${item.id}"><b>${escapeHtml(item.name)}</b><small>${escapeHtml(item.field || '数学知识')} · ${escapeHtml(item.type || 'concept')}</small></button>`).join('') : '<span>数据库中暂无匹配知识点</span>';
+      results.querySelectorAll('[data-concept-id]').forEach(button => button.addEventListener('click', async () => {
+        try {
+          const networkResponse = await fetch(`${API}/concepts/${button.dataset.conceptId}/network`);
+          const network = await networkResponse.json();
+          if (!networkResponse.ok) throw new Error(network.detail || '网络读取失败');
+          renderGraph(network);
+          $('graphStatus').textContent = `已加载：${button.querySelector('b').textContent} · ${network.nodes.length} 个节点`;
+          results.classList.remove('is-visible');
+          showMessage(`已从数据库加载“${button.querySelector('b').textContent}”的已有知识网络。`);
+        } catch (error) { showMessage(`知识网络加载失败：${error.message}`); }
+      }));
+      results.classList.add('is-visible');
+    } catch (error) { results.innerHTML = '<span>知识库查询暂不可用</span>'; results.classList.add('is-visible'); }
+  };
+  $('conceptSearchButton').addEventListener('click', runSearch);
+  input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } });
+  document.addEventListener('click', event => { if (!search.contains(event.target)) results.classList.remove('is-visible'); });
+}
+
 async function loadGraph() { $('graphStatus').textContent = '加载中'; try { const response = await fetch(`${API}/concepts/graph`); if (!response.ok) throw Error('图谱请求失败'); renderGraph(await response.json()); } catch (error) { $('graphStatus').textContent = '暂不可用'; $('graphCanvas').innerHTML = '<div class="empty-state">请先启动后端服务</div>'; } }
 function graphHash(value) { return [...String(value)].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0; }
 
@@ -428,6 +464,7 @@ function ensureUtilityDrawer() {
   graph.appendChild(drawer);
 }
 ensureUtilityDrawer();
+ensureConceptSearch();
 
 // 统一将本次问答的追踪 ID 放入查询面板，便于故障后立即定位。
 const originalAsk = ask;

@@ -16,7 +16,7 @@ from app.api.ai import (
     update_graph_candidate,
     validate_graph_candidate,
 )
-from app.api.concepts import AliasRequest, LearningProgressRequest, add_concept_alias, get_learning_path, get_learning_progress, set_learning_progress
+from app.api.concepts import AliasRequest, LearningProgressRequest, add_concept_alias, get_concept_network, get_learning_path, get_learning_progress, search_concepts, set_learning_progress
 from app.database import Base
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
@@ -155,6 +155,19 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertEqual(progress["summary"]["next_concepts"], [])
         learning = set_learning_progress(concept.id, LearningProgressRequest(status="learning"), self.db)
         self.assertIsNone(learning["completed_at"])
+
+    def test_persisted_concepts_can_be_searched_and_loaded_as_network(self):
+        source = Concept(name="连续性", type="concept", field="分析学", description="函数连续的基本性质")
+        target = Concept(name="紧致性", type="concept", field="拓扑学", description="有限子覆盖性质")
+        self.db.add_all([source, target])
+        self.db.commit()
+        self.db.add(ConceptRelation(source_concept_id=source.id, target_concept_id=target.id, relation="supports", weight=0.8))
+        self.db.commit()
+        results = search_concepts("紧致", 12, self.db)
+        self.assertEqual([item["name"] for item in results["items"]], ["紧致性"])
+        network = get_concept_network(target.id, self.db)
+        self.assertEqual({item["name"] for item in network["nodes"]}, {"连续性", "紧致性"})
+        self.assertEqual(network["edges"][0]["relation"], "supports")
 
 
 if __name__ == "__main__":
