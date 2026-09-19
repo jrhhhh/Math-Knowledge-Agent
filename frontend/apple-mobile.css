@@ -1,0 +1,13 @@
+/* Final responsive guardrail: this is deliberately last so legacy dashboard CSS cannot squeeze the composer. */
+@media(max-width:850px){
+  .chat-workbench{grid-template-columns:minmax(0,1fr)!important}
+  .conversation-rail{display:block!important}
+  .chat-stage{min-width:0}
+}
+@media(max-width:540px){
+  .chat-composer .form-footer{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;flex-wrap:wrap!important}
+  .chat-composer .form-actions{display:flex!important;align-items:center!important;gap:3px!important;margin-left:auto!important}
+  .chat-composer .form-footer button{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:34px!important;white-space:nowrap!important}
+  .chat-composer .graph-trigger{display:none!important}
+  .chat-composer .cancel-ask{margin-left:0!important}
+}
