@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, Text, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, String
 
 from app.database import Base
 
@@ -11,6 +11,7 @@ class AIRetryJob(Base):
     id = Column(String, primary_key=True)
     operation = Column(String, nullable=False)
     question = Column(Text, nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True, index=True)
     status = Column(String, nullable=False, default="queued")
     attempts = Column(Integer, nullable=False, default=0)
     max_attempts = Column(Integer, nullable=False, default=3)

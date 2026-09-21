@@ -26,9 +26,9 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int = 0):
+def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int = 0, conversation_id: int | None = None):
     job_id = uuid4().hex[:12]
-    job = {"id": job_id, "operation": operation, "question": question, "status": "queued", "attempts": 0, "max_attempts": max_attempts, "error": None, "result": None, "created_at": _now(), "updated_at": _now()}
+    job = {"id": job_id, "operation": operation, "question": question, "conversation_id": conversation_id, "status": "queued", "attempts": 0, "max_attempts": max_attempts, "error": None, "result": None, "created_at": _now(), "updated_at": _now()}
     with _lock:
         _jobs[job_id] = job
         terminal = [key for key, value in _jobs.items() if value["status"] in {"succeeded", "failed", "cancelled"}]
@@ -36,7 +36,7 @@ def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int 
             _jobs.pop(key, None)
     db = SessionLocal()
     try:
-        db.add(AIRetryJob(id=job_id, operation=operation, question=question, max_attempts=max_attempts))
+        db.add(AIRetryJob(id=job_id, operation=operation, question=question, conversation_id=conversation_id, max_attempts=max_attempts))
         db.commit()
     finally:
         db.close()
@@ -110,7 +110,7 @@ def _run(job_id: str):
             if job["operation"] == "answer":
                 result = _ask_impl(AskRequest(question=job["question"]), db, request_id=f"retry-{job_id}")
             elif job["operation"] == "related_graph":
-                result = get_related_graph(RelatedGraphRequest(question=job["question"]), db)
+                result = get_related_graph(RelatedGraphRequest(question=job["question"], conversation_id=job.get("conversation_id")), db)
             else:
                 raise ValueError("不支持的重试操作")
             job["status"] = "succeeded"
@@ -160,7 +160,7 @@ def resume_pending_jobs():
         jobs = db.query(AIRetryJob).filter(AIRetryJob.status.in_(["queued", "running", "retrying"])).all()
         for stored in jobs:
             with _lock:
-                _jobs[stored.id] = {"id": stored.id, "operation": stored.operation, "question": stored.question, "status": "queued", "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": None, "created_at": stored.created_at.isoformat() if stored.created_at else _now(), "updated_at": _now()}
+                _jobs[stored.id] = {"id": stored.id, "operation": stored.operation, "question": stored.question, "conversation_id": stored.conversation_id, "status": "queued", "attempts": stored.attempts, "max_attempts": stored.max_attempts, "error": stored.error, "result": None, "created_at": stored.created_at.isoformat() if stored.created_at else _now(), "updated_at": _now()}
             _pending.put((0, stored.id))
             _executor.submit(_worker)
     finally:

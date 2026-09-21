@@ -639,7 +639,7 @@ def log_request_failure(db: Session, request_id: str, question: str, started_at:
 def create_retry_job(request: RetryRequest):
     if request.operation not in {"related_graph", "answer"} or not request.question.strip() or request.priority not in {0, 10}:
         raise HTTPException(status_code=422, detail="仅支持对非空问题重试回答或相关知识图谱。")
-    return enqueue(request.operation, request.question.strip(), priority=request.priority)
+    return enqueue(request.operation, request.question.strip(), priority=request.priority, conversation_id=request.conversation_id)
 
 
 @router.post("/retry-queue/{job_id}/retry")
@@ -649,7 +649,7 @@ def retry_failed_job(job_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="重试任务不存在。")
     if job.status not in {"failed", "succeeded"}:
         raise HTTPException(status_code=409, detail="任务仍在处理中，不能重复触发。")
-    return enqueue(job.operation, job.question, job.max_attempts, priority=5)
+    return enqueue(job.operation, job.question, job.max_attempts, priority=5, conversation_id=job.conversation_id)
 
 
 @router.get("/retry-queue/{job_id}")
@@ -671,7 +671,7 @@ def cancel_retry_job(job_id: str):
 @router.get("/retry-queue")
 def list_retry_jobs(limit: int = Query(default=20, ge=1, le=100), db: Session = Depends(get_db)):
     jobs = db.query(AIRetryJob).order_by(AIRetryJob.created_at.desc()).limit(limit).all()
-    return {"items": [{"id": job.id, "operation": job.operation, "question": job.question, "status": job.status, "attempts": job.attempts, "max_attempts": job.max_attempts, "error": job.error, "created_at": job.created_at.isoformat() if job.created_at else None, "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
+    return {"items": [{"id": job.id, "operation": job.operation, "question": job.question, "conversation_id": job.conversation_id, "status": job.status, "attempts": job.attempts, "max_attempts": job.max_attempts, "error": job.error, "created_at": job.created_at.isoformat() if job.created_at else None, "updated_at": job.updated_at.isoformat() if job.updated_at else None} for job in jobs]}
 
 
 @router.get("/retry-alerts")
@@ -767,6 +767,7 @@ class GraphCandidateBatchRequest(BaseModel):
 class RetryRequest(BaseModel):
     operation: str = "related_graph"
     question: str
+    conversation_id: int | None = None
     priority: int = 0
 
 
