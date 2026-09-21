@@ -100,6 +100,35 @@ def review_attempt(attempt_id: int, payload: dict, db: Session = Depends(get_db)
     return {**attempt_response(attempt), "learning_update": learning_update}
 
 
+@router.get("/next")
+def recommend_next_problem(problem_id: int | None = None, db: Session = Depends(get_db)):
+    """Recommend a traceable remediation or retest problem from reviewed evidence."""
+    current = db.query(Problem).filter(Problem.id == problem_id).first() if problem_id else None
+    target_concept_ids = []
+    reason = "继续练习当前知识点"
+    if current:
+        target_concept_ids = [link.concept_id for link in db.query(ProblemConcept).filter(ProblemConcept.problem_id == current.id).all()]
+        latest = db.query(ProblemAttempt).filter(ProblemAttempt.problem_id == current.id).order_by(ProblemAttempt.id.desc()).first()
+        if latest and latest.correctness in {"incorrect", "partially_correct"}:
+            reason = "上一题尚未独立掌握，建议用同知识点重测"
+    query = db.query(Problem)
+    if target_concept_ids:
+        query = query.join(ProblemConcept, ProblemConcept.problem_id == Problem.id).filter(ProblemConcept.concept_id.in_(target_concept_ids))
+    if current:
+        query = query.filter(Problem.id != current.id)
+    candidates = query.order_by(Problem.id.asc()).all()
+    if not candidates and current:
+        candidates = [current]
+        reason = "当前知识点暂无其他题目，建议重新作答"
+    if not candidates:
+        return {"item": None, "reason": "题库暂无可推荐练习"}
+    def has_independent_success(item):
+        return db.query(ProblemAttempt).filter(ProblemAttempt.problem_id == item.id, ProblemAttempt.correctness == "correct", ProblemAttempt.independent == "yes").first() is not None
+    candidates.sort(key=lambda item: (has_independent_success(item), item.id))
+    item = candidates[0]
+    return {"reason": reason, "item": {"id": item.id, "title": item.title, "content": item.content, "difficulty": item.difficulty}}
+
+
 def update_learning_from_attempt(attempt: ProblemAttempt, db: Session) -> dict:
     """Turn reviewed work into conservative learning evidence.
 

@@ -3,7 +3,7 @@ import unittest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.api.problem_attempts import list_attempts, review_attempt, submit_attempt
+from app.api.problem_attempts import list_attempts, recommend_next_problem, review_attempt, submit_attempt
 from app.database import Base
 from app.models.problem import Problem
 from app.models.problem_concept import ProblemConcept
@@ -44,6 +44,17 @@ class ProblemAttemptTests(unittest.TestCase):
     def test_empty_answer_is_rejected(self):
         with self.assertRaises(Exception):
             submit_attempt(self.problem_id, {"answer": "  "}, self.db)
+
+    def test_recommendation_prefers_same_concept_retest(self):
+        second = Problem(title="极值重测", content="再次求 x^2 的最小值", solution="0", difficulty="基础")
+        self.db.add(second)
+        self.db.commit()
+        self.db.refresh(second)
+        self.db.add(ProblemConcept(problem_id=second.id, concept_id=self.concept_id, relation="tests", importance=1.0))
+        self.db.commit()
+        result = recommend_next_problem(problem_id=self.problem_id, db=self.db)
+        self.assertEqual(result["item"]["id"], second.id)
+        self.assertIn("当前知识点", result["reason"])
 
 
 if __name__ == "__main__":
