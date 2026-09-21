@@ -268,6 +268,11 @@ def notify_security_alerts(db: Session = Depends(get_db), _: bool = Depends(requ
 class ReviewRequest(BaseModel):
     status: str
     note: str | None = None
+    correctness: str = "unverified"
+    conclusion: str = "unverified"
+    conditions: str = "unverified"
+    reasoning: str = "unverified"
+    citations: str = "unverified"
 
 
 class EvaluateRequest(BaseModel):
@@ -318,7 +323,9 @@ def answer_stats(db: Session = Depends(get_db)):
         bucket["average_quality"] += item.quality_score or 0.0
     for bucket in by_source.values():
         bucket["average_quality"] = round(bucket["average_quality"] / bucket["count"], 3) if bucket["count"] else 0.0
-    return {"total": len(records), "feedback_count": len(feedback),
+    reviewed = [item for item in db.query(AnswerReview).all() if item.correctness != "unverified"]
+    correctness_counts = {status: sum(1 for item in reviewed if item.correctness == status) for status in ("correct", "partially_correct", "incorrect")}
+    return {"total": len(records), "feedback_count": len(feedback), "correctness_review_count": len(reviewed), "correctness_counts": correctness_counts,
             "average_rating": round(sum(item.rating for item in feedback) / len(feedback), 2) if feedback else None,
             "by_source": by_source,
             "quality_levels": {"good": sum(1 for item in records if (item.quality_score or 0) >= .75),
@@ -362,6 +369,8 @@ def list_answer_reviews(status: str = Query(default="pending"), limit: int = Que
         query = query.filter(AnswerReview.status == status)
     items = query.limit(limit).all()
     return {"items": [{"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note,
+                       "correctness": item.correctness, "conclusion": item.conclusion, "conditions": item.conditions,
+                       "reasoning": item.reasoning, "citations": item.citations,
                        "created_at": item.created_at.isoformat(), "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None}
                       for item in items], "total": len(items)}
 
@@ -376,13 +385,19 @@ def review_answer(answer_id: int, request: ReviewRequest, db: Session = Depends(
     if item is None:
         item = AnswerReview(answer_id=answer_id)
         db.add(item)
+    allowed = {"correct", "partially_correct", "incorrect", "unverified"}
+    fields = {"correctness": request.correctness, "conclusion": request.conclusion, "conditions": request.conditions, "reasoning": request.reasoning, "citations": request.citations}
+    if any(value not in allowed for value in fields.values()):
+        raise HTTPException(status_code=422, detail="正确性字段必须是 correct、partially_correct、incorrect 或 unverified。")
     item.status, item.note = request.status, request.note
+    for field, value in fields.items():
+        setattr(item, field, value)
     item.reviewed_at = datetime.now(timezone.utc).replace(tzinfo=None) if request.status != "pending" else None
     db.commit()
     db.refresh(item)
     db.add(AnswerReviewEvent(answer_id=answer_id, review_id=item.id, action=request.status, note=request.note))
     db.commit()
-    return {"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note}
+    return {"id": item.id, "answer_id": item.answer_id, "status": item.status, "note": item.note, **fields}
 
 
 @router.get("/answers/{answer_id}/review-events")
