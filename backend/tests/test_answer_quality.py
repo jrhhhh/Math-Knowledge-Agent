@@ -10,7 +10,10 @@ class AnswerQualityTests(unittest.TestCase):
         self.assertTrue(result["checks"]["has_formula"])
 
     def test_empty_answer_is_weak(self):
-        self.assertEqual(evaluate_answer("")["level"], "weak")
+        result = evaluate_answer("")
+        self.assertEqual(result["level"], "weak")
+        self.assertEqual(result["correctness_status"], "unverified")
+        self.assertEqual(result["completeness_score"], result["score"])
 
     def test_proof_question_has_specialized_checks(self):
         result = evaluate_answer("设 x∈K。由定理可得，因此结论成立。证明完毕。", "证明连续函数在紧集上有界")

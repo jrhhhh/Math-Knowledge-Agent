@@ -21,7 +21,15 @@ def evaluate_answer(answer: str, question: str = "") -> dict:
     formula = validate_formula(text)
     if not formula["valid"] and checks["has_formula"]:
         score = round(max(0.0, score - 0.25), 2)
-    return {"score": score, "checks": checks, "formula": formula, "question_type": "proof" if is_proof else "general", "level": "good" if score >= 0.75 else ("partial" if score >= 0.5 else "weak")}
+    return {
+        "score": score,
+        "completeness_score": score,
+        "correctness_status": "unverified",
+        "checks": checks,
+        "formula": formula,
+        "question_type": "proof" if is_proof else "general",
+        "level": "good" if score >= 0.75 else ("partial" if score >= 0.5 else "weak"),
+    }
 
 
 def quality_retry_instruction(quality: dict) -> str:
