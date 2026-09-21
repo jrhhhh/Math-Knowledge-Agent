@@ -869,8 +869,23 @@ async function loadPracticeProblem() {
     $('practicePrompt').textContent = problem ? `${problem.title}：${problem.content}` : '题目不存在';
     const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
     const history = await historyResponse.json();
-    $('practiceHistory').innerHTML = (history.items || []).length ? history.items.map(item => `<article class="practice-attempt"><div><b>${escapeHtml(item.correctness === 'unverified' ? '待审核' : item.correctness)}</b><small>${escapeHtml(item.created_at || '')}</small></div><p>${escapeHtml(item.answer)}</p>${item.feedback ? `<span>${escapeHtml(item.feedback)}</span>` : '<span class="muted">尚无审核反馈</span>'}</article>`).join('') : '<span class="muted">暂无作答记录</span>';
+    $('practiceHistory').innerHTML = (history.items || []).length ? history.items.map(item => `<article class="practice-attempt"><div><b>${escapeHtml(item.correctness === 'unverified' ? '待审核' : item.correctness)}</b><small>${escapeHtml(item.created_at || '')}</small></div><p>${escapeHtml(item.answer)}</p>${item.feedback ? `<span>${escapeHtml(item.feedback)}</span>` : '<span class="muted">尚无审核反馈</span>'}${item.correctness === 'unverified' ? `<div class="attempt-review" data-attempt-id="${item.id}"><select aria-label="审核正确性"><option value="correct">正确</option><option value="partially_correct">部分正确</option><option value="incorrect">错误</option></select><input data-review-error placeholder="错误类型（可选）"><textarea data-review-feedback placeholder="给学生的反馈（可选）"></textarea><button type="button" data-review-submit>保存审核</button></div>` : ''}</article>`).join('') : '<span class="muted">暂无作答记录</span>';
+    $('practiceHistory').querySelectorAll('[data-review-submit]').forEach(button => button.addEventListener('click', () => reviewPracticeAttempt(button.closest('[data-attempt-id]'))));
   } catch (error) { $('practiceStatus').textContent = `练习记录暂不可用：${error.message}`; }
+}
+
+async function reviewPracticeAttempt(panel) {
+  if (!panel) return;
+  const button = panel.querySelector('[data-review-submit]');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${API}/problems/attempts/${panel.dataset.attemptId}/review`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correctness: panel.querySelector('select').value, error_type: panel.querySelector('[data-review-error]').value.trim() || null, feedback: panel.querySelector('[data-review-feedback]').value.trim() || null }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '审核失败');
+    const remediation = data.learning_update?.remediation || [];
+    $('practiceStatus').textContent = remediation.length ? `审核已保存；建议补学：${remediation.map(item => item.name).join('、')}` : (data.learning_update?.updated_concept_ids?.length ? '审核已保存：独立正确，关联知识点已标记为掌握。' : '审核已保存：当前知识点仍处于学习中。');
+    await loadPracticeProblem();
+  } catch (error) { $('practiceStatus').textContent = `审核失败：${error.message}`; button.disabled = false; }
 }
 
 async function submitPractice(event) {

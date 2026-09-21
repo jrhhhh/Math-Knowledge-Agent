@@ -288,6 +288,10 @@ body { overflow-x: clip; }
 .practice-attempt small { color: #6d929e; }
 .practice-attempt p { margin: 8px 0; color: #c5e4e8; white-space: pre-wrap; line-height: 1.55; }
 .practice-attempt span { color: #9fc8d1; font-size: 11px; }
+.attempt-review { display: grid; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(126, 211, 229, .12); }
+.attempt-review input, .attempt-review textarea { width: 100%; }
+.attempt-review textarea { min-height: 54px; resize: vertical; }
+.attempt-review button { justify-self: start; padding: 8px 12px; border-radius: 999px; background: rgba(110, 223, 234, .18); color: #bdeff2; }
 @media (max-width: 760px) { .practice-workbench { grid-template-columns: 1fr; padding: 18px; } }
 
 .answer-sources { margin-top: 14px; border-top: 1px solid rgba(126, 211, 229, .14); color: #a8d6dc; }
