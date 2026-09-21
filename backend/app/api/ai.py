@@ -424,7 +424,11 @@ def evaluate_answer_endpoint(request: EvaluateRequest):
         warnings.append("答案未覆盖全部指定知识点。")
     return {
         "score": quality["score"],
-        "correctness": quality["score"],
+        # This endpoint only performs structural heuristics.  Never expose the
+        # heuristic score as mathematical correctness; that requires a reviewed
+        # reference answer or an explicit human review.
+        "correctness": None,
+        "correctness_status": "unverified",
         "completeness": round(max(0.0, quality["score"] - 0.1 * len(missing_points)), 2),
         "formula_valid": quality["formula"]["valid"],
         "logic_valid": bool(quality["checks"].get("has_reasoning") or quality["checks"].get("has_conclusion")),

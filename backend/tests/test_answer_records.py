@@ -117,6 +117,8 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.json()
         self.assertIn("formula_valid", body)
+        self.assertIsNone(body["correctness"])
+        self.assertEqual(body["correctness_status"], "unverified")
         self.assertEqual(body["missing_points"], [])
 
     def test_answer_retry_queue_contract(self):
