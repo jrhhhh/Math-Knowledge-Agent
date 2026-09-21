@@ -42,7 +42,7 @@ jobs:
         run: node --check frontend/app.js
       - name: Start services
         run: |
-          uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/math-agent-api.log 2>&1 &
+          MATH_AGENT_DB_PATH=/tmp/math-agent-ci.db uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/math-agent-api.log 2>&1 &
           python -m http.server 5500 --directory ../frontend > /tmp/math-agent-web.log 2>&1 &
           sleep 3
         working-directory: backend
