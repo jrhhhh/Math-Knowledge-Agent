@@ -271,10 +271,10 @@ function initKnowledgeLibrary() {
     status.textContent = '正在检索本地知识库…';
     results.innerHTML = '<div class="library-empty">正在检索…</div>';
     try {
-      const response = await fetch(API + '/concepts/search?q=' + encodeURIComponent(query) + '&limit=50');
+      const response = await fetch(API + '/concepts/search?q=' + encodeURIComponent(query) + '&type=' + encodeURIComponent(type) + '&limit=50');
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || '检索失败');
-      const items = type ? data.items.filter(item => item.type === type) : data.items;
+      const items = data.items || [];
       renderResults(items);
       status.textContent = '找到 ' + items.length + ' 个知识点' + (query ? ' · “' + query + '”' : '');
     } catch (error) {

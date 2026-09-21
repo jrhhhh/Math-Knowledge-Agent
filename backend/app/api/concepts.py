@@ -70,7 +70,7 @@ def get_concepts(
 
 
 @router.get("/search")
-def search_concepts(q: str = Query(default="", max_length=120), limit: int = Query(default=12, ge=1, le=50), db: Session = Depends(get_db)):
+def search_concepts(q: str = Query(default="", max_length=120), concept_type: str | None = Query(default=None, alias="type", max_length=30), offset: int = Query(default=0, ge=0), limit: int = Query(default=12, ge=1, le=100), db: Session = Depends(get_db)):
     """Search persisted concepts without asking the model to regenerate a graph."""
     query = db.query(Concept)
     term = q.strip()
@@ -80,10 +80,18 @@ def search_concepts(q: str = Query(default="", max_length=120), limit: int = Que
             (Concept.name.ilike(pattern))
             | (Concept.description.ilike(pattern))
             | (Concept.field.ilike(pattern))
+            | (ConceptAlias.alias.ilike(pattern))
         )
-    concepts = query.order_by(Concept.level.asc(), Concept.name.asc()).limit(limit).all()
+    if concept_type:
+        query = query.filter(Concept.type == concept_type)
+    query = query.outerjoin(ConceptAlias, ConceptAlias.concept_id == Concept.id).distinct()
+    total = query.count()
+    concepts = query.order_by(Concept.level.asc(), Concept.name.asc()).offset(offset).limit(limit).all()
     return {
         "query": term,
+        "type": concept_type,
+        "offset": offset,
+        "limit": limit,
         "items": [
             {
                 "id": item.id,
@@ -94,7 +102,7 @@ def search_concepts(q: str = Query(default="", max_length=120), limit: int = Que
             }
             for item in concepts
         ],
-        "total": len(concepts),
+        "total": total,
     }
 
 

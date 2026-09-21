@@ -8,6 +8,7 @@ from app.api.ai import format_audited_sources, retrieve_audited_sources
 from app.database import Base
 from app.models.concept import Concept
 from app.models.knowledge_source import KnowledgeChunk, KnowledgeDocument
+from app.models.concept_alias import ConceptAlias
 
 
 class KnowledgeSourceTests(unittest.TestCase):
@@ -45,6 +46,16 @@ class KnowledgeSourceTests(unittest.TestCase):
         self.db.query(KnowledgeChunk).update({KnowledgeChunk.review_status: "unreviewed"})
         self.db.commit()
         self.assertEqual(retrieve_audited_sources(self.db, "紧集", [{"concept": self.concept}]), [])
+
+    def test_concept_search_filters_type_and_alias_before_pagination(self):
+        from app.api.concepts import search_concepts
+        alias = ConceptAlias(concept_id=self.concept.id, alias="compact set")
+        theorem = Concept(name="紧集定理", description="连续像", field="拓扑学", type="theorem")
+        self.db.add_all([alias, theorem])
+        self.db.commit()
+        result = search_concepts(q="compact", concept_type="concept", offset=0, limit=1, db=self.db)
+        self.assertEqual(result["total"], 1)
+        self.assertEqual(result["items"][0]["id"], self.concept.id)
 
 
 if __name__ == "__main__":
