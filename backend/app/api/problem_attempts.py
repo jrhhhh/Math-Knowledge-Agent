@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.problem import Problem
 from app.models.problem_attempt import ProblemAttempt
+from app.models.problem_concept import ProblemConcept
+from app.models.concept import Concept
+from app.models.concept_learning_progress import ConceptLearningProgress
+from app.models.concept_relation import ConceptRelation
 
 
 router = APIRouter(prefix="/problems", tags=["Problem Attempts"])
@@ -77,6 +81,52 @@ def review_attempt(attempt_id: int, payload: dict, db: Session = Depends(get_db)
     attempt.feedback = str(payload["feedback"]).strip() if payload.get("feedback") else None
     attempt.independent = "yes" if payload.get("independent") is True else ("no" if payload.get("independent") is False else attempt.independent)
     attempt.reviewed_at = datetime.utcnow() if attempt.status == "reviewed" else None
+    learning_update = update_learning_from_attempt(attempt, db)
     db.commit()
     db.refresh(attempt)
-    return attempt_response(attempt)
+    return {**attempt_response(attempt), "learning_update": learning_update}
+
+
+def update_learning_from_attempt(attempt: ProblemAttempt, db: Session) -> dict:
+    """Turn reviewed work into conservative learning evidence.
+
+    Only an independently correct attempt can complete a concept. A prompted or
+    partially correct attempt remains learning; an incorrect attempt exposes
+    prerequisite concepts as remediation suggestions.
+    """
+    links = db.query(ProblemConcept).filter(ProblemConcept.problem_id == attempt.problem_id).all()
+    if not links or attempt.correctness == "unverified":
+        return {"updated_concept_ids": [], "remediation": []}
+    now = datetime.utcnow()
+    completed_ids = []
+    for link in links:
+        item = db.query(ConceptLearningProgress).filter(
+            ConceptLearningProgress.profile_id == "local",
+            ConceptLearningProgress.concept_id == link.concept_id,
+        ).first()
+        status = "completed" if attempt.correctness == "correct" and attempt.independent == "yes" else "learning"
+        if item is None:
+            item = ConceptLearningProgress(profile_id="local", concept_id=link.concept_id, status=status)
+            db.add(item)
+        else:
+            # Never downgrade an independently mastered concept because of a later miss.
+            if item.status != "completed":
+                item.status = status
+        item.updated_at = now
+        if item.status == "completed":
+            item.completed_at = item.completed_at or now
+            completed_ids.append(link.concept_id)
+        elif status == "learning":
+            item.completed_at = None
+    remediation = []
+    if attempt.correctness in {"incorrect", "partially_correct"}:
+        prerequisite_ids = set()
+        for link in links:
+            prerequisite_ids.update(
+                relation.source_concept_id
+                for relation in db.query(ConceptRelation).filter(ConceptRelation.target_concept_id == link.concept_id).all()
+            )
+        if prerequisite_ids:
+            concepts = db.query(Concept).filter(Concept.id.in_(prerequisite_ids)).order_by(Concept.level.asc(), Concept.id.asc()).all()
+            remediation = [{"id": item.id, "name": item.name, "type": item.type} for item in concepts[:5]]
+    return {"updated_concept_ids": completed_ids, "remediation": remediation}
