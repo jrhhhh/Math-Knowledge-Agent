@@ -1795,7 +1795,7 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
             print("[AI] graph semantic validation failed:", repr(exc))
             candidate.validation_json = json.dumps({**validation, "semantic_valid": False, "confidence": 0.0, "semantic_issues": ["AI 语义校验未完成，请重试"]}, ensure_ascii=False)
             candidate.status = "needs_review"
-            record_candidate_event(db, candidate.id, "validation_failed", {"error": str(exc.detail)})
+            record_candidate_event(db, candidate.id, "validation_failed", {"error": str(exc)})
             db.commit()
             raise HTTPException(status_code=503, detail="AI 数学语义校验暂时不可用，请稍后重试。") from exc
 
@@ -1833,10 +1833,9 @@ confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例�
             {"role": "user", "content": prompt},
         ],
         response_format={"type": "json_object"},
-        max_retries=2,
+        max_retries=1,
         max_tokens=3000,
-        timeout=70.0,
-        extra_body={"thinking": {"type": "enabled"}},
+        timeout=min(35.0, primary_timeout),
     )
     result = parse_ai_graph_json(raw)
     try:

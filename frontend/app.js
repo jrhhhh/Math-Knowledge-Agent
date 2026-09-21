@@ -147,7 +147,35 @@ async function applyGraphEdit() { if (!activeCandidateId) return; let graph; try
 async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; $('question').value = data.question; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
 async function loadCandidateEvents(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '事件读取失败'); let timeline = $('candidateTimeline'); if (!timeline) { timeline = document.createElement('div'); timeline.id = 'candidateTimeline'; timeline.className = 'candidate-timeline'; $('graphEditorPanel').appendChild(timeline); } const names = { generated: 'AI 生成', edited: '人工编辑', validated: '校验通过', rejected: '校验拒绝', validation_failed: '校验异常', relation_conflict: '关系冲突处理', saved: '写入知识库' }; const detailText = event => event.action === 'relation_conflict' ? `${event.detail.action === 'replaced' ? '已替换' : '已跳过'}：${event.detail.old_relations?.join(', ')} → ${event.detail.new_relation}（优先级 ${event.detail.old_priority} / ${event.detail.new_priority}）` : ''; timeline.innerHTML = `<b>审核记录</b>${(data.events || []).map(event => `<div><span>${escapeHtml(names[event.action] || event.action)}${detailText(event) ? ` · ${escapeHtml(detailText(event))}` : ''}</span><small>${escapeHtml(event.created_at || '')}</small></div>`).join('') || '<span class="muted">暂无记录</span>'}`; } catch (error) {} }
 async function loadCandidateHistory() { try { const status = $('candidateStatusFilter').value; const query = status ? `?status=${encodeURIComponent(status)}&limit=12` : '?limit=12'; const response = await fetch(`${API}/ai/graph-candidates${query}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选记录读取失败'); const statusNames = { pending: '待审核', needs_review: '需复核', validated: '已校验', saved: '已保存', rejected: '已拒绝' }; $('candidateList').innerHTML = data.items.length ? data.items.map(item => `<button type="button" class="candidate-item" data-candidate-id="${item.id}"><span class="candidate-question">${escapeHtml(item.question)}</span><span class="candidate-meta"><b class="candidate-status status-${escapeHtml(item.status)}">${escapeHtml(statusNames[item.status] || item.status)}</b><span>${item.node_count} 节点 · ${item.edge_count} 关系</span></span></button>`).join('') : '<span class="muted">暂无符合条件的候选图谱</span>'; document.querySelectorAll('.candidate-item').forEach(item => item.addEventListener('click', () => loadCandidate(item.dataset.candidateId))); } catch (error) { $('candidateList').innerHTML = '<span class="muted">候选记录暂不可用</span>'; } }
-async function validateAndSaveGraph() { if (!activeCandidateId) return; const button = $('saveGraphButton'); button.disabled = true; button.textContent = 'AI 校验中…'; $('graphStatus').textContent = '正在校验数学关系'; try { const validationResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/validate`, { method: 'POST' }); const validation = await validationResponse.json(); if (!validationResponse.ok) throw new Error(validation.detail || '校验失败'); if (validation.status !== 'validated') throw new Error('AI 判定存在需要复核的数学关系，暂未保存。'); const saveResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/save`, { method: 'POST' }); const saved = await saveResponse.json(); if (!saveResponse.ok) throw new Error(saved.detail || '保存失败'); $('graphStatus').textContent = `已保存 · 新增 ${saved.created_concepts} 个知识点`; button.textContent = '已保存到知识库'; showMessage(`图谱已通过 AI 校验并保存：新增 ${saved.created_concepts} 个知识点、${saved.created_relations} 条关系。`); } catch (error) { button.textContent = '校验并保存'; $('graphStatus').textContent = '待复核'; showMessage(`图谱暂未保存：${error.message}`); } finally { button.disabled = false; } }
+async function validateAndSaveGraph() {
+  if (!activeCandidateId) return;
+  const button = $('saveGraphButton');
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 45000);
+  button.disabled = true;
+  button.textContent = 'AI 校验中…';
+  $('graphStatus').textContent = '正在校验数学关系（最长 45 秒）';
+  try {
+    const validationResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/validate`, { method: 'POST', signal: controller.signal });
+    const validation = await validationResponse.json();
+    if (!validationResponse.ok) throw new Error(validation.detail || `校验失败（HTTP ${validationResponse.status}）`);
+    if (validation.status !== 'validated') throw new Error('AI 判定存在需要复核的数学关系，暂未保存。');
+    const saveResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/save`, { method: 'POST', signal: controller.signal });
+    const saved = await saveResponse.json();
+    if (!saveResponse.ok) throw new Error(saved.detail || '保存失败');
+    $('graphStatus').textContent = `已保存 · 新增 ${saved.created_concepts} 个知识点`;
+    button.textContent = '已保存到知识库';
+    showMessage(`图谱已通过 AI 校验并保存：新增 ${saved.created_concepts} 个知识点、${saved.created_relations} 条关系。`);
+    loadCandidateHistory();
+  } catch (error) {
+    button.textContent = '校验并保存';
+    $('graphStatus').textContent = error.name === 'AbortError' ? '校验超时 · 请稍后重试' : '待复核';
+    showMessage(error.name === 'AbortError' ? 'AI 校验超过 45 秒，已自动取消；候选图谱仍保留，可稍后重试。' : `图谱暂未保存：${error.message}`);
+  } finally {
+    window.clearTimeout(timeout);
+    button.disabled = false;
+  }
+}
 async function analyzeProof(event) { event.preventDefault(); const question = $('proofQuestion').value.trim(), proof = $('proofDraft').value.trim(); if (!question || !proof) return; clearMessage(); $('proofButton').disabled = true; $('proofButton').innerHTML = '审查中…'; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = '<div class="proof-loading">正在逐步核对证明链…</div>'; try { const response = await fetch(`${API}/ai/proof-analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, proof }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '请求失败'); renderProof(data); } catch (error) { showMessage(`证明审查暂不可用：${error.message}`); $('proofResult').innerHTML = '<div class="empty-state">请检查后端服务或稍后重试。</div>'; } finally { $('proofButton').disabled = false; $('proofButton').innerHTML = '检查证明 <span>→</span>'; } }
 function ensureConceptSearch() {
   if ($('conceptSearch')) return;

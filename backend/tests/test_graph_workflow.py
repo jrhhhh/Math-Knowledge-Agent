@@ -20,6 +20,7 @@ from app.api.concepts import AliasRequest, LearningProgressRequest, add_concept_
 from app.database import Base
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
+from app.models.graph_candidate import GraphCandidate
 
 
 class GraphWorkflowTests(unittest.TestCase):
@@ -89,6 +90,19 @@ class GraphWorkflowTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as error:
             save_graph_candidate(generated["candidate_id"], self.db)
         self.assertEqual(error.exception.status_code, 409)
+
+    def test_semantic_validation_failure_returns_503_and_records_error(self):
+        with patch("app.api.ai.call_deepseek", return_value=json.dumps(self.graph_payload())):
+            generated = generate_ai_related_graph(self.db, "柯西中值定理")
+        with patch("app.api.ai.validate_graph_semantics", side_effect=RuntimeError("provider returned empty response")):
+            with self.assertRaises(HTTPException) as error:
+                validate_graph_candidate(generated["candidate_id"], self.db)
+        self.assertEqual(error.exception.status_code, 503)
+        candidate = self.db.query(GraphCandidate).filter_by(id=generated["candidate_id"]).one()
+        self.assertEqual(candidate.status, "needs_review")
+        events = get_graph_candidate_events(candidate.id, self.db)["events"]
+        self.assertEqual(events[-1]["action"], "validation_failed")
+        self.assertIn("provider returned empty response", events[-1]["detail"]["error"])
 
     def test_edit_resets_validation_and_cache_reuses_candidate(self):
         payload = self.graph_payload()
