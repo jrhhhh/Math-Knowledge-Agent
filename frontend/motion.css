@@ -280,6 +280,10 @@ body { overflow-x: clip; }
 .practice-prompt { margin: 14px 0; padding: 14px; border-radius: 12px; background: rgba(126, 211, 229, .08); color: #d7f5f7; line-height: 1.7; }
 .practice-prompt b { display: block; margin-bottom: 5px; color: #f2ffff; }
 .practice-source { display: block; margin-top: 9px; color: #83b9c4; font: 10px/1.5 var(--mono); }
+.learning-evidence-note { display: block; margin: 6px 0 8px; color: #83b9c4; font-size: 10px; }
+.learning-step { display: inline-grid; gap: 3px; padding: 7px 9px; border: 1px solid #285467; border-radius: 8px; color: #b9e8ed; font-size: 10px; }
+.learning-step small { color: #7faab4; font-size: 8px; }
+.learning-step.is-complete { border-color: #4e9f7d; color: #baf0d0; }
 .answer-review-item { border-top: 1px solid #173346; padding-top: 8px; }
 .answer-review-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
 .answer-review-fields label { display: grid; gap: 4px; color: #8fbcc5; font-size: 9px; }

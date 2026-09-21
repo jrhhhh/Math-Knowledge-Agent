@@ -481,23 +481,11 @@ async function openGraphConceptCard(concept) {
       : '<span>暂无已保存的直接关联</span>';
     const pathElement = card.querySelector('.graph-card-path');
     const completedIds = new Set(progress.completed_concept_ids || []);
+    const progressById = new Map((progress.items || []).map(item => [Number(item.concept_id), item]));
+    const statusLabel = { completed: '独立作答已掌握', learning: '学习中', unverified: '待验证' };
     pathElement.innerHTML = pathResponse.ok
-      ? `<b>推荐学习顺序</b><div>${(path.steps || []).map((item, index) => `<button type="button" class="learning-step${completedIds.has(item.id) ? ' is-complete' : ''}" data-learning-concept="${item.id}">${completedIds.has(item.id) ? '✓ ' : ''}${index + 1}. ${escapeHtml(item.name)}</button>`).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
+      ? `<b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><div>${(path.steps || []).map((item, index) => { const state = progressById.get(Number(item.id)); const status = state?.status || 'unverified'; return `<span class="learning-step${status === 'completed' ? ' is-complete' : ''}" title="${escapeHtml(statusLabel[status] || status)}">${status === 'completed' ? '✓ ' : ''}${index + 1}. ${escapeHtml(item.name)}<small>${escapeHtml(statusLabel[status] || statusLabel.unverified)}</small></span>`; }).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
       : '<b>推荐学习顺序</b><span>暂时无法生成路径</span>';
-    pathElement.querySelectorAll('[data-learning-concept]').forEach(button => button.addEventListener('click', async () => {
-      const conceptId = Number(button.dataset.learningConcept);
-      const done = button.classList.contains('is-complete');
-      button.disabled = true;
-      try {
-        const saveResponse = await fetch(`${API}/concepts/${conceptId}/learning-progress`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: done ? 'learning' : 'completed' }) });
-        if (!saveResponse.ok) throw new Error('保存失败');
-        await openGraphConceptCard(concept);
-        loadLearningPulse();
-      } catch (error) {
-        showMessage('学习进度保存失败，请稍后重试。');
-        button.disabled = false;
-      }
-    }));
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
   }
