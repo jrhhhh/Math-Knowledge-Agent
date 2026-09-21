@@ -33,7 +33,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">∑</span><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
-      <nav><a class="active" href="#ask">✦ 智能问答</a><a href="#proof">✓ 证明审查</a><a href="#graph">◎ 知识图谱</a></nav>
+      <nav><a class="active" href="#ask">✦ 智能问答</a><a href="#knowledge-library">⌕ 知识库</a><a href="#proof">✓ 证明审查</a><a href="#graph">◎ 知识图谱</a></nav>
       <div class="side-note"><span class="status-dot"></span><div><b>系统在线</b><small>连接本地知识库</small></div></div>
     </aside>
     <main class="main-content">
@@ -52,6 +52,18 @@
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
       <div id="message" class="message hidden"></div>
+      <section class="knowledge-library" id="knowledge-library" aria-label="知识库检索">
+        <div class="library-intro"><span class="pill">LOCAL KNOWLEDGE LIBRARY</span><h2>从已有知识出发。</h2><p>检索本地已保存的概念、定理、性质和方法，查看关系网络，再把知识点带回当前对话。</p></div>
+        <div class="library-workbench">
+          <form id="knowledgeSearchForm" class="library-search-form">
+            <label for="knowledgeSearchInput">搜索知识点</label>
+            <div class="library-search-row"><input id="knowledgeSearchInput" type="search" placeholder="例如：Hamilton 图、紧性、连续映射" autocomplete="off"><select id="knowledgeTypeFilter" aria-label="知识点类型"><option value="">全部类型</option><option value="concept">概念</option><option value="theorem">定理</option><option value="property">性质</option><option value="method">方法</option></select><button type="submit">检索 <span>↗</span></button></div>
+            <span id="knowledgeSearchStatus" class="muted">输入关键词，搜索本地知识库</span>
+          </form>
+          <div id="knowledgeSearchResults" class="library-results" aria-live="polite"><div class="library-empty">检索结果会显示在这里</div></div>
+          <aside id="knowledgeDetail" class="library-detail hidden" aria-live="polite"></aside>
+        </div>
+      </section>
       <section class="proof-workbench" id="proof">
         <div class="proof-intro"><span class="pill">PROOF REVIEW</span><h2>把证明交给第二双眼睛。</h2><p>逐步检查推理链，定位缺失条件与逻辑跳跃。适合提交自己的证明草稿。</p></div>
         <form id="proofForm" class="proof-form">
@@ -69,7 +81,7 @@
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=conversation-graph-4"></script>
-  <script src="./motion.js?v=conversation-graph-4"></script>
+  <script src="./app.js?v=knowledge-library-1"></script>
+  <script src="./motion.js?v=knowledge-library-1"></script>
 </body>
 </html>

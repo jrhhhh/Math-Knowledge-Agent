@@ -185,6 +185,70 @@ function ensureConceptSearch() {
   document.addEventListener('click', event => { if (!search.contains(event.target)) results.classList.remove('is-visible'); });
 }
 
+function initKnowledgeLibrary() {
+  const form = $('knowledgeSearchForm');
+  if (!form) return;
+  const input = $('knowledgeSearchInput');
+  const filter = $('knowledgeTypeFilter');
+  const results = $('knowledgeSearchResults');
+  const status = $('knowledgeSearchStatus');
+  const detail = $('knowledgeDetail');
+  let latestItems = [];
+  const renderResults = items => {
+    latestItems = items;
+    results.innerHTML = items.length ? items.map((item, index) => '<button type="button" class="library-result" data-library-index="' + index + '"><span><b>' + escapeHtml(item.name) + '</b><small>' + escapeHtml(item.field || '数学知识') + ' · ' + escapeHtml(item.type || 'concept') + '</small></span><i>查看 →</i></button>').join('') : '<div class="library-empty">没有找到匹配的知识点</div>';
+    results.querySelectorAll('[data-library-index]').forEach(button => button.addEventListener('click', () => showDetail(latestItems[Number(button.dataset.libraryIndex)])));
+  };
+  const showDetail = async item => {
+    if (!item) return;
+    detail.classList.remove('hidden');
+    detail.innerHTML = '<div class="library-detail-head"><span class="graph-card-tag">' + escapeHtml(item.type || 'concept').toUpperCase() + ' · ' + escapeHtml(item.field || '数学知识') + '</span><button type="button" aria-label="关闭知识点详情">×</button></div><h3>' + escapeHtml(item.name) + '</h3><p>' + escapeHtml(item.description || '该知识点暂无定义。') + '</p><div class="library-detail-actions"><button type="button" data-library-network>加载关系网络</button><button type="button" data-library-add>带入当前对话</button></div><div class="library-detail-network">选择操作查看更多信息</div>';
+    detail.querySelector('button[aria-label]').onclick = () => detail.classList.add('hidden');
+    detail.querySelector('[data-library-add]').onclick = () => {
+      const question = $('question');
+      const prefix = question.value.trim() ? question.value.trim() + '\\n\\n' : '';
+      question.value = prefix + '请结合知识点“' + item.name + '”继续讲解。';
+      question.focus();
+      showMessage('已将“' + item.name + '”带入当前对话输入框。');
+      document.querySelector('#ask')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    detail.querySelector('[data-library-network]').onclick = async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = '加载中…';
+      try {
+        const response = await fetch(API + '/concepts/' + item.id + '/network');
+        const network = await response.json();
+        if (!response.ok) throw new Error(network.detail || '关系网络读取失败');
+        renderGraph(network);
+        $('graphStatus').textContent = '已加载：' + item.name + ' · ' + network.nodes.length + ' 个节点';
+        detail.querySelector('.library-detail-network').textContent = '已加载 ' + network.nodes.length + ' 个节点、' + network.edges.length + ' 条关系。';
+        document.querySelector('#graph')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        detail.querySelector('.library-detail-network').textContent = '关系网络暂不可用：' + error.message;
+      } finally { button.disabled = false; button.textContent = '加载关系网络'; }
+    };
+  };
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const query = input.value.trim();
+    const type = filter.value;
+    status.textContent = '正在检索本地知识库…';
+    results.innerHTML = '<div class="library-empty">正在检索…</div>';
+    try {
+      const response = await fetch(API + '/concepts/search?q=' + encodeURIComponent(query) + '&limit=50');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || '检索失败');
+      const items = type ? data.items.filter(item => item.type === type) : data.items;
+      renderResults(items);
+      status.textContent = '找到 ' + items.length + ' 个知识点' + (query ? ' · “' + query + '”' : '');
+    } catch (error) {
+      status.textContent = '知识库暂不可用';
+      results.innerHTML = '<div class="library-empty">' + escapeHtml(error.message) + '</div>';
+    }
+  });
+}
+
 async function loadGraph() { $('graphStatus').textContent = '加载中'; try { const response = await fetch(`${API}/concepts/graph`); if (!response.ok) throw Error('图谱请求失败'); renderGraph(await response.json()); } catch (error) { $('graphStatus').textContent = '暂不可用'; $('graphCanvas').innerHTML = '<div class="empty-state">请先启动后端服务</div>'; } }
 function graphHash(value) { return [...String(value)].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0; }
 
@@ -429,6 +493,7 @@ $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
 ensureAdminPanel();
+initKnowledgeLibrary();
 $('generateGraphButton').addEventListener('click', generateRelatedGraph);
 $('saveGraphButton').addEventListener('click', validateAndSaveGraph);
 $('applyGraphEdit').addEventListener('click', applyGraphEdit);

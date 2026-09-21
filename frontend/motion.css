@@ -263,6 +263,54 @@ body { overflow-x: clip; }
 .graph-source-relation b { color: #78ddec; font-weight: 600; }
 .graph-source-relation small { color: #769eac; font-size: 9px; }
 
+.knowledge-library {
+  display: grid;
+  grid-template-columns: .72fr 1.28fr;
+  gap: 22px;
+  margin-top: 19px;
+  padding: 28px;
+  border: 1px solid #1c4055;
+  border-radius: 16px;
+  background: linear-gradient(118deg, #0a1c2b, #0d2936 62%, #10253c);
+  color: #e5f8fb;
+  position: relative;
+  overflow: hidden;
+}
+.knowledge-library::before { content: '∫'; position: absolute; right: 5%; top: -40px; color: #70dce914; font: 180px var(--serif); transform: rotate(9deg); pointer-events: none; }
+.library-intro, .library-workbench { position: relative; z-index: 1; }
+.library-intro h2 { margin: 17px 0 9px; font: 700 27px var(--serif); letter-spacing: -.04em; }
+.library-intro p { max-width: 300px; color: #a9c5ce; font-size: 12px; line-height: 1.8; }
+.library-workbench { display: grid; grid-template-columns: 1fr .9fr; gap: 12px; align-items: start; }
+.library-search-form { grid-column: 1 / -1; padding: 14px; border: 1px solid #2b5b70; border-radius: 12px; background: #07162299; }
+.library-search-form label { display: block; color: #bdeaf0; font: 500 10px var(--mono); letter-spacing: .09em; margin-bottom: 8px; }
+.library-search-row { display: flex; gap: 7px; }
+.library-search-row input, .library-search-row select { min-width: 0; border: 1px solid #315a70; border-radius: 8px; background: #0b2434; color: #e5f8fb; padding: 10px; outline: none; font: 11px var(--sans); }
+.library-search-row input { flex: 1; }
+.library-search-row select { width: 106px; }
+.library-search-row input:focus, .library-search-row select:focus { border-color: #72e5f3; box-shadow: 0 0 0 3px #5bd9e51c; }
+.library-search-row button, .library-detail-actions button { border: 1px solid #6be1ed; border-radius: 8px; background: #153f50; color: #e5fbff; padding: 9px 12px; cursor: pointer; font: 600 10px var(--sans); }
+.library-search-row button:hover, .library-detail-actions button:hover { background: #1a5a6a; }
+.library-search-row button span { margin-left: 3px; font-size: 14px; }
+.library-search-form > .muted { display: block; margin-top: 8px; color: #759baa; }
+.library-results { display: grid; gap: 7px; max-height: 246px; overflow: auto; }
+.library-result { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #254b60; border-radius: 10px; background: #0b2130b8; color: #d8f4f7; padding: 11px 12px; text-align: left; cursor: pointer; }
+.library-result:hover { border-color: #6edfea; background: #12384a; transform: translateX(3px); }
+.library-result b, .library-result small { display: block; }
+.library-result b { font-size: 12px; }
+.library-result small { margin-top: 4px; color: #7fa8b3; font: 9px var(--mono); }
+.library-result i { color: #7fe3ef; font: 10px var(--mono); font-style: normal; white-space: nowrap; }
+.library-empty { display: grid; min-height: 100px; place-items: center; border: 1px dashed #315a70; border-radius: 10px; color: #789eab; font-size: 11px; }
+.library-detail { padding: 16px; border: 1px solid #3f7180; border-radius: 12px; background: #122d3bcc; box-shadow: 0 16px 34px #03101a55; }
+.library-detail-head { display: flex; justify-content: space-between; align-items: start; }
+.library-detail-head button { border: 0; background: transparent; color: #94bec8; cursor: pointer; font-size: 18px; }
+.library-detail h3 { margin: 7px 0; font: 700 21px var(--serif); }
+.library-detail p { margin: 0; color: #b6d4da; font-size: 11px; line-height: 1.75; }
+.library-detail-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+.library-detail-actions button:disabled { opacity: .6; cursor: wait; }
+.library-detail-network { margin-top: 12px; color: #8fb9c2; font-size: 10px; }
+@media (max-width: 850px) { .knowledge-library { grid-template-columns: 1fr; padding: 22px; } .library-workbench { grid-template-columns: 1fr; } }
+@media (max-width: 540px) { .library-search-row { flex-wrap: wrap; } .library-search-row input { flex-basis: 100%; } .library-search-row select, .library-search-row button { flex: 1; } }
+
 @keyframes source-message-pulse {
   0% { transform: translateY(8px); opacity: .45; }
   100% { transform: translateY(0); opacity: 1; }
