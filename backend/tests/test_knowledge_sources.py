@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.api.knowledge import concept_sources, search_knowledge_chunks
+from app.api.ai import format_audited_sources, retrieve_audited_sources
 from app.database import Base
 from app.models.concept import Concept
 from app.models.knowledge_source import KnowledgeChunk, KnowledgeDocument
@@ -36,6 +37,14 @@ class KnowledgeSourceTests(unittest.TestCase):
         result = concept_sources(self.concept.id, self.db)
         self.assertEqual(result["items"][0]["chunk_type"], "definition")
         self.assertEqual(result["items"][0]["document_title"], "最优化导论")
+
+    def test_answer_retrieval_only_uses_approved_source_chunks(self):
+        sources = retrieve_audited_sources(self.db, "紧集", [{"concept": self.concept}])
+        self.assertEqual(len(sources), 1)
+        self.assertIn("第 8 页", format_audited_sources(sources))
+        self.db.query(KnowledgeChunk).update({KnowledgeChunk.review_status: "unreviewed"})
+        self.db.commit()
+        self.assertEqual(retrieve_audited_sources(self.db, "紧集", [{"concept": self.concept}]), [])
 
 
 if __name__ == "__main__":

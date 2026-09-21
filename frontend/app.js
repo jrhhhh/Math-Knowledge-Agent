@@ -31,6 +31,7 @@ function escapeHtml(s = '') { return String(s).replace(/[&<>"']/g, c => ({ '&': 
 function renderConcepts(items = []) { $('conceptCount').textContent = items.length; $('concepts').innerHTML = items.length ? items.map(x => `<div class="concept"><div><div class="concept-name">${escapeHtml(x.name)}</div><div class="concept-type">${escapeHtml(x.type || 'concept')}</div></div><span class="similarity">${Math.round((x.similarity || 0) * 100)}%</span></div>`).join('') : '<div class="empty-state">未检索到相关知识点</div>'; }
 function normalizeMathText(text) { return String(text || '').replace(/```(?:latex|tex|math)\s*\n?([\s\S]*?)```/gi, (_, formula) => `\\[${formula.trim()}\\]`); }
 function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').textContent = normalizeMathText(text || '暂无回答'); typesetMath($('answer')); }
+function renderKnowledgeSources(sources = []) { let panel = $('answerSources'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerSources'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } panel.innerHTML = `<summary>教材出处 ${sources.length ? `· ${sources.length} 条` : '· 暂无已审核片段'}</summary>${sources.length ? sources.map(item => `<article><b>${escapeHtml(item.document_title || '课程文档')}</b><small>${escapeHtml(item.chapter || '未分章')} · 第 ${escapeHtml(String(item.page_start || '?'))} 页 · ${escapeHtml(item.chunk_type || '片段')}</small><p>${escapeHtml(item.content || '')}</p></article>`).join('') : '<span class="muted">本次回答没有使用已审核教材片段，不能据此声称有教材出处。</span>'}`; }
 function ensureAnswerFeedback() { if ($('answerFeedback')) return; const panel = document.createElement('div'); panel.id = 'answerFeedback'; panel.className = 'answer-feedback'; panel.innerHTML = '<span>这份回答有帮助吗？</span><button type="button" data-rating="5">有帮助</button><button type="button" data-rating="2">需改进</button><textarea aria-label="回答反馈" placeholder="可选：指出需要改进的地方"></textarea><output></output>'; $('answer').parentElement?.appendChild(panel); panel.querySelectorAll('[data-rating]').forEach(button => button.addEventListener('click', () => submitAnswerFeedback(Number(button.dataset.rating)))); }
 async function submitAnswerFeedback(rating) { const panel = $('answerFeedback'); const answerId = lastAskResult?.answer_id; if (!answerId) { panel.querySelector('output').textContent = '当前回答尚未保存，暂不能提交反馈。'; return; } panel.querySelectorAll('button').forEach(button => { button.disabled = true; }); try { const response = await fetch(`${API}/ai/answers/${answerId}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rating, feedback: panel.querySelector('textarea').value.trim() || null }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '提交失败'); panel.querySelector('output').textContent = '感谢反馈，已记录。'; } catch (error) { panel.querySelector('output').textContent = error.message; panel.querySelectorAll('button').forEach(button => { button.disabled = false; }); } }
 function renderProof(data) { const status = data.valid ? '通过' : '需要修改'; const steps = (data.steps || []).map((s, i) => `<article class="proof-step ${s.status === 'valid' ? 'is-valid' : 'is-error'}"><div class="step-mark">${s.status === 'valid' ? '✓' : '!'}</div><div><div class="step-top"><b>步骤 ${escapeHtml(String(s.step || i + 1))}</b><span>${escapeHtml(s.error_type || 'none')}</span></div><p>${escapeHtml(s.text || '')}</p><small>${escapeHtml(s.reason || '')}</small></div></article>`).join(''); const list = (title, items) => items?.length ? `<div class="proof-notes"><b>${title}</b><ul>${items.map(x => `<li>${escapeHtml(String(x))}</li>`).join('')}</ul></div>` : ''; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = `<div class="proof-summary"><div><span class="section-label">REVIEW RESULT</span><h3>${status}</h3><p>${escapeHtml(data.summary || '')}</p></div><span class="review-badge ${data.valid ? 'good' : 'warn'}">${data.valid ? 'VALID' : 'REVIEW'}</span></div>${steps ? `<div class="proof-steps">${steps}</div>` : ''}${list('缺失条件', data.missing_assumptions)}${list('建议', data.suggestions)}`; typesetMath($('proofResult')); }
@@ -51,6 +52,7 @@ async function ask(event) {
   try {
     const data = await requestAskStream(question, askController.signal);
     renderAnswer(data.answer);
+    renderKnowledgeSources(data.knowledge_sources);
     renderConcepts(data.concepts);
     const sourceNames = { deepseek_extended: '深入生成完成', backup_model: '备用模型生成完成', local_fallback: '本地兜底生成完成' };
     const quality = data.answer_quality;
@@ -67,6 +69,7 @@ async function ask(event) {
       if (recovered) {
         lastAskResult = recovered;
         renderAnswer(recovered.answer);
+        renderKnowledgeSources(recovered.knowledge_sources);
         renderConcepts(recovered.concepts);
         if (recovered.knowledge_graph) renderGraph(recovered.knowledge_graph);
         $('answerStatus').textContent = recovered.answer_source === 'local_fallback' ? '本地兜底生成完成' : '断线后已恢复回答';
@@ -824,6 +827,7 @@ async function conversationAsk(event) {
     const data = await requestConversationStream(question, askController.signal);
     lastAskResult = data;
     renderAnswer(data.answer);
+    renderKnowledgeSources(data.knowledge_sources);
     renderConcepts(data.concepts || []);
     if (data.knowledge_graph) renderGraph(data.knowledge_graph);
     const completeness = data.answer_quality?.completeness_score ?? data.answer_quality?.score;

@@ -290,6 +290,14 @@ body { overflow-x: clip; }
 .practice-attempt span { color: #9fc8d1; font-size: 11px; }
 @media (max-width: 760px) { .practice-workbench { grid-template-columns: 1fr; padding: 18px; } }
 
+.answer-sources { margin-top: 14px; border-top: 1px solid rgba(126, 211, 229, .14); color: #a8d6dc; }
+.answer-sources summary { cursor: pointer; padding: 10px 0; color: #82e3ef; font: 500 10px var(--mono); letter-spacing: .08em; }
+.answer-sources article { margin: 0 0 8px; padding: 10px 12px; border-left: 2px solid #6edfea; background: rgba(9, 28, 41, .65); }
+.answer-sources article b, .answer-sources article small { display: block; }
+.answer-sources article b { color: #d8f5f5; font-size: 11px; }
+.answer-sources article small { margin-top: 3px; color: #789eab; font-size: 9px; }
+.answer-sources article p { margin: 7px 0 0; font-size: 11px; line-height: 1.6; }
+
 .graph-card-relations > div {
   display: flex;
   flex-wrap: wrap;

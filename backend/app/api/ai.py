@@ -46,6 +46,7 @@ from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
 from app.models.conversation import ConversationMessage
+from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 
 from app.ai.analyzer import client, backup_client, backup_model, primary_api_key, primary_base_url, primary_model, primary_timeout
 from app.ai.concept_matcher import (
@@ -2230,6 +2231,35 @@ def format_historical_problems(
     )
 
 
+def retrieve_audited_sources(db: Session, question: str, matched_concepts: list[dict], limit: int = 6) -> list[dict]:
+    """Return only approved textbook chunks, retaining citation metadata."""
+    concept_ids = [item["concept"].id for item in matched_concepts if item.get("concept")]
+    query = db.query(KnowledgeChunk, KnowledgeDocument).join(
+        KnowledgeDocument, KnowledgeDocument.id == KnowledgeChunk.document_id
+    ).filter(KnowledgeChunk.review_status == "approved", KnowledgeDocument.review_status == "approved")
+    if concept_ids:
+        query = query.filter(KnowledgeChunk.concept_id.in_(concept_ids))
+    else:
+        terms = [term for term in re.split(r"\s+", question.strip()) if len(term) >= 2][:5]
+        if not terms:
+            return []
+        query = query.filter(*[KnowledgeChunk.content.ilike(f"%{term}%") for term in terms])
+    rows = query.order_by(KnowledgeChunk.page_start.asc(), KnowledgeChunk.id.asc()).limit(limit).all()
+    return [{"chunk_id": chunk.id, "document_id": document.id, "document_title": document.title,
+             "course": document.course, "chapter": document.chapter, "page_start": chunk.page_start,
+             "page_end": chunk.page_end, "heading": chunk.heading, "chunk_type": chunk.chunk_type,
+             "content": chunk.content} for chunk, document in rows]
+
+
+def format_audited_sources(sources: list[dict]) -> str:
+    if not sources:
+        return "暂无经过审核的教材片段；不要声称已有教材出处。"
+    return "\n".join(
+        f"[{item['document_title']} · {item.get('chapter') or '未分章'} · 第 {item.get('page_start') or '?'} 页 · 片段 {item['chunk_id']}]\n{item['content']}"
+        for item in sources
+    )
+
+
 # ============================================================
 # Format similar problems
 # ============================================================
@@ -2415,6 +2445,7 @@ def _ask_impl(
             question
         )
     )
+    audited_sources = retrieve_audited_sources(db, question, matched_concepts)
     set_task_status(request_id, "retrieving", "检索知识点", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
@@ -2635,6 +2666,9 @@ def _ask_impl(
 相关知识点：
 {format_graph_nodes(graph_nodes[:6])}
 
+经过审核的教材片段（只能引用这些片段；没有片段时不要虚构出处）：
+{format_audited_sources(audited_sources)}
+
 关键关系：
 {format_graph_relations(graph_relations[:10])}
 
@@ -2791,6 +2825,7 @@ def _ask_impl(
         "generation_budget_seconds": REQUEST_BUDGET_SECONDS,
         "generation_elapsed_seconds": round(time.perf_counter() - started_at, 3),
         "degradation": degradation,
+        "knowledge_sources": audited_sources,
 
         "concepts": [
             {
