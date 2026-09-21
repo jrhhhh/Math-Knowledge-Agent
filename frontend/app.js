@@ -10,6 +10,7 @@ let lastAiErrorCode = null;
 let lastAskResult = null;
 let lastAskRequestId = null;
 let lastSecurityAlertSignature = '';
+let activeGraphContext = { nodes: [], edges: [] };
 const trackedFetch = window.fetch;
 window.fetch = (input, init = {}) => {
   const url = typeof input === 'string' ? input : input?.url || '';
@@ -310,6 +311,7 @@ async function batchSaveCandidates() {
 
 function renderGraph(graph) {
   const nodes = (graph.nodes || []).slice(0, 28), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target })).slice(0, 45);
+  activeGraphContext = { nodes, edges };
   if (!nodes.length) { $('graphCanvas').innerHTML = '<div class="empty-state">知识图谱暂无数据</div>'; return; }
   const width = 1000, height = 420, center = { x: width / 2, y: height / 2 }, positions = {};
   nodes.forEach((node, index) => { const ring = index < 5 ? 0 : index < 14 ? 1 : 2, count = ring === 0 ? Math.min(nodes.length, 5) : ring === 1 ? Math.min(Math.max(nodes.length - 5, 0), 9) : Math.max(nodes.length - 14, 1), offset = ring === 0 ? index : ring === 1 ? index - 5 : index - 14, angle = (Math.PI * 2 * offset / count) - Math.PI / 2 + (ring ? .18 : 0), radius = [90, 160, 245][ring], jitter = (graphHash(node.id) % 18) - 9; positions[node.id] = { x: center.x + Math.cos(angle) * (radius + jitter), y: center.y + Math.sin(angle) * (radius + jitter), ring }; });
@@ -337,13 +339,30 @@ function highlightConversationMessages(conceptName) {
   matches[0]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+function conversationMatches(conceptName) {
+  const needle = String(conceptName || '').trim().toLocaleLowerCase();
+  if (!needle) return [];
+  return [...document.querySelectorAll('#chatTimeline .chat-message')].filter(message => (message.querySelector('.chat-bubble')?.textContent || '').toLocaleLowerCase().includes(needle));
+}
+
 async function loadRetryAlerts() { let panel = $('retryAlerts'); if (!panel) { panel = document.createElement('details'); panel.id = 'retryAlerts'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>重试失败告警</summary><div class="retry-alert-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/retry-alerts?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); panel.querySelector('.retry-alert-info').innerHTML = data.alert ? `<b class="health-warning">⚠ 最近 1 小时有 ${data.failed_count} 个任务最终失败</b>${(data.items || []).slice(0, 3).map(item => `<div class="retry-alert-item"><span>${escapeHtml(item.question)}</span><small>${escapeHtml(item.error || '未知错误')}</small></div>`).join('')}` : '<span class="muted">最近 1 小时没有最终失败任务</span>'; } catch (error) { panel.querySelector('.retry-alert-info').textContent = '重试告警暂不可用'; } }
 async function loadOperationsDashboard() { let panel = $('operationsDashboard'); if (!panel) { panel = document.createElement('details'); panel.id = 'operationsDashboard'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>运营健康总览</summary><div class="ops-dashboard-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/ops-dashboard?window_minutes=60`); const data = await response.json(); if (!response.ok) throw new Error(); const sources = Object.entries(data.by_source || {}).map(([name, value]) => `${escapeHtml(name)} ${Math.round((value.average_quality || 0) * 100)}%/${value.count}次`).join(' · ') || '暂无回答'; const providers = Object.entries(data.provider_failure_rates || {}).map(([name, value]) => `${escapeHtml(name)} ${value.failure_rate == null ? '—' : `${Math.round(value.failure_rate * 100)}%`}`).join(' · '); panel.querySelector('.ops-dashboard-info').innerHTML = `<b class="ops-${escapeHtml(data.health || 'healthy')}">${data.health === 'degraded' ? '需要关注' : '运行正常'}</b><div>回答 ${data.answer_count || 0} · 平均质量 ${data.average_quality == null ? '—' : `${Math.round(data.average_quality * 100)}%`} · 平均耗时 ${data.average_duration_seconds == null ? '—' : `${data.average_duration_seconds}s`} · 失败重试 ${data.failed_retry_jobs || 0}</div><div>来源：${sources}</div><div>供应商失败率：${providers || '暂无调用'}</div>`; } catch (error) { panel.querySelector('.ops-dashboard-info').textContent = '运营统计暂不可用'; } }
 async function openGraphConceptCard(concept) {
   const card = $('graphConceptCard');
   if (!card || !concept) return;
+  const sourceMessages = conversationMatches(concept.name);
+  const relatedEdges = activeGraphContext.edges.filter(edge => String(edge.source) === String(concept.id) || String(edge.target) === String(concept.id)).slice(0, 8);
+  const relationMarkup = relatedEdges.length
+    ? relatedEdges.map(edge => {
+      const otherId = String(edge.source) === String(concept.id) ? edge.target : edge.source;
+      const other = activeGraphContext.nodes.find(node => String(node.id) === String(otherId));
+      const relation = edge.relation || edge.type || 'related';
+      const relationSources = conversationMatches(`${concept.name} ${other?.name || ''}`).length;
+      return `<span class="graph-source-relation"><b>${escapeHtml(relation)}</b> → ${escapeHtml(other?.name || String(otherId))}<small>${relationSources ? `${relationSources} 条消息共同提及` : '来自当前图谱推断'}</small></span>`;
+    }).join('')
+    : '<span>暂无当前图谱关系</span>';
   card.classList.remove('hidden');
-  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-path"><b>推荐学习顺序</b><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断'}</span></div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-path"><b>推荐学习顺序</b><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
   card.querySelector('.graph-card-close').onclick = () => card.classList.add('hidden');
   try {
     const [response, pathResponse, progressResponse] = await Promise.all([
