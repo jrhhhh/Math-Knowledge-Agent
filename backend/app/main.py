@@ -27,6 +27,7 @@ from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
 from app.models.concept_learning_progress import ConceptLearningProgress
+from app.models.problem_attempt import ProblemAttempt
 from app.models.conversation import Conversation, ConversationMessage, MessageConcept
 from app.logging_config import configure_logging
 from app.ai.retry_queue import resume_pending_jobs
@@ -39,6 +40,7 @@ from app.api.problem_concepts import router as problem_concept_router
 from app.api.templates import router as template_router
 from app.api.maintenance import router as maintenance_router
 from app.api.conversations import router as conversations_router
+from app.api.problem_attempts import router as problem_attempt_router
 
 
 Base.metadata.create_all(
@@ -72,6 +74,7 @@ app.include_router(problem_concept_router)
 app.include_router(template_router)
 app.include_router(maintenance_router)
 app.include_router(conversations_router)
+app.include_router(problem_attempt_router)
 
 
 @app.get("/")

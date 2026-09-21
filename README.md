@@ -191,6 +191,9 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `GET /concepts/{concept_id}/learning-path`：按前置关系生成“基础 → 当前目标”的学习路径，并检测关系环
 - `GET /concepts/learning-progress`：读取本地学习档案的掌握状态、完成比例和下一步建议
 - `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
+- `POST /problems/{problem_id}/attempts`：记录学生作答；新作答默认是 `unverified`，不会直接计入掌握
+- `GET /problems/{problem_id}/attempts`：读取该题的作答与重测历史
+- `PUT /problems/attempts/{attempt_id}/review`：由审核流程写入 `correct` / `partially_correct` / `incorrect`、错误类型和针对性反馈
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。回答上的“完整度”只表示条件、推理、结论和公式等结构信号是否齐全；在建立人工审核题集和数学正确性评估器前，界面会明确标注“数学正确性未验证”，不会把完整度伪装成正确率。
 
