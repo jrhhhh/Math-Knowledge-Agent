@@ -41,7 +41,11 @@ def enqueue(operation: str, question: str, max_attempts: int = 3, priority: int 
     finally:
         db.close()
     _pending.put((-priority, job_id))
-    _executor.submit(_worker)
+    # Contract tests can persist and inspect a queued job without starting a
+    # real provider call or leaving a non-terminating worker at interpreter
+    # shutdown. Production keeps the normal asynchronous behavior.
+    if os.getenv("MATH_AGENT_DISABLE_RETRY_WORKER", "0").lower() not in {"1", "true", "yes"}:
+        _executor.submit(_worker)
     return job.copy()
 
 
@@ -149,6 +153,8 @@ def _persist(job):
 
 
 def resume_pending_jobs():
+    if os.getenv("MATH_AGENT_DISABLE_RETRY_WORKER", "0").lower() in {"1", "true", "yes"}:
+        return
     db = SessionLocal()
     try:
         jobs = db.query(AIRetryJob).filter(AIRetryJob.status.in_(["queued", "running", "retrying"])).all()

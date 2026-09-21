@@ -122,7 +122,9 @@ class AnswerRecordContractTests(unittest.TestCase):
         self.assertEqual(body["missing_points"], [])
 
     def test_answer_retry_queue_contract(self):
-        response = self.client.post("/ai/retry-queue", json={"operation": "answer", "question": "证明连续函数有界", "priority": 0})
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"MATH_AGENT_DISABLE_RETRY_WORKER": "1"}):
+            response = self.client.post("/ai/retry-queue", json={"operation": "answer", "question": "证明连续函数有界", "priority": 0})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["operation"], "answer")
 
