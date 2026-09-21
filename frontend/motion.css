@@ -242,6 +242,24 @@ body { overflow-x: clip; }
   font-size: 11px;
 }
 
+.graph-card-sources blockquote {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 2px solid #6edfea;
+  background: #091c29;
+  color: #b8dce2;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.graph-card-sources blockquote small,
+.graph-source-relation em {
+  display: block;
+  color: #789eab;
+  font-size: 9px;
+  font-style: normal;
+}
+
 .graph-card-relations > div {
   display: flex;
   flex-wrap: wrap;
