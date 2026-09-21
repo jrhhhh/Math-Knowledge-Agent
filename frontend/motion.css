@@ -278,6 +278,15 @@ body { overflow-x: clip; }
 .practice-toolbar select { flex: 1; min-width: 0; }
 .practice-toolbar button { padding: 8px 10px; }
 .practice-prompt { margin: 14px 0; padding: 14px; border-radius: 12px; background: rgba(126, 211, 229, .08); color: #d7f5f7; line-height: 1.7; }
+.practice-prompt b { display: block; margin-bottom: 5px; color: #f2ffff; }
+.practice-source { display: block; margin-top: 9px; color: #83b9c4; font: 10px/1.5 var(--mono); }
+.answer-review-item { border-top: 1px solid #173346; padding-top: 8px; }
+.answer-review-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.answer-review-fields label { display: grid; gap: 4px; color: #8fbcc5; font-size: 9px; }
+.answer-review-fields select, .answer-review-item textarea { width: 100%; background: #071522; border: 1px solid #21465b; border-radius: 6px; color: #d8f4f8; padding: 6px; font: 10px var(--sans); }
+.answer-review-item textarea { min-height: 48px; margin-top: 7px; resize: vertical; }
+.review-actions { display: flex; gap: 5px; }
+@media(max-width:700px){ .answer-review-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .practice-form textarea { min-height: 120px; width: 100%; resize: vertical; }
 .practice-form > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; color: #9fc8d1; font-size: 11px; }
 .practice-form button { padding: 10px 15px; border-radius: 999px; background: #6edfea; color: #07151f; font-weight: 700; }
