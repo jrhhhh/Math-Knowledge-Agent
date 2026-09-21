@@ -194,6 +194,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `GET /knowledge/documents`：按课程查看已导入文档
 - `GET /knowledge/chunks/search`：按课程、章节、片段类型和关键词分页检索原文片段
 - `GET /knowledge/concepts/{concept_id}/sources`：查看知识点关联的真实教材片段和页码
+
+可用 `python3 scripts/import_pdf_pages.py <PDF> --pages 14-16 --title ... --course ... --chapter ... --review-status approved` 导入经过人工核对的页码。导入脚本只保存选定片段和绝对来源路径，不会把原始 PDF 提交到仓库；未人工核对的内容应使用默认 `draft` 状态。
 - `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
 - `POST /problems/{problem_id}/attempts`：记录学生作答；新作答默认是 `unverified`，不会直接计入掌握
 - `GET /problems/{problem_id}/attempts`：读取该题的作答与重测历史

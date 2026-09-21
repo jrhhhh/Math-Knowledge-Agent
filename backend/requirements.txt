@@ -4,3 +4,4 @@ sqlalchemy>=2,<3
 pydantic>=2,<3
 openai>=3.0,<4
 python-dotenv>=1,<2
+pypdf>=5,<7
