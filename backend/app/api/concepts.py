@@ -70,7 +70,7 @@ def get_concepts(
 
 
 @router.get("/search")
-def search_concepts(q: str = Query(default="", max_length=120), concept_type: str | None = Query(default=None, alias="type", max_length=30), offset: int = Query(default=0, ge=0), limit: int = Query(default=12, ge=1, le=100), db: Session = Depends(get_db)):
+def search_concepts(q: str = Query(default="", max_length=120), limit: int = Query(default=12, ge=1, le=100), db: Session = Depends(get_db), concept_type: str | None = None, offset: int = 0):
     """Search persisted concepts without asking the model to regenerate a graph."""
     query = db.query(Concept)
     term = q.strip()
