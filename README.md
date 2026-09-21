@@ -190,6 +190,10 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /concepts/{concept_id}/aliases`：为已有知识点添加别名
 - `GET /concepts/{concept_id}/learning-path`：按前置关系生成“基础 → 当前目标”的学习路径，并检测关系环
 - `GET /concepts/learning-progress`：读取本地学习档案的掌握状态、完成比例和下一步建议
+- `POST /knowledge/documents`：导入带课程、章节、来源地址和页码片段的可审核知识文档
+- `GET /knowledge/documents`：按课程查看已导入文档
+- `GET /knowledge/chunks/search`：按课程、章节、片段类型和关键词分页检索原文片段
+- `GET /knowledge/concepts/{concept_id}/sources`：查看知识点关联的真实教材片段和页码
 - `PUT /concepts/{concept_id}/learning-progress`：持久化单个知识点的 `learning` / `completed` 状态
 - `POST /problems/{problem_id}/attempts`：记录学生作答；新作答默认是 `unverified`，不会直接计入掌握
 - `GET /problems/{problem_id}/attempts`：读取该题的作答与重测历史

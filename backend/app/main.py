@@ -28,6 +28,7 @@ from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
 from app.models.concept_learning_progress import ConceptLearningProgress
 from app.models.problem_attempt import ProblemAttempt
+from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.conversation import Conversation, ConversationMessage, MessageConcept
 from app.logging_config import configure_logging
 from app.ai.retry_queue import resume_pending_jobs
