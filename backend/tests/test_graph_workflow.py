@@ -102,6 +102,9 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertEqual(error.exception.status_code, 503)
         candidate = self.db.query(GraphCandidate).filter_by(id=generated["candidate_id"]).one()
         self.assertEqual(candidate.status, "needs_review")
+        validation = json.loads(candidate.validation_json)
+        self.assertEqual(validation["semantic_status"], "incomplete")
+        self.assertEqual(validation["provider_diagnostics"]["failure_kind"], "empty_response")
         events = get_graph_candidate_events(candidate.id, self.db)["events"]
         self.assertEqual(events[-1]["action"], "validation_failed")
         self.assertIn("provider returned empty response", events[-1]["detail"]["error"])

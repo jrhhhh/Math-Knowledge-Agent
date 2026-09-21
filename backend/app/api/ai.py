@@ -860,6 +860,7 @@ def call_deepseek(
     circuit_enabled: bool = False,
     provider_client=None,
     model: str = primary_model,
+    return_metadata: bool = False,
 ):
     """
     调用 DeepSeek API。
@@ -924,10 +925,21 @@ def call_deepseek(
             ):
                 record_request(True, attempts - 1, duration=time.perf_counter() - request_started, provider="backup" if provider_client is not None else "primary")
                 circuit_success()
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if return_metadata:
+                    return {
+                        "content": content,
+                        "diagnostics": {
+                            "finish_reason": response.choices[0].finish_reason,
+                            "content_length": len(content),
+                            "choice_count": len(response.choices),
+                            "usage": response.usage.model_dump() if response.usage else None,
+                        },
+                    }
+                return content
 
             raise RuntimeError(
-                "DeepSeek 返回了空响应。"
+                "DeepSeek 返回了空响应（content_length=0，可能是 finish_reason、拒答或服务端截断）。"
             )
 
         except (
@@ -1867,9 +1879,25 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
                 validation["invalid_edges"].extend(semantic["invalid_edges"])
         except Exception as exc:
             print("[AI] graph semantic validation failed:", repr(exc))
-            candidate.validation_json = json.dumps({**validation, "semantic_valid": False, "confidence": 0.0, "semantic_issues": ["AI 语义校验未完成，请重试"]}, ensure_ascii=False)
+            error_text = str(exc)
+            if "超时" in error_text.lower() or "timeout" in error_text.lower():
+                failure_kind = "timeout"
+            elif "空响应" in error_text or "content_length=0" in error_text or "empty response" in error_text.lower():
+                failure_kind = "empty_response"
+            elif "json" in error_text.lower() or "解析" in error_text:
+                failure_kind = "invalid_json"
+            else:
+                failure_kind = "provider_error"
+            candidate.validation_json = json.dumps({
+                **validation,
+                "semantic_valid": False,
+                "confidence": 0.0,
+                "semantic_status": "incomplete",
+                "semantic_issues": ["AI 语义校验未完成，请重试"],
+                "provider_diagnostics": {"failure_kind": failure_kind, "error": error_text[:500]},
+            }, ensure_ascii=False)
             candidate.status = "needs_review"
-            record_candidate_event(db, candidate.id, "validation_failed", {"error": str(exc)})
+            record_candidate_event(db, candidate.id, "validation_failed", {"failure_kind": failure_kind, "error": error_text[:500]})
             db.commit()
             raise HTTPException(status_code=503, detail="AI 数学语义校验暂时不可用，请稍后重试。") from exc
 
@@ -1910,8 +1938,10 @@ confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例�
         max_retries=1,
         max_tokens=3000,
         timeout=min(35.0, primary_timeout),
+        return_metadata=True,
     )
-    result = parse_ai_graph_json(raw)
+    diagnostics = raw.get("diagnostics", {}) if isinstance(raw, dict) else {}
+    result = parse_ai_graph_json(raw.get("content", "") if isinstance(raw, dict) else raw)
     try:
         confidence = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
     except (TypeError, ValueError):
@@ -1924,6 +1954,7 @@ confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例�
         "confidence": confidence,
         "issues": result.get("issues", []) if isinstance(result.get("issues", []), list) else [],
         "invalid_edges": invalid_edges,
+        "provider_diagnostics": diagnostics,
     }
 
 
