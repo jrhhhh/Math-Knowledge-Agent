@@ -21,6 +21,7 @@ from app.database import Base
 from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
 from app.models.graph_candidate import GraphCandidate
+from app.models.conversation import Conversation, ConversationMessage
 
 
 class GraphWorkflowTests(unittest.TestCase):
@@ -103,6 +104,27 @@ class GraphWorkflowTests(unittest.TestCase):
         events = get_graph_candidate_events(candidate.id, self.db)["events"]
         self.assertEqual(events[-1]["action"], "validation_failed")
         self.assertIn("provider returned empty response", events[-1]["detail"]["error"])
+
+    def test_graph_generation_uses_raw_conversation_messages(self):
+        conversation = Conversation(title="原始消息测试")
+        self.db.add(conversation)
+        self.db.commit()
+        self.db.refresh(conversation)
+        messages = [
+            ConversationMessage(conversation_id=conversation.id, role="user", content="证明连续映射保持紧性"),
+            ConversationMessage(conversation_id=conversation.id, role="assistant", content="设 K 是紧集，说明像集仍紧。\\[f(K)\\]"),
+        ]
+        self.db.add_all(messages)
+        self.db.commit()
+        for message in messages:
+            self.db.refresh(message)
+        with patch("app.api.ai.generate_ai_related_graph", return_value={"candidate_id": 1}) as generate:
+            result = get_related_graph(RelatedGraphRequest(question="根据本次对话生成图谱", conversation_id=conversation.id), self.db)
+        self.assertEqual(result["candidate_id"], 1)
+        generated_question = generate.call_args.args[1]
+        self.assertIn("\\[f(K)\\]", generated_question)
+        self.assertIn(f"消息 {messages[0].id}", generated_question)
+        self.assertEqual(generate.call_args.args[2:], (conversation.id, [messages[0].id, messages[1].id]))
 
     def test_edit_resets_validation_and_cache_reuses_candidate(self):
         payload = self.graph_payload()

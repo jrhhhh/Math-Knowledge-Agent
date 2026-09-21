@@ -105,12 +105,14 @@ function collectConversationGraphContext() {
 }
 
 async function generateRelatedGraph() {
-  const question = collectConversationGraphContext();
-  if (!question) {
+  const context = collectConversationGraphContext();
+  if (!context) {
     showMessage('请先输入一个数学问题或知识点，再生成相关图谱。');
     $('question').focus();
     return;
   }
+  const draft = $('question').value.trim();
+  const question = activeConversationId ? (draft || '根据本次对话生成图谱') : context;
   clearMessage();
   const button = $('generateGraphButton');
   button.disabled = true;
@@ -122,7 +124,7 @@ async function generateRelatedGraph() {
     const response = await fetch(`${API}/ai/related-graph`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, conversation_id: activeConversationId || null }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '图谱请求失败');

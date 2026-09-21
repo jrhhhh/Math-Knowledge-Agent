@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, Text, String
+from sqlalchemy import Column, DateTime, Integer, Text, String, ForeignKey
 
 from app.database import Base
 
@@ -12,6 +12,8 @@ class GraphCandidate(Base):
 
     id = Column(Integer, primary_key=True)
     question = Column(Text, nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True, index=True)
+    source_message_ids = Column(Text, nullable=True, default="[]")
     graph_json = Column(Text, nullable=False)
     validation_json = Column(Text, nullable=False, default="{}")
     status = Column(String, nullable=False, default="pending")

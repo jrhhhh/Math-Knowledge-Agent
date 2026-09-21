@@ -44,6 +44,7 @@ from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
+from app.models.conversation import ConversationMessage
 
 from app.ai.analyzer import client, backup_client, backup_model, primary_api_key, primary_base_url, primary_model, primary_timeout
 from app.ai.concept_matcher import (
@@ -731,6 +732,7 @@ class AskRequest(BaseModel):
 
 class RelatedGraphRequest(BaseModel):
     question: str
+    conversation_id: int | None = None
 
 
 class GraphCandidateUpdateRequest(BaseModel):
@@ -1310,6 +1312,23 @@ def get_related_graph(
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空。")
 
+    source_message_ids = []
+    if request.conversation_id is not None:
+        messages = db.query(ConversationMessage).filter(
+            ConversationMessage.conversation_id == request.conversation_id,
+            ConversationMessage.role.in_(["user", "assistant"]),
+        ).order_by(ConversationMessage.id.asc()).all()
+        if not messages:
+            raise HTTPException(status_code=404, detail="对话不存在或没有可用于生成图谱的消息。")
+        source_message_ids = [message.id for message in messages]
+        transcript = "\n\n".join(
+            f"{'用户' if message.role == 'user' else 'AI 助手'}（消息 {message.id}）：{message.content}"
+            for message in messages
+        )
+        question = f"根据以下当前对话生成知识图谱：\n\n{transcript}"
+        if request.question and request.question != "根据本次对话生成图谱":
+            question += f"\n\n用户尚未发送的补充草稿：{request.question}"
+
     cached = (
         db.query(GraphCandidate)
         .filter(GraphCandidate.question == question)
@@ -1320,7 +1339,7 @@ def get_related_graph(
         graph = json.loads(cached.graph_json)
         return graph_candidate_response(cached, graph, "已复用 24 小时内的 AI 图谱缓存。")
 
-    return generate_ai_related_graph(db, question)
+    return generate_ai_related_graph(db, question, request.conversation_id, source_message_ids)
 
 
 def parse_ai_graph_json(raw: str):
@@ -1341,6 +1360,8 @@ def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: st
     return {
         "candidate_id": candidate.id,
         "question": candidate.question,
+        "conversation_id": candidate.conversation_id,
+        "source_message_ids": json.loads(candidate.source_message_ids or "[]"),
         "concepts": [
             {
                 "id": node["id"],
@@ -1356,7 +1377,7 @@ def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: st
     }
 
 
-def generate_ai_related_graph(db: Session, question: str):
+def generate_ai_related_graph(db: Session, question: str, conversation_id: int | None = None, source_message_ids: list[int] | None = None):
     """由模型生成题目相关的临时知识图谱，并尽可能锚定到本地知识库。"""
     prompt = f"""为数学问题“{question}”生成学习知识图谱。只输出 JSON：
 {{"nodes":[{{"id":"n1","name":"名称","type":"concept","description":"说明","field":"分支","level":1}}],"edges":[{{"source":"n1","target":"n2","relation":"prerequisite","weight":0.9}}]}}
@@ -1525,6 +1546,8 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
 
     candidate = GraphCandidate(
         question=question,
+        conversation_id=conversation_id,
+        source_message_ids=json.dumps(source_message_ids or [], ensure_ascii=False),
         graph_json=json.dumps({"nodes": nodes, "edges": edges}, ensure_ascii=False),
         validation_json=json.dumps({"valid": True, "invalid_edges": []}, ensure_ascii=False),
         status="pending",
