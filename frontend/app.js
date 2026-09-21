@@ -843,6 +843,55 @@ async function conversationAsk(event) {
   }
 }
 
+async function loadPracticeProblems() {
+  const select = $('practiceProblem');
+  if (!select) return;
+  try {
+    const response = await fetch(`${API}/problems/`);
+    const items = await response.json();
+    if (!response.ok) throw new Error(items.detail || '题目读取失败');
+    select.innerHTML = items.length ? items.map(item => `<option value="${item.id}">${escapeHtml(item.title)}${item.difficulty ? ` · ${escapeHtml(item.difficulty)}` : ''}</option>`).join('') : '<option value="">暂无练习</option>';
+    await loadPracticeProblem();
+  } catch (error) { select.innerHTML = '<option value="">题目暂不可用</option>'; $('practiceStatus').textContent = error.message; }
+}
+
+async function loadPracticeProblem() {
+  const id = $('practiceProblem')?.value;
+  if (!id) return;
+  try {
+    const response = await fetch(`${API}/problems/`);
+    const items = await response.json();
+    const problem = items.find(item => String(item.id) === String(id));
+    $('practicePrompt').textContent = problem ? `${problem.title}：${problem.content}` : '题目不存在';
+    const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
+    const history = await historyResponse.json();
+    $('practiceHistory').innerHTML = (history.items || []).length ? history.items.map(item => `<article class="practice-attempt"><div><b>${escapeHtml(item.correctness === 'unverified' ? '待审核' : item.correctness)}</b><small>${escapeHtml(item.created_at || '')}</small></div><p>${escapeHtml(item.answer)}</p>${item.feedback ? `<span>${escapeHtml(item.feedback)}</span>` : '<span class="muted">尚无审核反馈</span>'}</article>`).join('') : '<span class="muted">暂无作答记录</span>';
+  } catch (error) { $('practiceStatus').textContent = `练习记录暂不可用：${error.message}`; }
+}
+
+async function submitPractice(event) {
+  event.preventDefault();
+  const problemId = $('practiceProblem').value;
+  const answer = $('practiceAnswer').value.trim();
+  if (!problemId || !answer) return;
+  const button = $('practiceSubmit');
+  button.disabled = true;
+  try {
+    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, independent: $('practiceIndependent').checked }) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '提交失败');
+    $('practiceAnswer').value = '';
+    $('practiceIndependent').checked = false;
+    $('practiceStatus').textContent = '已记录：数学正确性未验证，等待审核反馈。';
+    await loadPracticeProblem();
+  } catch (error) { $('practiceStatus').textContent = `提交失败：${error.message}`; } finally { button.disabled = false; }
+}
+
+$('practiceForm')?.addEventListener('submit', submitPractice);
+$('practiceProblem')?.addEventListener('change', loadPracticeProblem);
+$('refreshPractice')?.addEventListener('click', loadPracticeProblems);
+$('practiceProblem') && loadPracticeProblems();
+
 $('askForm').removeEventListener('submit', ask);
 $('askForm').addEventListener('submit', conversationAsk);
 $('newConversation').addEventListener('click', createConversation);
