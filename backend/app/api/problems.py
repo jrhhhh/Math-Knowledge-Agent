@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.problem import Problem
+from app.models.problem_source import ProblemSource
+from app.models.knowledge_source import KnowledgeChunk, KnowledgeDocument
 
 
 router = APIRouter(
@@ -49,7 +51,21 @@ def get_problems(
     db: Session = Depends(get_db)
 ):
 
-    return db.query(Problem).all()
+    problems = db.query(Problem).order_by(Problem.id.asc()).all()
+    return [{
+        "id": problem.id,
+        "title": problem.title,
+        "content": problem.content,
+        "solution": problem.solution,
+        "difficulty": problem.difficulty,
+        "created_at": problem.created_at.isoformat() if problem.created_at else None,
+        "sources": [{"chunk_id": source.chunk_id, "page_start": chunk.page_start, "page_end": chunk.page_end,
+                      "document_title": document.title, "chapter": document.chapter, "relation": source.relation}
+                     for source, chunk, document in db.query(ProblemSource, KnowledgeChunk, KnowledgeDocument)
+                     .join(KnowledgeChunk, KnowledgeChunk.id == ProblemSource.chunk_id)
+                     .join(KnowledgeDocument, KnowledgeDocument.id == KnowledgeChunk.document_id)
+                     .filter(ProblemSource.problem_id == problem.id).all()]
+    } for problem in problems]
 
 @router.delete("/{problem_id}")
 def delete_problem(
