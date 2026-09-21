@@ -22,6 +22,7 @@ from app.models.concept import Concept
 from app.models.concept_relation import ConceptRelation
 from app.models.graph_candidate import GraphCandidate
 from app.models.conversation import Conversation, ConversationMessage
+from app.models.graph_evidence import GraphEvidence
 
 
 class GraphWorkflowTests(unittest.TestCase):
@@ -125,6 +126,26 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertIn("\\[f(K)\\]", generated_question)
         self.assertIn(f"消息 {messages[0].id}", generated_question)
         self.assertEqual(generate.call_args.args[2:], (conversation.id, [messages[0].id, messages[1].id]))
+
+    def test_graph_candidate_persists_node_and_edge_evidence(self):
+        conversation = Conversation(title="证据测试")
+        self.db.add(conversation)
+        self.db.commit()
+        self.db.refresh(conversation)
+        message = ConversationMessage(
+            conversation_id=conversation.id,
+            role="assistant",
+            content="柯西中值定理与拉格朗日中值定理都需要可导条件。",
+        )
+        self.db.add(message)
+        self.db.commit()
+        self.db.refresh(message)
+        with patch("app.api.ai.call_deepseek", return_value=json.dumps(self.graph_payload())):
+            result = generate_ai_related_graph(self.db, "根据当前对话生成图谱", conversation.id, [message.id])
+        evidence = self.db.query(GraphEvidence).filter_by(candidate_id=result["candidate_id"]).all()
+        self.assertGreaterEqual(len(evidence), 5)
+        self.assertTrue(any(item.subject_type == "node" and item.source_message_id == message.id for item in evidence))
+        self.assertTrue(any(item.subject_type == "edge" and item.source_kind == "conversation" for item in evidence))
 
     def test_edit_resets_validation_and_cache_reuses_candidate(self):
         payload = self.graph_payload()

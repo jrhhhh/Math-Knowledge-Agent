@@ -11,6 +11,7 @@ let lastAskResult = null;
 let lastAskRequestId = null;
 let lastSecurityAlertSignature = '';
 let activeGraphContext = { nodes: [], edges: [] };
+let activeGraphEvidence = [];
 const trackedFetch = window.fetch;
 window.fetch = (input, init = {}) => {
   const url = typeof input === 'string' ? input : input?.url || '';
@@ -129,6 +130,7 @@ async function generateRelatedGraph() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '图谱请求失败');
     activeCandidateId = data.candidate_id;
+    activeGraphEvidence = data.evidence || [];
     $('saveGraphButton').classList.remove('hidden');
     $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2);
     $('graphEditorPanel').open = false;

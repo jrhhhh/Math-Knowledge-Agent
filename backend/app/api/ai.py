@@ -36,6 +36,7 @@ from app.models.problem_concept import ProblemConcept
 from app.models.graph_candidate import GraphCandidate
 from app.models.concept_alias import ConceptAlias
 from app.models.graph_candidate_event import GraphCandidateEvent
+from app.models.graph_evidence import GraphEvidence
 from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 from app.models.question_sample import QuestionSample
@@ -1337,7 +1338,7 @@ def get_related_graph(
     )
     if cached and cached.created_at and datetime.now(timezone.utc).replace(tzinfo=None) - cached.created_at < timedelta(hours=24):
         graph = json.loads(cached.graph_json)
-        return graph_candidate_response(cached, graph, "已复用 24 小时内的 AI 图谱缓存。")
+        return graph_candidate_response(cached, graph, "已复用 24 小时内的 AI 图谱缓存。", db)
 
     return generate_ai_related_graph(db, question, request.conversation_id, source_message_ids)
 
@@ -1356,12 +1357,27 @@ def parse_ai_graph_json(raw: str):
     return json.loads(text[start:end + 1])
 
 
-def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: str):
+def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: str, db: Session | None = None):
+    evidence = []
+    if db is not None:
+        evidence = [
+            {
+                "id": item.id,
+                "subject_type": item.subject_type,
+                "subject_key": item.subject_key,
+                "source_kind": item.source_kind,
+                "source_message_id": item.source_message_id,
+                "excerpt": item.excerpt,
+                "review_status": item.review_status,
+            }
+            for item in db.query(GraphEvidence).filter(GraphEvidence.candidate_id == candidate.id).order_by(GraphEvidence.id.asc()).all()
+        ]
     return {
         "candidate_id": candidate.id,
         "question": candidate.question,
         "conversation_id": candidate.conversation_id,
         "source_message_ids": json.loads(candidate.source_message_ids or "[]"),
+        "evidence": evidence,
         "concepts": [
             {
                 "id": node["id"],
@@ -1558,10 +1574,31 @@ relation 只能为 prerequisite/supports/defines/property_of/uses/equivalent_to/
     db.commit()
     db.refresh(candidate)
 
+    source_messages = []
+    if conversation_id is not None:
+        source_messages = db.query(ConversationMessage).filter(ConversationMessage.id.in_(source_message_ids or [])).order_by(ConversationMessage.id.asc()).all()
+    for node in nodes:
+        matches = [message for message in source_messages if node["name"].casefold() in message.content.casefold()]
+        if matches:
+            db.add(GraphEvidence(candidate_id=candidate.id, subject_type="node", subject_key=str(node["id"]), source_kind="conversation", source_message_id=matches[0].id, excerpt=matches[0].content[:600]))
+        else:
+            db.add(GraphEvidence(candidate_id=candidate.id, subject_type="node", subject_key=str(node["id"]), source_kind="ai_inferred", excerpt="模型从当前对话综合推断，未找到直接文本提及。"))
+    node_names = {str(node["id"]): node["name"] for node in nodes}
+    for edge in edges:
+        source_name, target_name = node_names.get(str(edge["source"]), ""), node_names.get(str(edge["target"]), "")
+        matches = [message for message in source_messages if source_name.casefold() in message.content.casefold() and target_name.casefold() in message.content.casefold()]
+        subject_key = f"{edge['source']}->{edge['target']}:{edge['relation']}"
+        if matches:
+            db.add(GraphEvidence(candidate_id=candidate.id, subject_type="edge", subject_key=subject_key, source_kind="conversation", source_message_id=matches[0].id, excerpt=matches[0].content[:600]))
+        else:
+            db.add(GraphEvidence(candidate_id=candidate.id, subject_type="edge", subject_key=subject_key, source_kind="ai_inferred", excerpt="模型根据对话内容推断该关系，未找到同时直接提及两个节点的消息。"))
+    db.commit()
+    db.refresh(candidate)
     return graph_candidate_response(
         candidate,
         {"nodes": nodes, "edges": edges},
         "AI 已根据问题生成相关知识图谱。",
+        db,
     )
 
 
@@ -1707,9 +1744,23 @@ def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
     return {
         "id": candidate.id,
         "question": candidate.question,
+        "conversation_id": candidate.conversation_id,
+        "source_message_ids": json.loads(candidate.source_message_ids or "[]"),
         "status": candidate.status,
         "validation": json.loads(candidate.validation_json or "{}"),
         "knowledge_graph": json.loads(candidate.graph_json),
+        "evidence": [
+            {
+                "id": item.id,
+                "subject_type": item.subject_type,
+                "subject_key": item.subject_key,
+                "source_kind": item.source_kind,
+                "source_message_id": item.source_message_id,
+                "excerpt": item.excerpt,
+                "review_status": item.review_status,
+            }
+            for item in db.query(GraphEvidence).filter(GraphEvidence.candidate_id == candidate.id).order_by(GraphEvidence.id.asc()).all()
+        ],
         "created_at": candidate.created_at.isoformat() if candidate.created_at else None,
     }
 
