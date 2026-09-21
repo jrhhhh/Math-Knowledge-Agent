@@ -304,6 +304,9 @@ body { overflow-x: clip; }
 .attempt-review { display: grid; gap: 7px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(126, 211, 229, .12); }
 .attempt-review input, .attempt-review textarea { width: 100%; }
 .attempt-review textarea { min-height: 54px; resize: vertical; }
+.practice-hints { display: grid; gap: 6px; margin-top: 8px; }
+.practice-hints div { display: grid; gap: 2px; padding: 8px 10px; border-left: 2px solid #6edfea; background: rgba(110, 223, 234, .07); color: #c3e8ec; font-size: 10px; }
+.practice-hints b { color: #8edce4; font-size: 9px; }
 .attempt-review button { justify-self: start; padding: 8px 12px; border-radius: 999px; background: rgba(110, 223, 234, .18); color: #bdeff2; }
 @media (max-width: 760px) { .practice-workbench { grid-template-columns: 1fr; padding: 18px; } }
 

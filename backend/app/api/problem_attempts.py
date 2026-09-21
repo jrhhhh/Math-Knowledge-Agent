@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.problem import Problem
 from app.models.problem_attempt import ProblemAttempt
+from app.models.problem_hint import ProblemHint
 from app.models.problem_concept import ProblemConcept
 from app.models.concept import Concept
 from app.models.concept_learning_progress import ConceptLearningProgress
@@ -57,6 +58,18 @@ def submit_attempt(problem_id: int, payload: dict, db: Session = Depends(get_db)
     db.commit()
     db.refresh(attempt)
     return {**attempt_response(attempt), "message": "作答已记录，数学正确性等待审核。"}
+
+
+@router.get("/{problem_id}/hints")
+def list_hints(problem_id: int, level: int = 0, db: Session = Depends(get_db)):
+    if db.query(Problem).filter(Problem.id == problem_id).first() is None:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    level = max(0, min(int(level), 5))
+    query = db.query(ProblemHint).filter(ProblemHint.problem_id == problem_id, ProblemHint.review_status == "approved")
+    if level:
+        query = query.filter(ProblemHint.level <= level)
+    hints = query.order_by(ProblemHint.level.asc()).all()
+    return {"problem_id": problem_id, "level": level, "items": [{"level": item.level, "content": item.content} for item in hints], "max_level": db.query(ProblemHint).filter(ProblemHint.problem_id == problem_id, ProblemHint.review_status == "approved").count()}
 
 
 @router.get("/{problem_id}/attempts")

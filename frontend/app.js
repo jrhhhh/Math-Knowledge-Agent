@@ -12,6 +12,7 @@ let lastAskRequestId = null;
 let lastSecurityAlertSignature = '';
 let activeGraphContext = { nodes: [], edges: [] };
 let activeGraphEvidence = [];
+let practiceHintLevel = 0;
 const trackedFetch = window.fetch;
 window.fetch = (input, init = {}) => {
   const url = typeof input === 'string' ? input : input?.url || '';
@@ -854,6 +855,9 @@ async function loadPracticeProblem() {
     const response = await fetch(`${API}/problems/`);
     const items = await response.json();
     const problem = items.find(item => String(item.id) === String(id));
+    practiceHintLevel = 0;
+    if ($('practiceHints')) $('practiceHints').innerHTML = '';
+    if ($('practiceHint')) { $('practiceHint').disabled = false; $('practiceHint').textContent = '获取一级提示'; }
     $('practicePrompt').innerHTML = problem ? `<b>${escapeHtml(problem.title)}</b>：${escapeHtml(problem.content)}${(problem.sources || []).length ? `<small class="practice-source">教材来源：${problem.sources.map(source => `${escapeHtml(source.document_title || '课程文档')} · ${escapeHtml(source.chapter || '未分章')} · 第 ${escapeHtml(String(source.page_start || '?'))} 页`).join('；')}</small>` : '<small class="practice-source">暂无已审核教材出处</small>'}` : '题目不存在';
     const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
     const history = await historyResponse.json();
@@ -884,11 +888,13 @@ async function submitPractice(event) {
   const button = $('practiceSubmit');
   button.disabled = true;
   try {
-    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, independent: $('practiceIndependent').checked }) });
+    const independent = practiceHintLevel === 0 && $('practiceIndependent').checked;
+    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, hint_level: practiceHintLevel, independent }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '提交失败');
     $('practiceAnswer').value = '';
     $('practiceIndependent').checked = false;
+    practiceHintLevel = 0;
     $('practiceStatus').textContent = '已记录：数学正确性未验证，等待审核反馈。';
     await loadPracticeProblem();
   } catch (error) { $('practiceStatus').textContent = `提交失败：${error.message}`; } finally { button.disabled = false; }
@@ -897,6 +903,21 @@ async function submitPractice(event) {
 $('practiceForm')?.addEventListener('submit', submitPractice);
 $('practiceProblem')?.addEventListener('change', loadPracticeProblem);
 $('refreshPractice')?.addEventListener('click', loadPracticeProblems);
+$('practiceHint')?.addEventListener('click', async () => {
+  const problemId = $('practiceProblem')?.value;
+  if (!problemId) return;
+  const button = $('practiceHint');
+  try {
+    const response = await fetch(`${API}/problems/${problemId}/hints?level=${practiceHintLevel + 1}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '提示读取失败');
+    practiceHintLevel = Math.min(practiceHintLevel + 1, data.max_level || practiceHintLevel + 1);
+    $('practiceHints').innerHTML = (data.items || []).map(item => `<div><b>提示 ${item.level}</b><span>${escapeHtml(item.content)}</span></div>`).join('');
+    button.textContent = practiceHintLevel >= data.max_level ? '已显示全部提示' : `获取${practiceHintLevel + 1}级提示`;
+    button.disabled = practiceHintLevel >= data.max_level;
+    $('practiceIndependent').checked = false;
+  } catch (error) { $('practiceStatus').textContent = `提示暂不可用：${error.message}`; }
+});
 $('practiceProblem') && loadPracticeProblems();
 
 $('askForm').removeEventListener('submit', ask);

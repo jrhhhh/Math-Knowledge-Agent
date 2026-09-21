@@ -28,6 +28,7 @@ from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
 from app.models.concept_learning_progress import ConceptLearningProgress
 from app.models.problem_attempt import ProblemAttempt
+from app.models.problem_hint import ProblemHint
 from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.problem_source import ProblemSource
 from app.models.conversation import Conversation, ConversationMessage, MessageConcept

@@ -78,7 +78,7 @@
         <div class="practice-panel">
           <div class="practice-toolbar"><label for="practiceProblem">选择练习</label><select id="practiceProblem"><option value="">正在加载题目…</option></select><button type="button" id="refreshPractice">刷新</button></div>
           <div id="practicePrompt" class="practice-prompt">选择一道题开始作答。</div>
-          <form id="practiceForm" class="practice-form"><textarea id="practiceAnswer" placeholder="写出你的思路、计算或证明步骤…" required></textarea><div><label><input type="checkbox" id="practiceIndependent"> 我在没有提示的情况下完成</label><button type="submit" id="practiceSubmit">提交作答</button></div></form>
+          <form id="practiceForm" class="practice-form"><textarea id="practiceAnswer" placeholder="写出你的思路、计算或证明步骤…" required></textarea><div><label><input type="checkbox" id="practiceIndependent"> 我在没有提示的情况下完成</label><button type="button" id="practiceHint">获取一级提示</button><button type="submit" id="practiceSubmit">提交作答</button></div><div id="practiceHints" class="practice-hints" aria-live="polite"></div></form>
           <div id="practiceStatus" class="practice-status muted">作答结果会显示在这里</div>
           <div id="practiceHistory" class="practice-history"><span class="muted">暂无作答记录</span></div>
         </div>
