@@ -201,3 +201,29 @@ body { overflow-x: clip; }
   .motion-ready .flow-reveal { opacity: 1; transform: none; transition: none; }
   .graph-node { transition: none; }
 }
+
+.chat-message.is-source-message {
+  position: relative;
+  border-color: rgba(108, 230, 255, .78);
+  box-shadow: 0 0 0 3px rgba(108, 230, 255, .12), 0 14px 32px rgba(4, 18, 30, .18);
+  animation: source-message-pulse 1.2s ease both;
+}
+
+.chat-message.is-source-message::after {
+  content: '图谱出处';
+  position: absolute;
+  top: 9px;
+  right: 11px;
+  color: #70e7f7;
+  font: 500 9px var(--mono);
+  letter-spacing: .08em;
+}
+
+@keyframes source-message-pulse {
+  0% { transform: translateY(8px); opacity: .45; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message.is-source-message { animation: none; }
+}
