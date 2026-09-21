@@ -53,7 +53,7 @@ async function ask(event) {
     renderConcepts(data.concepts);
     const sourceNames = { deepseek_extended: '深入生成完成', backup_model: '备用模型生成完成', local_fallback: '本地兜底生成完成' };
     const quality = data.answer_quality;
-    const qualityLabel = quality && quality.level === 'weak' ? ' · 需人工核对' : '';
+    const qualityLabel = quality ? ` · 完整度 ${Math.round((quality.completeness_score ?? quality.score ?? 0) * 100)}% · 数学正确性未验证` : '';
     $('answerStatus').textContent = (sourceNames[data.answer_source] || (data.cache_hit ? '缓存命中' : '已完成')) + qualityLabel;
     if (data.knowledge_graph) renderGraph(data.knowledge_graph);
   } catch (error) {
@@ -89,7 +89,7 @@ function renderTaskDetail(task) { ensureTaskDetailPanel(); const result = task.r
 function cancelAsk() { askController?.abort(); }
 function ensureAskCancelButton() { const button = document.createElement('button'); button.type = 'button'; button.id = 'cancelAskButton'; button.className = 'cancel-ask hidden'; button.textContent = '取消推理'; button.addEventListener('click', cancelAsk); $('askButton').parentElement?.appendChild(button); }
 async function pollGraphRetry(jobId) { for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.knowledge_graph) { activeCandidateId = job.result.candidate_id; $('graphEditor').value = JSON.stringify(job.result.knowledge_graph, null, 2); $('saveGraphButton').classList.remove('hidden'); renderGraph(job.result.knowledge_graph); loadCandidateStats(); loadCandidateHistory(); showMessage('后台重试成功，相关知识图谱已自动载入。'); return; } if (job.status === 'failed') { showMessage(`后台重试仍未成功：${job.error || '未知错误'}`); return; } $('graphStatus').textContent = `后台重试中（第 ${job.attempts || 0} 次）`; } catch (error) { return; } } showMessage('后台重试仍在进行，可稍后查看候选图谱历史。'); }
-async function pollAnswerRetry(jobId) { $('answerStatus').textContent = '答案质量不足，后台正在优化…'; for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.answer) { renderAnswer(job.result.answer); if (job.result.answer_quality) $('answerStatus').textContent = `后台优化完成 · 质量 ${Math.round((job.result.answer_quality.score || 0) * 100)}%`; showMessage('已用后台重试结果替换原答案。'); return; } if (job.status === 'failed') { $('answerStatus').textContent = '已完成 · 后台优化失败'; return; } } catch (error) { return; } } $('answerStatus').textContent = '已完成 · 后台优化仍在进行'; }
+async function pollAnswerRetry(jobId) { $('answerStatus').textContent = '答案完整度不足，后台正在优化…'; for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.answer) { renderAnswer(job.result.answer); if (job.result.answer_quality) $('answerStatus').textContent = `后台优化完成 · 完整度 ${Math.round(((job.result.answer_quality.completeness_score ?? job.result.answer_quality.score) || 0) * 100)}% · 数学正确性未验证`; showMessage('已用后台重试结果替换原答案。'); return; } if (job.status === 'failed') { $('answerStatus').textContent = '已完成 · 后台优化失败'; return; } } catch (error) { return; } } $('answerStatus').textContent = '已完成 · 后台优化仍在进行'; }
 async function enqueueGraphRetry(question) { try { const response = await fetch(`${API}/ai/retry-queue`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operation: 'related_graph', question, priority: 10 }) }); const job = await response.json(); if (response.ok) { showMessage(`本次生成失败，已加入高优先级重试队列（任务 ${job.id}）。正在等待结果…`); pollGraphRetry(job.id); } } catch (error) {} }
 function collectConversationGraphContext() {
   const messages = [...document.querySelectorAll('#chatTimeline .chat-message')]
@@ -820,7 +820,8 @@ async function conversationAsk(event) {
     renderAnswer(data.answer);
     renderConcepts(data.concepts || []);
     if (data.knowledge_graph) renderGraph(data.knowledge_graph);
-    $('answerStatus').textContent = data.answer_source === 'local_fallback' ? '本地数学推导完成' : '本轮推理完成';
+    const completeness = data.answer_quality?.completeness_score ?? data.answer_quality?.score;
+    $('answerStatus').textContent = (data.answer_source === 'local_fallback' ? '本地数学推导完成' : '本轮推理完成') + (completeness == null ? '' : ` · 完整度 ${Math.round(completeness * 100)}% · 数学正确性未验证`);
     $('chatContextStatus').textContent = '本轮内容已保存到对话上下文';
     $('question').value = '';
     loadConversationList();
