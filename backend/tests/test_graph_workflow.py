@@ -109,6 +109,23 @@ class GraphWorkflowTests(unittest.TestCase):
         self.assertEqual(events[-1]["action"], "validation_failed")
         self.assertIn("provider returned empty response", events[-1]["detail"]["error"])
 
+    def test_semantic_validation_failure_kinds_are_explainable(self):
+        cases = [
+            ("模型响应超时", "timeout"),
+            ("provider returned refusal/content filter", "refusal"),
+            ("invalid_json: unexpected end", "invalid_json"),
+        ]
+        for message, expected_kind in cases:
+            with self.subTest(expected_kind=expected_kind):
+                with patch("app.api.ai.call_deepseek", return_value=json.dumps(self.graph_payload())):
+                    generated = generate_ai_related_graph(self.db, f"测试{expected_kind}")
+                with patch("app.api.ai.validate_graph_semantics", side_effect=RuntimeError(message)):
+                    with self.assertRaises(HTTPException) as error:
+                        validate_graph_candidate(generated["candidate_id"], self.db)
+                self.assertEqual(error.exception.status_code, 503)
+                candidate = self.db.query(GraphCandidate).filter_by(id=generated["candidate_id"]).one()
+                self.assertEqual(json.loads(candidate.validation_json)["provider_diagnostics"]["failure_kind"], expected_kind)
+
     def test_graph_generation_uses_raw_conversation_messages(self):
         conversation = Conversation(title="原始消息测试")
         self.db.add(conversation)

@@ -1893,6 +1893,7 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
                 "semantic_valid": semantic["valid"],
                 "confidence": semantic["confidence"],
                 "semantic_issues": semantic["issues"],
+                "provider_diagnostics": semantic.get("provider_diagnostics", {}),
             })
             validation["valid"] = validation["valid"] and semantic["valid"] and semantic["confidence"] >= 0.80
             if not validation["valid"]:
@@ -1900,10 +1901,13 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
         except Exception as exc:
             print("[AI] graph semantic validation failed:", repr(exc))
             error_text = str(exc)
-            if "超时" in error_text.lower() or "timeout" in error_text.lower():
+            error_lower = error_text.lower()
+            if "超时" in error_text.lower() or "timeout" in error_lower:
                 failure_kind = "timeout"
             elif "空响应" in error_text or "content_length=0" in error_text or "empty response" in error_text.lower():
                 failure_kind = "empty_response"
+            elif any(marker in error_lower for marker in ("refusal", "拒答", "content filter", "safety")):
+                failure_kind = "refusal"
             elif "json" in error_text.lower() or "解析" in error_text:
                 failure_kind = "invalid_json"
             else:
@@ -1961,7 +1965,10 @@ confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例�
         return_metadata=True,
     )
     diagnostics = raw.get("diagnostics", {}) if isinstance(raw, dict) else {}
-    result = parse_ai_graph_json(raw.get("content", "") if isinstance(raw, dict) else raw)
+    try:
+        result = parse_ai_graph_json(raw.get("content", "") if isinstance(raw, dict) else raw)
+    except Exception as exc:
+        raise RuntimeError(f"invalid_json: {exc}") from exc
     try:
         confidence = max(0.0, min(1.0, float(result.get("confidence", 0.0))))
     except (TypeError, ValueError):
