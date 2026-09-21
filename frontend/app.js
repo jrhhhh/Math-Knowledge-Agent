@@ -90,7 +90,58 @@ function ensureAskCancelButton() { const button = document.createElement('button
 async function pollGraphRetry(jobId) { for (let attempt = 0; attempt < 30; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.knowledge_graph) { activeCandidateId = job.result.candidate_id; $('graphEditor').value = JSON.stringify(job.result.knowledge_graph, null, 2); $('saveGraphButton').classList.remove('hidden'); renderGraph(job.result.knowledge_graph); loadCandidateStats(); loadCandidateHistory(); showMessage('后台重试成功，相关知识图谱已自动载入。'); return; } if (job.status === 'failed') { showMessage(`后台重试仍未成功：${job.error || '未知错误'}`); return; } $('graphStatus').textContent = `后台重试中（第 ${job.attempts || 0} 次）`; } catch (error) { return; } } showMessage('后台重试仍在进行，可稍后查看候选图谱历史。'); }
 async function pollAnswerRetry(jobId) { $('answerStatus').textContent = '答案质量不足，后台正在优化…'; for (let attempt = 0; attempt < 45; attempt += 1) { await new Promise(resolve => setTimeout(resolve, 2000)); try { const response = await fetch(`${API}/ai/retry-queue/${encodeURIComponent(jobId)}`); const job = await response.json(); if (!response.ok) return; if (job.status === 'succeeded' && job.result?.answer) { renderAnswer(job.result.answer); if (job.result.answer_quality) $('answerStatus').textContent = `后台优化完成 · 质量 ${Math.round((job.result.answer_quality.score || 0) * 100)}%`; showMessage('已用后台重试结果替换原答案。'); return; } if (job.status === 'failed') { $('answerStatus').textContent = '已完成 · 后台优化失败'; return; } } catch (error) { return; } } $('answerStatus').textContent = '已完成 · 后台优化仍在进行'; }
 async function enqueueGraphRetry(question) { try { const response = await fetch(`${API}/ai/retry-queue`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operation: 'related_graph', question, priority: 10 }) }); const job = await response.json(); if (response.ok) { showMessage(`本次生成失败，已加入高优先级重试队列（任务 ${job.id}）。正在等待结果…`); pollGraphRetry(job.id); } } catch (error) {} }
-async function generateRelatedGraph() { const question = $('question').value.trim(); if (!question) { showMessage('请先输入一个数学问题或知识点，再生成相关图谱。'); $('question').focus(); return; } clearMessage(); const button = $('generateGraphButton'); button.disabled = true; button.innerHTML = 'AI 构建中…'; $('graphStatus').textContent = 'AI 正在规划知识关系'; $('saveGraphButton').classList.add('hidden'); $('graphCanvas').innerHTML = '<div class="empty-state">AI 正在提取概念、定理与推导关系，这通常需要几十秒…</div>'; try { const response = await fetch(`${API}/ai/related-graph`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '图谱请求失败'); activeCandidateId = data.candidate_id; $('saveGraphButton').classList.remove('hidden'); $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; renderConcepts(data.concepts); renderGraph(data.knowledge_graph); document.querySelector('#graph').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (error) { $('graphStatus').textContent = '生成失败'; $('graphCanvas').innerHTML = '<div class="empty-state">AI 图谱暂时不可用，已转入后台重试。</div>'; showMessage(`无法立即生成相关知识图谱：${error.message}`); enqueueGraphRetry(question); } finally { button.disabled = false; button.innerHTML = '生成相关图谱 <span>◎</span>'; } }
+function collectConversationGraphContext() {
+  const messages = [...document.querySelectorAll('#chatTimeline .chat-message')]
+    .map((message) => {
+      const role = message.classList.contains('user') ? '用户' : 'AI 助手';
+      const content = message.querySelector('.chat-bubble')?.textContent?.trim() || '';
+      return content ? `${role}：${content}` : '';
+    })
+    .filter(Boolean);
+  const draft = $('question').value.trim();
+  if (draft) messages.push(`用户（尚未发送）：${draft}`);
+  return messages.join('\n\n');
+}
+
+async function generateRelatedGraph() {
+  const question = collectConversationGraphContext();
+  if (!question) {
+    showMessage('请先输入一个数学问题或知识点，再生成相关图谱。');
+    $('question').focus();
+    return;
+  }
+  clearMessage();
+  const button = $('generateGraphButton');
+  button.disabled = true;
+  button.innerHTML = '正在理解本次对话…';
+  $('graphStatus').textContent = 'AI 正在根据整段对话规划知识关系';
+  $('saveGraphButton').classList.add('hidden');
+  $('graphCanvas').innerHTML = '<div class="empty-state">AI 正在综合本次对话中的概念、定义与推导关系，这通常需要几十秒…</div>';
+  try {
+    const response = await fetch(`${API}/ai/related-graph`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || '图谱请求失败');
+    activeCandidateId = data.candidate_id;
+    $('saveGraphButton').classList.remove('hidden');
+    $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2);
+    $('graphEditorPanel').open = false;
+    renderConcepts(data.concepts);
+    renderGraph(data.knowledge_graph);
+    document.querySelector('#graph').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    $('graphStatus').textContent = '生成失败';
+    $('graphCanvas').innerHTML = '<div class="empty-state">AI 图谱暂时不可用，已转入后台重试。</div>';
+    showMessage(`无法立即生成相关知识图谱：${error.message}`);
+    enqueueGraphRetry(question);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = '根据本次对话生成图谱 <span>◎</span>';
+  }
+}
 async function applyGraphEdit() { if (!activeCandidateId) return; let graph; try { graph = JSON.parse($('graphEditor').value); } catch (error) { showMessage('编辑内容不是合法 JSON，请检查后再应用。'); return; } const button = $('applyGraphEdit'); button.disabled = true; button.textContent = '保存修改中…'; try { const response = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ graph }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '修改失败'); renderGraph(data.knowledge_graph); $('saveGraphButton').classList.remove('hidden'); $('graphStatus').textContent = '已修改 · 待重新校验'; showMessage('图谱修改已保存，请点击“校验并保存”完成 AI 复核。'); } catch (error) { showMessage(`无法应用图谱修改：${error.message}`); } finally { button.disabled = false; button.textContent = '应用修改'; } }
 async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; $('question').value = data.question; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
 async function loadCandidateEvents(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '事件读取失败'); let timeline = $('candidateTimeline'); if (!timeline) { timeline = document.createElement('div'); timeline.id = 'candidateTimeline'; timeline.className = 'candidate-timeline'; $('graphEditorPanel').appendChild(timeline); } const names = { generated: 'AI 生成', edited: '人工编辑', validated: '校验通过', rejected: '校验拒绝', validation_failed: '校验异常', relation_conflict: '关系冲突处理', saved: '写入知识库' }; const detailText = event => event.action === 'relation_conflict' ? `${event.detail.action === 'replaced' ? '已替换' : '已跳过'}：${event.detail.old_relations?.join(', ')} → ${event.detail.new_relation}（优先级 ${event.detail.old_priority} / ${event.detail.new_priority}）` : ''; timeline.innerHTML = `<b>审核记录</b>${(data.events || []).map(event => `<div><span>${escapeHtml(names[event.action] || event.action)}${detailText(event) ? ` · ${escapeHtml(detailText(event))}` : ''}</span><small>${escapeHtml(event.created_at || '')}</small></div>`).join('') || '<span class="muted">暂无记录</span>'}`; } catch (error) {} }

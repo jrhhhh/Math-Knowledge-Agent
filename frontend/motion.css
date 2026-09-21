@@ -1,0 +1,203 @@
+/* Mathematical flow layer: progressively enhanced by motion.js. */
+:root {
+  --flow-ink: #0d314f;
+  --flow-blue: #0071e3;
+  --flow-mint: #38a7a0;
+  --flow-warm: #e99145;
+  --flow-line: rgba(16, 89, 143, 0.17);
+  --motion-fast: 180ms;
+  --motion-standard: 320ms;
+  --motion-medium: 480ms;
+  --motion-slow: 720ms;
+  --ease-flow: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drift: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+html { scroll-behavior: smooth; }
+body { overflow-x: clip; }
+
+.math-flow {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(12, 67, 109, 0.036) 1px, transparent 1px),
+    linear-gradient(rgba(12, 67, 109, 0.03) 1px, transparent 1px);
+  background-size: 84px 84px;
+  mask-image: linear-gradient(to bottom, black 0%, black 46%, transparent 86%);
+}
+
+.app-shell { position: relative; z-index: 1; }
+
+.flow-orbit {
+  position: absolute;
+  width: clamp(330px, 40vw, 680px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(0, 113, 227, 0.13);
+  border-radius: 50%;
+  transform: translate3d(calc(var(--flow-x, 0px) * .04), calc(var(--flow-y, 0px) * .035), 0);
+  will-change: transform;
+}
+
+.flow-orbit::before,
+.flow-orbit::after {
+  content: '';
+  position: absolute;
+  border: inherit;
+  border-radius: inherit;
+}
+
+.flow-orbit::before { inset: 11%; }
+.flow-orbit::after { inset: 27%; border-color: rgba(56, 167, 160, 0.16); }
+.flow-orbit-a { top: -19rem; right: -9rem; }
+.flow-orbit-b { width: clamp(280px, 32vw, 520px); bottom: -20rem; left: -11rem; border-color: rgba(233, 145, 69, 0.13); }
+
+.flow-curve {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: .62;
+  transform: translate3d(0, calc(var(--scroll-progress, 0) * -80px), 0);
+  will-change: transform;
+}
+
+.flow-curve path {
+  fill: none;
+  stroke: var(--flow-line);
+  stroke-width: 1.2;
+  stroke-dasharray: 10 13;
+  animation: flow-dash 18s linear infinite;
+}
+
+.flow-curve path + path { stroke: rgba(56, 167, 160, .13); animation-duration: 24s; animation-direction: reverse; }
+
+.scroll-coordinate {
+  position: fixed;
+  z-index: 40;
+  right: max(14px, calc((100vw - 1290px) / 2));
+  top: 70px;
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  color: #73818d;
+  font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+.scroll-coordinate i { display: block; width: 1px; height: 48px; background: #d2d9de; overflow: hidden; }
+.scroll-coordinate i::after { content: ''; display: block; width: 100%; height: 100%; background: var(--flow-blue); transform: translateY(calc(-100% + var(--scroll-progress, 0) * 100%)); }
+
+.topbar { position: relative; }
+.topbar::after {
+  content: 'x + y = trajectory';
+  position: absolute;
+  right: 0;
+  bottom: -17px;
+  color: #90a0ab;
+  font: 500 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .07em;
+}
+
+.chat-workbench,
+.proof-workbench,
+.panel,
+.learning-pulse,
+.graph-concept-card { position: relative; }
+
+.chat-workbench::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(360px circle at var(--workbench-x, 78%) var(--workbench-y, 12%), rgba(0, 113, 227, .075), transparent 68%);
+  transition: background var(--motion-standard) var(--ease-flow);
+}
+
+.conversation-rail,
+.chat-stage { position: relative; z-index: 3; }
+.chat-timeline { background-image: radial-gradient(circle at 78% 10%, rgba(237, 246, 255, .78), transparent 27%), linear-gradient(90deg, transparent 0 98%, rgba(10, 72, 113, .025) 98%); }
+
+.chat-welcome > span {
+  animation: integral-breathe 4.5s var(--ease-drift) infinite;
+  transform-origin: center;
+}
+
+.chat-message { transform-origin: 50% 100%; }
+.chat-message:not(.flow-reveal) { opacity: 1; }
+.motion-ready .flow-reveal { opacity: 0; transform: translate3d(0, 18px, 0); }
+.motion-ready .flow-reveal.is-flow-visible { opacity: 1; transform: translate3d(0, 0, 0); transition: opacity var(--motion-medium) var(--ease-flow), transform var(--motion-medium) var(--ease-flow); }
+
+.proof-workbench { overflow: hidden; isolation: isolate; }
+.proof-workbench::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 46%;
+  aspect-ratio: 1;
+  right: -15%;
+  top: -63%;
+  border: 1px solid rgba(0, 113, 227, .16);
+  border-radius: 50%;
+  box-shadow: 0 0 0 42px rgba(0, 113, 227, .025), 0 0 0 84px rgba(56, 167, 160, .018);
+  transform: rotate(calc(var(--proof-turn, 0) * 1deg));
+  transition: transform 900ms var(--ease-flow);
+}
+
+.learning-pulse-track i { position: relative; overflow: hidden; }
+.learning-pulse-track i::after { content: ''; position: absolute; inset: 0; width: 34%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); transform: translateX(-150%); animation: pulse-travel 3.6s var(--ease-drift) infinite; }
+
+.graph-canvas { isolation: isolate; }
+.graph-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(220px circle at var(--graph-x, 50%) var(--graph-y, 50%), rgba(0, 113, 227, .075), transparent 72%);
+  opacity: .9;
+}
+
+.graph-node { transition: transform var(--motion-fast) var(--ease-flow), filter var(--motion-fast) var(--ease-flow); }
+.graph-node:hover { transform: scale(1.07); filter: brightness(1.04); }
+
+.conversation-item,
+.chat-stage-actions button,
+.chat-composer .form-footer button,
+.proof-actions button,
+.ghost-btn { transition-timing-function: var(--ease-flow); }
+
+@keyframes flow-dash { to { stroke-dashoffset: -184; } }
+@keyframes integral-breathe { 0%, 100% { transform: rotate(-4deg) scale(1); } 50% { transform: rotate(4deg) scale(1.06); } }
+@keyframes pulse-travel { 0%, 60% { transform: translateX(-150%); } 100% { transform: translateX(350%); } }
+
+@media (max-width: 850px) {
+  .scroll-coordinate { top: 59px; right: 12px; }
+  .topbar::after { right: 8px; }
+  .flow-orbit-a { right: -15rem; }
+  .flow-orbit-b { left: -16rem; }
+}
+
+@media (max-width: 540px) {
+  .math-flow { background-size: 56px 56px; }
+  .scroll-coordinate { display: none; }
+  .topbar::after { display: none; }
+  .flow-curve { opacity: .36; }
+  .chat-workbench::before { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .flow-curve path,
+  .chat-welcome > span,
+  .learning-pulse-track i::after { animation: none; }
+  .flow-orbit,
+  .flow-curve,
+  .proof-workbench::after { transform: none; }
+  .motion-ready .flow-reveal { opacity: 1; transform: none; transition: none; }
+  .graph-node { transition: none; }
+}

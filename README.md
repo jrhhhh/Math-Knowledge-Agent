@@ -27,6 +27,7 @@ Current Version: v0.3
 - [x] AI 数学问答与证明辅助
 - [x] 知识图谱关系检索
 - [x] AI 按问题生成相关知识图谱
+- [x] 根据当前完整聊天上下文生成相关知识图谱
 - [x] 候选图谱校验、缓存与幂等入库
 - [x] 知识点别名归一化
 - [x] 产品化前端展示页
@@ -162,6 +163,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - MathJax 数学公式排版
 - 可持续追问的会话工作台：保存消息、自动压缩旧上下文并恢复历史对话
 - 响应式布局与移动端适配
+- motion-first 视觉层：滚动进度、指针响应背景轨迹、渐进式内容揭示和 reduced-motion 兼容
 
 ### AI API
 
@@ -170,7 +172,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `GET/PATCH/DELETE /conversations/{conversation_id}`：恢复、命名或删除对话
 - `POST /conversations/{conversation_id}/messages/stream`：按会话上下文流式生成下一轮数学回答
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
-- `POST /ai/related-graph`：由 AI 根据问题生成候选知识图谱；相同问题 24 小时内复用缓存
+- `POST /ai/related-graph`：由 AI 根据问题或完整聊天上下文生成候选知识图谱；相同输入 24 小时内复用缓存
 - `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
 - `GET /ai/graph-candidates/stats`：查看各审核状态的候选数量
 - `POST /ai/graph-candidates/batch-validate`：批量执行候选图谱校验，单条失败不影响其他记录
@@ -200,6 +202,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 ```text
 问题 → AI 生成候选图谱 → 代码校验 → AI 语义校验 → 显式保存 → 知识库复用
 ```
+
+前端点击“根据本次对话生成图谱”时，会按时间顺序收集当前聊天框中的全部用户消息和 AI 回复，并将尚未发送的输入框草稿一并作为上下文提交给 `/ai/related-graph`。因此图谱可以综合整段讨论中的定义、追问、例子和推导，而不再只依赖最后一条问题；空对话仍会提示先输入数学问题或知识点。
 
 候选图谱中的新概念在保存前只作为临时节点展示；保存时会按标准名称和别名去重，并按关系优先级处理冲突。已有数据库不会被首次启动或生成操作删除。
 
