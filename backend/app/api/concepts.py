@@ -44,6 +44,20 @@ def create_concept(
     field: str,
     db: Session = Depends(get_db)
 ):
+    name = name.strip()
+    description = description.strip()
+    field = field.strip()
+    if not name or not field:
+        raise HTTPException(status_code=422, detail="知识点名称和领域不能为空。")
+
+    # Keep repeated imports, retries, and smoke tests from creating visually
+    # identical nodes for the same logical concept.
+    existing = db.query(Concept).filter(
+        Concept.name == name,
+        Concept.field == field,
+    ).order_by(Concept.id.asc()).first()
+    if existing is not None:
+        return existing
 
     concept = Concept(
         name=name,

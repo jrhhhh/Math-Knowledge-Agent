@@ -186,6 +186,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /ai/graph-candidates/{candidate_id}/validate`：执行格式和数学语义校验
 - `POST /ai/graph-candidates/{candidate_id}/save`：将通过校验的概念和关系幂等写入知识库
 - `GET /concepts/graph`：获取知识图谱节点和关系
+- `POST /concepts/`：创建知识点；相同名称和领域会幂等复用已有记录，避免重复节点
 - `GET /concepts/search?q=...&limit=12`：查询已持久化的知识点，不触发模型生成
 - `GET /concepts/{concept_id}/network`：加载指定知识点及其直接关联网络
 - `POST /concepts/{concept_id}/aliases`：为已有知识点添加别名
@@ -227,6 +228,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 当当前内容属于已保存对话时，图谱接口会根据 `conversation_id` 从后端读取原始消息（包括未被 MathJax 改写的 LaTeX），并在候选记录中保存 `conversation_id` 与 `source_message_ids`。这为后续显示逐条证据和关系审核提供稳定来源。
 
 候选图谱还会在 `graph_evidence` 中记录节点和关系的来源类型、消息 ID、证据摘录及审核状态。直接出现在对话中的内容标为 `conversation`；模型根据上下文推断但没有直接文字依据的内容标为 `ai_inferred`，两者不会混在一起展示。
+
+浏览器冒烟测试会先复用同名测试知识点，不会在每次运行时重复创建；CI 服务使用临时 SQLite 数据库，测试数据不会写入个人本地知识库。
 
 候选图谱中的新概念在保存前只作为临时节点展示；保存时会按标准名称和别名去重，并按关系优先级处理冲突。已有数据库不会被首次启动或生成操作删除。
 

@@ -17,7 +17,14 @@ try {
   await page.getByRole('button', { name: '新建对话' }).click();
   await page.waitForFunction(() => document.querySelectorAll('#conversationList .conversation-item').length >= 2);
   const graphConcept = await page.evaluate(async () => {
-    const response = await fetch(`${window.MATH_AGENT_API}/concepts/?name=%E7%B4%A7%E8%87%B4%E6%80%A7%E5%86%92%E7%83%9F%E6%B5%8B%E8%AF%95&description=%E7%94%A8%E4%BA%8E%E9%AA%8C%E8%AF%81%E5%9B%BE%E8%B0%B1%E4%BA%A4%E4%BA%92%E3%80%82&field=%E6%8B%93%E6%89%91%E5%AD%A6`, { method: 'POST' });
+    const name = '紧致性冒烟测试';
+    const field = '拓扑学';
+    const search = await fetch(`${window.MATH_AGENT_API}/concepts/search?q=${encodeURIComponent(name)}&limit=100`);
+    if (!search.ok) throw new Error('unable to search smoke-test concept');
+    const matches = (await search.json()).items || [];
+    const existing = matches.find(item => item.name === name && item.field === field);
+    if (existing) return existing;
+    const response = await fetch(`${window.MATH_AGENT_API}/concepts/?name=${encodeURIComponent(name)}&description=${encodeURIComponent('用于验证图谱交互。')}&field=${encodeURIComponent(field)}`, { method: 'POST' });
     if (!response.ok) throw new Error('unable to create smoke-test concept');
     return response.json();
   });
