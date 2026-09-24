@@ -159,10 +159,10 @@ async function validateAndSaveGraph() {
   if (!activeCandidateId) return;
   const button = $('saveGraphButton');
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 45000);
+  const timeout = window.setTimeout(() => controller.abort(), 20000);
   button.disabled = true;
   button.textContent = 'AI 校验中…';
-  $('graphStatus').textContent = '正在校验数学关系（最长 45 秒）';
+  $('graphStatus').textContent = '正在快速校验数学关系（最长 20 秒）';
   try {
     const validationResponse = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}/validate`, { method: 'POST', signal: controller.signal });
     const validation = await validationResponse.json();
@@ -178,7 +178,7 @@ async function validateAndSaveGraph() {
   } catch (error) {
     button.textContent = '校验并保存';
     $('graphStatus').textContent = error.name === 'AbortError' ? '校验超时 · 请稍后重试' : '待复核';
-    showMessage(error.name === 'AbortError' ? 'AI 校验超过 45 秒，已自动取消；候选图谱仍保留，可稍后重试。' : `图谱暂未保存：${error.message}`);
+    showMessage(error.name === 'AbortError' ? 'AI 校验超过 20 秒，已自动取消；候选图谱仍保留，可稍后重试。' : `图谱暂未保存：${error.message}`);
   } finally {
     window.clearTimeout(timeout);
     button.disabled = false;
@@ -421,12 +421,12 @@ function renderGraph(graph) {
   $('graphCanvas').innerHTML = `<div class="graph-vignette"></div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="数学知识图谱，包含 ${nodes.length} 个知识点和 ${edges.length} 条关系"><defs><radialGradient id="graph-depth" cx="50%" cy="44%"><stop offset="0" stop-color="#163b59"/><stop offset=".5" stop-color="#0b1e32"/><stop offset="1" stop-color="#07111f"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#graph-depth)"/>${particles}<g class="graph-rings"><circle cx="${center.x}" cy="${center.y}" r="90"/><circle cx="${center.x}" cy="${center.y}" r="160"/><circle cx="${center.x}" cy="${center.y}" r="245"/></g><g class="graph-edges">${edgeMarkup}</g><g class="graph-nodes">${nodeMarkup}</g></svg>`;
   $('graphCanvas').querySelectorAll('[data-graph-node-id]').forEach(element => {
     const node = nodes.find(item => String(item.id) === element.dataset.graphNodeId);
-    const showNode = () => { openGraphConceptCard(node); highlightConversationMessages(node?.name); };
+    const showNode = () => { openGraphConceptCard(node); };
     element.addEventListener('click', showNode);
     element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showNode(); } });
   });
   $('graphStatus').textContent = `${nodes.length} 个节点 · ${edges.length} 条关系`;
-  $('legend').innerHTML = '<span class="legend-concept">概念</span><span class="legend-theorem">定理</span><span class="legend-property">性质</span><span class="legend-method">方法</span><em>点击节点回看聊天出处</em>';
+  $('legend').innerHTML = '<span class="legend-concept">概念</span><span class="legend-theorem">定理</span><span class="legend-property">性质</span><span class="legend-method">方法</span><em>点击节点查看知识卡片</em>';
 }
 
 function highlightConversationMessages(conceptName) {
@@ -450,6 +450,7 @@ async function loadOperationsDashboard() { let panel = $('operationsDashboard');
 async function openGraphConceptCard(concept) {
   const card = $('graphConceptCard');
   if (!card || !concept) return;
+  initGraphCardDrag(card);
   const sourceMessages = conversationMatches(concept.name);
   const nodeEvidence = activeGraphEvidence.filter(item => item.subject_type === 'node' && String(item.subject_key) === String(concept.id));
   const relatedEdges = activeGraphContext.edges.filter(edge => String(edge.source) === String(concept.id) || String(edge.target) === String(concept.id)).slice(0, 8);
@@ -490,6 +491,26 @@ async function openGraphConceptCard(concept) {
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
   }
+}
+
+function initGraphCardDrag(card) {
+  if (card.dataset.dragReady) return;
+  card.dataset.dragReady = 'true'; card.setAttribute('role', 'dialog');
+  let drag = null;
+  card.addEventListener('pointerdown', event => {
+    if (!event.target.closest('.graph-card-head') || event.target.closest('button')) return;
+    const rect = card.getBoundingClientRect();
+    drag = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+    card.classList.add('is-dragging'); card.setPointerCapture?.(event.pointerId); event.preventDefault();
+  });
+  card.addEventListener('pointermove', event => {
+    if (!drag) return;
+    const left = Math.min(window.innerWidth - card.offsetWidth - 10, Math.max(10, drag.left + event.clientX - drag.x));
+    const top = Math.min(window.innerHeight - card.offsetHeight - 10, Math.max(10, drag.top + event.clientY - drag.y));
+    card.style.left = `${left}px`; card.style.top = `${top}px`; card.style.right = 'auto';
+  });
+  const stop = () => { drag = null; card.classList.remove('is-dragging'); };
+  card.addEventListener('pointerup', stop); card.addEventListener('pointercancel', stop);
 }
 
 async function loadLearningPulse() {
@@ -699,7 +720,8 @@ async function loadConversationList() {
     const response = await fetch(`${API}/conversations`);
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '读取失败');
-    list.innerHTML = (data.items || []).map(item => `<button type="button" class="conversation-item ${item.id === activeConversationId ? 'is-active' : ''}" data-conversation-id="${item.id}"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.topic || `${item.message_count || 0} 条消息`)} · ${conversationTime(item.updated_at)}</small></button>`).join('') || '<span>还没有保存的对话</span>';
+    const savedItems = (data.items || []).filter(item => Number(item.message_count || 0) > 0);
+    list.innerHTML = savedItems.map(item => `<button type="button" class="conversation-item ${item.id === activeConversationId ? 'is-active' : ''}" data-conversation-id="${item.id}"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.topic || `${item.message_count || 0} 条消息`)} · ${conversationTime(item.updated_at)}</small></button>`).join('') || '<span>还没有保存的对话</span>';
     list.querySelectorAll('[data-conversation-id]').forEach(button => button.addEventListener('click', () => selectConversation(Number(button.dataset.conversationId))));
   } catch (error) {
     list.innerHTML = '<span>对话服务暂不可用</span>';

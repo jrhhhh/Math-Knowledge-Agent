@@ -131,7 +131,12 @@ def create_conversation(payload: ConversationCreate, db: Session = Depends(get_d
 @router.get("")
 def list_conversations(db: Session = Depends(get_db)):
     items = db.query(Conversation).order_by(Conversation.updated_at.desc()).all()
-    return {"items": [serialize_conversation(item, db.query(ConversationMessage).filter_by(conversation_id=item.id).count()) for item in items]}
+    saved_items = []
+    for item in items:
+        message_count = db.query(ConversationMessage).filter_by(conversation_id=item.id).count()
+        if message_count:
+            saved_items.append(serialize_conversation(item, message_count))
+    return {"items": saved_items}
 
 
 @router.get("/{conversation_id}")

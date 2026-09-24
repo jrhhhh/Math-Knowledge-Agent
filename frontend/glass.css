@@ -159,3 +159,4 @@ body {
 @media (prefers-reduced-transparency: reduce) {
   .sidebar, .chat-workbench, .learning-pulse, .proof-workbench, .panel, .graph-concept-card { backdrop-filter: none; background: #f7fbff; }
 }
+.graph-concept-card{position:fixed!important;z-index:30;width:min(390px,calc(100vw - 32px))!important;max-width:none!important;max-height:min(70vh,620px);top:clamp(76px,16vh,150px);right:clamp(16px,5vw,72px);left:auto;margin:0!important;overflow:auto;touch-action:none}.graph-concept-card.is-dragging{cursor:grabbing;user-select:none}.graph-card-head{cursor:grab}

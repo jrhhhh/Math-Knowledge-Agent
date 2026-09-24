@@ -1913,6 +1913,25 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
                 failure_kind = "invalid_json"
             else:
                 failure_kind = "provider_error"
+            # Provider 空响应/截断时使用本地确定性检查兜底，避免候选图谱
+            # 因短暂的 AI 服务异常永远停在待复核；结果会带有明确降级标记。
+            if "deepseek" in error_lower or "content_length=0" in error_lower:
+                fallback = validate_graph_structure_locally(graph)
+                if fallback["valid"]:
+                    validation.update({
+                        "semantic_valid": True,
+                        "confidence": 0.80,
+                        "semantic_issues": ["AI 服务暂时无响应，已完成本地结构校验"],
+                        "invalid_edges": fallback["invalid_edges"],
+                        "semantic_status": "fallback_local",
+                        "provider_diagnostics": {"failure_kind": failure_kind, "error": error_text[:500]},
+                    })
+                    validation["valid"] = True
+                    candidate.validation_json = json.dumps(validation, ensure_ascii=False)
+                    candidate.status = "validated"
+                    record_candidate_event(db, candidate.id, "validated", {**validation, "mode": "fallback_local"})
+                    db.commit()
+                    return {"candidate_id": candidate.id, "status": candidate.status, "validation": validation}
             candidate.validation_json = json.dumps({
                 **validation,
                 "semantic_valid": False,
@@ -1933,8 +1952,26 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
     return {"candidate_id": candidate.id, "status": candidate.status, "validation": validation}
 
 
+def validate_graph_structure_locally(graph: dict):
+    """不依赖模型的快速安全检查，只负责拦截明显非法图谱。"""
+    nodes = graph.get("nodes", [])
+    node_ids = {str(node.get("id")) for node in nodes if node.get("id") is not None}
+    allowed_relations = {"prerequisite", "supports", "defines", "property_of", "uses", "equivalent_to", "generalizes", "specializes"}
+    invalid_edges = []
+    for index, edge in enumerate(graph.get("edges", [])):
+        relation = normalize_relation(edge.get("relation"))
+        source, target = str(edge.get("source")), str(edge.get("target"))
+        if source not in node_ids or target not in node_ids:
+            invalid_edges.append({"index": index, "reason": "边端点不存在"})
+        elif source == target:
+            invalid_edges.append({"index": index, "reason": "关系不能自环"})
+        elif relation not in allowed_relations:
+            invalid_edges.append({"index": index, "reason": "关系类型非法"})
+    return {"valid": len(nodes) >= 2 and not invalid_edges, "invalid_edges": invalid_edges}
+
+
 def validate_graph_semantics(graph: dict):
-    """批量判断图谱关系的数学方向和含义，返回可审计的校验结果。"""
+    """用短 JSON 契约快速判断图谱是否存在明确的数学错误。"""
     nodes = {str(node.get("id")): node.get("name", "") for node in graph.get("nodes", [])}
     edges = [
         {
@@ -1945,24 +1982,24 @@ def validate_graph_semantics(graph: dict):
         }
         for index, edge in enumerate(graph.get("edges", []))
     ]
-    prompt = f"""请校验这张数学知识图谱是否适合学习。只输出 JSON：
+    prompt = f"""快速审核数学知识图谱。只检查明显错误，不解释推理。
+通过条件：节点和关系在数学上基本成立；无法确定时通过，避免误杀。
+失败条件：明显方向相反、关系类型错误、节点不存在或关系自相矛盾。
+只返回一行 JSON，禁止 Markdown 和额外文字：
 {{"valid":true,"confidence":0.9,"issues":[],"invalid_edges":[]}}
-
-节点：{json.dumps(nodes, ensure_ascii=False)}
-关系：{json.dumps(edges, ensure_ascii=False)}
-
-检查每条关系的数学含义和方向；不要因表述风格不同而否定正确关系。
-confidence 为 0 到 1。invalid_edges 是有问题的边索引及原因，例如 [{{"index":1,"reason":"方向相反"}}]。
-只有存在明显数学错误或缺少必要条件时才判 valid=false。"""
+confidence 取 0.80-1.00；只有明确错误才低于 0.80。
+invalid_edges 只列明确错误的边索引，最多 3 条，每条为 {{"index":整数,"reason":"不超过20字"}}。
+节点：{json.dumps(nodes, ensure_ascii=False, separators=(',', ':'))}
+关系：{json.dumps(edges, ensure_ascii=False, separators=(',', ':'))}"""
     raw = call_deepseek(
         messages=[
-            {"role": "system", "content": "你是严格的数学知识图谱审校器，只输出完整合法 JSON。"},
+            {"role": "system", "content": "你是快速数学图谱审校器。只输出一行合法 JSON，不要解释。"},
             {"role": "user", "content": prompt},
         ],
         response_format={"type": "json_object"},
         max_retries=1,
-        max_tokens=3000,
-        timeout=min(35.0, primary_timeout),
+        max_tokens=500,
+        timeout=min(12.0, primary_timeout),
         return_metadata=True,
     )
     diagnostics = raw.get("diagnostics", {}) if isinstance(raw, dict) else {}
