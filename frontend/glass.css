@@ -1,0 +1,161 @@
+/* Liquid glass theme: translucent layers, refracted color, and readable contrast. */
+:root {
+  --glass-ink: #122033;
+  --glass-muted: #637287;
+  --glass-line: rgba(255,255,255,.62);
+  --glass-surface: rgba(255,255,255,.48);
+  --glass-surface-strong: rgba(255,255,255,.72);
+  --glass-shadow: 0 24px 70px rgba(30,55,86,.13), inset 0 1px 0 rgba(255,255,255,.72);
+  --glass-blue: #2575e8;
+  --glass-cyan: #24b9c9;
+}
+
+html, body { background: #dfeaf4; color: var(--glass-ink); }
+body {
+  background:
+    radial-gradient(45rem 30rem at 7% 7%, rgba(255,255,255,.92), transparent 62%),
+    radial-gradient(42rem 32rem at 92% 16%, rgba(151,211,255,.42), transparent 62%),
+    radial-gradient(38rem 34rem at 52% 98%, rgba(194,177,255,.28), transparent 65%),
+    linear-gradient(135deg, #e9f1f8 0%, #dce9f4 48%, #e8e5f7 100%);
+}
+.math-flow { opacity: .7; background-size: 74px 74px; mask-image: linear-gradient(to bottom, black, transparent 88%); }
+.math-flow::after { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 50% 10%, rgba(255,255,255,.42), transparent 55%); }
+.sidebar {
+  margin: 12px auto 0; width: min(1180px, calc(100% - 28px)); height: 58px; padding: 0 18px;
+  border: 1px solid rgba(255,255,255,.7); border-radius: 22px;
+  background: rgba(255,255,255,.44); box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(145%); -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+.brand-mark { color: #1f6ce0; }
+.brand strong, .sidebar nav a { color: var(--glass-ink); }
+.sidebar nav a { line-height: 58px; }
+.sidebar nav a.active { color: var(--glass-blue); }
+.main-content { padding-top: 62px; }
+.topbar h1 { color: #17263b; text-shadow: 0 1px 0 rgba(255,255,255,.7); }
+.eyebrow, .pill { color: var(--glass-blue); }
+.ghost-btn { padding: 10px 15px; border: 1px solid rgba(255,255,255,.75); border-radius: 999px; background: rgba(255,255,255,.42); box-shadow: 0 8px 22px rgba(35,70,110,.08); }
+
+.chat-workbench, .learning-pulse, .proof-workbench, .panel, .graph-concept-card {
+  border: 1px solid var(--glass-line); background: var(--glass-surface); box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+.chat-workbench { border-radius: 30px; }
+.conversation-rail { background: rgba(245,249,255,.34); border-right-color: rgba(255,255,255,.58); }
+.conversation-rail-head .section-label, .conversation-rail-foot, .conversation-item small { color: var(--glass-muted); }
+.conversation-rail-head button, .chat-stage-actions button { border: 1px solid rgba(255,255,255,.7); background: rgba(255,255,255,.48); color: var(--glass-ink); box-shadow: 0 5px 14px rgba(43,77,115,.08); }
+.conversation-item { color: #506077; }
+.conversation-item:hover, .conversation-item.is-active { background: rgba(255,255,255,.58); color: var(--glass-ink); }
+.conversation-item.is-active { box-shadow: inset 3px 0 var(--glass-blue), 0 5px 18px rgba(42,92,150,.08); }
+.chat-stage { background: rgba(250,252,255,.34); }
+.chat-stage-head { border-bottom-color: rgba(255,255,255,.6); }
+.chat-stage-head h2, .chat-welcome b { color: var(--glass-ink); }
+.chat-timeline { background: radial-gradient(circle at 78% 10%, rgba(255,255,255,.58), transparent 30%), rgba(255,255,255,.15); }
+.chat-welcome { color: var(--glass-ink); }
+.chat-welcome > span { background: linear-gradient(145deg, #54b4ff, #8a75e8); box-shadow: 0 10px 25px rgba(67,123,223,.24); }
+.chat-welcome p, .chat-message-label, .chat-message-meta { color: var(--glass-muted); }
+.chat-bubble { background: rgba(255,255,255,.62); color: var(--glass-ink); box-shadow: 0 9px 23px rgba(30,65,105,.07), inset 0 1px 0 rgba(255,255,255,.7); }
+.chat-message.user .chat-bubble { background: linear-gradient(135deg, rgba(52,133,242,.94), rgba(77,113,225,.9)); }
+.chat-composer { border-color: rgba(255,255,255,.78); background: rgba(255,255,255,.62); box-shadow: 0 15px 38px rgba(26,62,103,.13), inset 0 1px 0 rgba(255,255,255,.85); }
+.chat-composer textarea { color: var(--glass-ink); }
+.chat-composer .form-footer { color: var(--glass-muted); }
+.chat-composer .form-footer button { background: linear-gradient(135deg, #3487ef, #526ee4); box-shadow: 0 7px 16px rgba(54,111,220,.24); }
+.chat-composer .graph-trigger { color: var(--glass-blue)!important; background: rgba(255,255,255,.4)!important; border-color: rgba(52,126,224,.25)!important; }
+
+.learning-pulse { background: rgba(255,255,255,.5); }
+.proof-workbench { background: linear-gradient(135deg, rgba(255,255,255,.58), rgba(224,235,250,.48)); }
+.panel, .graph-concept-card { background: rgba(255,255,255,.55); }
+.panel-heading h3, .proof-intro h2 { color: var(--glass-ink); }
+.graph-canvas { background-color: rgba(245,249,253,.46); background-image: linear-gradient(rgba(120,153,185,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(120,153,185,.13) 1px,transparent 1px); }
+
+/* One shared content rail keeps every functional section aligned to the chat surface. */
+.main-content > .topbar,
+.main-content > .chat-workbench,
+.main-content > .learning-pulse,
+.main-content > .message,
+.main-content > .knowledge-library,
+.main-content > .proof-workbench,
+.main-content > .practice-workbench,
+.main-content > .dashboard-grid,
+.main-content > .graph-panel,
+.main-content > .graph-concept-card,
+.main-content > .utility-drawer {
+  width: 100%;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+.main-content > .topbar { margin-bottom: 32px; }
+.main-content > .learning-pulse,
+.main-content > .proof-workbench,
+.main-content > .practice-workbench,
+.main-content > .dashboard-grid,
+.main-content > .graph-panel { margin-top: 25px; }
+
+/* Practice loop: a quiet worksheet surface inside the larger glass system. */
+.practice-workbench {
+  grid-template-columns: minmax(250px, .72fr) minmax(0, 1.28fr);
+  gap: 28px; margin-top: 30px; padding: 28px;
+  border: 1px solid rgba(255,255,255,.76); border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255,255,255,.66), rgba(233,241,251,.48));
+  box-shadow: var(--glass-shadow); backdrop-filter: blur(26px) saturate(140%); -webkit-backdrop-filter: blur(26px) saturate(140%);
+}
+.practice-intro { align-self: start; padding: 8px 10px 0 4px; }
+.practice-intro h2 { margin: 14px 0 10px; color: var(--glass-ink); font-size: clamp(26px, 3vw, 39px); line-height: 1.08; letter-spacing: -.045em; }
+.practice-intro p { max-width: 320px; color: var(--glass-muted); font-size: 14px; line-height: 1.75; }
+.practice-panel { padding: 4px; }
+.practice-toolbar { gap: 10px; padding: 0 2px; }
+.practice-toolbar label { color: var(--glass-blue); font: 700 11px var(--sans); letter-spacing: .02em; }
+.practice-toolbar select, .practice-toolbar button {
+  min-height: 42px; border: 1px solid rgba(164,186,211,.56); border-radius: 12px; background: rgba(255,255,255,.62); color: var(--glass-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); font: 500 13px var(--sans);
+}
+.practice-toolbar select { padding: 0 12px; }
+.practice-toolbar button { padding: 0 15px; cursor: pointer; }
+.practice-toolbar button:hover { border-color: rgba(37,117,232,.42); background: rgba(255,255,255,.86); }
+.practice-prompt { margin: 16px 0; padding: 18px 20px; border: 1px solid rgba(255,255,255,.64); border-radius: 18px; background: rgba(220,235,250,.46); color: #31445c; line-height: 1.72; box-shadow: inset 0 1px 0 rgba(255,255,255,.65); }
+.practice-prompt b { margin-bottom: 7px; color: var(--glass-ink); font-size: 17px; }
+.practice-source { margin-top: 10px; color: #788aa0; font: 10px/1.5 var(--sans); }
+.practice-form { padding: 16px; border: 1px solid rgba(255,255,255,.7); border-radius: 20px; background: rgba(255,255,255,.42); }
+.practice-form textarea { min-height: 132px; border: 1px solid rgba(164,186,211,.62); border-radius: 14px; padding: 14px; outline: 0; background: rgba(255,255,255,.72); color: var(--glass-ink); font: 14px/1.7 var(--sans); box-shadow: inset 0 1px 2px rgba(44,77,112,.05); }
+.practice-form textarea:focus { border-color: rgba(37,117,232,.52); box-shadow: 0 0 0 4px rgba(37,117,232,.12); }
+.practice-form > div { align-items: center; margin-top: 14px; color: var(--glass-muted); font-size: 12px; }
+.practice-form > div label { display: inline-flex; align-items: center; gap: 7px; }
+.practice-form input[type="checkbox"] { accent-color: var(--glass-blue); }
+.practice-form button { min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: linear-gradient(135deg, #3487ef, #526ee4); color: #fff; box-shadow: 0 8px 18px rgba(54,111,220,.2); cursor: pointer; font: 600 12px var(--sans); }
+.practice-form button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(54,111,220,.26); }
+.practice-form button#practiceHint { border: 1px solid rgba(37,117,232,.28); background: rgba(255,255,255,.66); color: var(--glass-blue); box-shadow: none; }
+.practice-status { margin-top: 14px; color: var(--glass-muted); }
+.practice-history { gap: 9px; margin-top: 14px; }
+.practice-attempt { padding: 13px 15px; border: 1px solid rgba(171,195,222,.5); border-radius: 15px; background: rgba(255,255,255,.46); }
+.practice-attempt > div { color: var(--glass-blue); }
+.practice-attempt small, .practice-attempt span { color: var(--glass-muted); }
+.practice-attempt p { color: #3f5065; }
+.practice-hints div { border-left-color: var(--glass-blue); background: rgba(37,117,232,.07); color: #405570; }
+.practice-hints b { color: var(--glass-blue); }
+.attempt-review { border-top-color: rgba(159,183,211,.4); }
+.attempt-review input, .attempt-review textarea { border: 1px solid rgba(164,186,211,.62); border-radius: 10px; background: rgba(255,255,255,.72); color: var(--glass-ink); padding: 9px; }
+.attempt-review button { background: rgba(37,117,232,.1); color: var(--glass-blue); box-shadow: none; }
+
+@media (max-width: 850px) {
+  .sidebar { width: calc(100% - 20px); margin-top: 10px; }
+  .main-content { padding-top: 40px; }
+}
+@media (max-width: 540px) {
+  .sidebar { height: 52px; border-radius: 18px; }
+  .sidebar nav a { line-height: 52px; }
+  .main-content { padding-top: 30px; }
+  .topbar h1 { font-size: 38px; }
+  .chat-workbench { border-radius: 22px; }
+  .practice-workbench { gap: 16px; padding: 18px; border-radius: 22px; }
+  .practice-intro { padding: 0; }
+  .practice-intro h2 { font-size: 28px; }
+  .practice-toolbar { flex-wrap: wrap; }
+  .practice-toolbar label { width: 100%; }
+  .practice-toolbar select { flex-basis: calc(100% - 74px); }
+  .practice-toolbar button { flex: 1; }
+  .practice-form { padding: 12px; }
+  .practice-form > div { flex-wrap: wrap; }
+  .practice-form > div label { width: 100%; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar, .chat-workbench, .learning-pulse, .proof-workbench, .panel, .graph-concept-card { backdrop-filter: none; background: #f7fbff; }
+}
