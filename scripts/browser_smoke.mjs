@@ -15,7 +15,10 @@ try {
   await page.waitForSelector('#conversationList .conversation-item');
   if (!(await page.getByRole('button', { name: '新建对话' }).isVisible())) throw new Error('conversation workspace missing');
   await page.getByRole('button', { name: '新建对话' }).click();
-  await page.waitForFunction(() => document.querySelectorAll('#conversationList .conversation-item').length >= 2);
+  await page.waitForFunction(() => Boolean(localStorage.getItem('math-agent-conversation-id')));
+  if (await page.locator('#conversationList .conversation-item').filter({ hasText: '0 条消息' }).count()) {
+    throw new Error('empty conversations should not appear in history');
+  }
   const graphConcept = await page.evaluate(async () => {
     const name = '紧致性冒烟测试';
     const field = '拓扑学';
