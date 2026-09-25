@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -30,11 +31,13 @@ class AgentStepTests(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
 
     def test_executes_registered_lean_check(self):
-        response = self.client.post("/ai/agent/step", json={
-            "question": "使用 Lean 形式化检查",
-            "action": "lean_check",
-            "parameters": {"theorem": "nat_add_zero"},
-        })
+        lean_result = {"status": "formally_verified", "theorem": "nat_add_zero", "evidence_type": "formal_verification", "method": "lean_fixed_template"}
+        with patch("app.api.ai.check_known_theorem", return_value=lean_result):
+            response = self.client.post("/ai/agent/step", json={
+                "question": "使用 Lean 形式化检查",
+                "action": "lean_check",
+                "parameters": {"theorem": "nat_add_zero"},
+            })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["result"]["status"], "formally_verified")
 

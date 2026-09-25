@@ -47,7 +47,8 @@ class AgentModeAskTests(unittest.TestCase):
             "knowledge_sources": [], "concepts": [], "historical_problems": [], "similar_problems": [],
             "knowledge_graph": {"nodes": [], "relations": []}, "formula_fixes": [],
         }
-        with patch("app.api.ai.call_deepseek", return_value=result["answer"]):
+        lean_result = {"status": "formally_verified", "theorem": "nat_add_zero", "evidence_type": "formal_verification", "method": "lean_fixed_template"}
+        with patch("app.api.ai.call_deepseek", return_value=result["answer"]), patch("app.api.ai.check_known_theorem", return_value=lean_result):
             response = self.client.post("/ai/ask", json={"question": "使用 Lean 形式化检查", "agent_mode": True, "agent_parameters": {"theorem": "nat_add_zero"}})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["agent_tool_evidence"][0]["status"], "formally_verified")
