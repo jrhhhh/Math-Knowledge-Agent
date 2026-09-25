@@ -17,6 +17,7 @@ from app.api.conversations import (
 )
 from app.database import Base
 from app.models.concept import Concept
+from app.models.conversation import ConversationMessage
 
 
 class ConversationTests(unittest.TestCase):
@@ -58,6 +59,11 @@ class ConversationTests(unittest.TestCase):
     def test_list_update_and_delete_conversations(self):
         first = create_conversation(ConversationCreate(title="拓扑学"), self.db)
         second = create_conversation(ConversationCreate(title="分析学"), self.db)
+        self.db.add_all([
+            ConversationMessage(conversation_id=first["id"], role="user", content="紧致性"),
+            ConversationMessage(conversation_id=second["id"], role="user", content="分析学"),
+        ])
+        self.db.commit()
         update_conversation(first["id"], ConversationUpdate(title="紧致性专题", topic="拓扑学"), self.db)
         listed = list_conversations(self.db)["items"]
         self.assertEqual({item["title"] for item in listed}, {"紧致性专题", "分析学"})

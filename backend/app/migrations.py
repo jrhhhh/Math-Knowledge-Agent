@@ -1,6 +1,6 @@
 from sqlalchemy import inspect, text
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 9
 
 def run_schema_migrations(connection):
     connection.execute(text("CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
@@ -17,6 +17,12 @@ def run_schema_migrations(connection):
     task_columns = {column["name"] for column in inspect(connection).get_columns("ai_task_statuses")}
     if "result_json" not in task_columns:
         connection.execute(text("ALTER TABLE ai_task_statuses ADD COLUMN result_json TEXT"))
+    if "goal" not in task_columns:
+        connection.execute(text("ALTER TABLE ai_task_statuses ADD COLUMN goal TEXT"))
+    if "termination_reason" not in task_columns:
+        connection.execute(text("ALTER TABLE ai_task_statuses ADD COLUMN termination_reason VARCHAR(120)"))
+    if "evidence_summary" not in task_columns:
+        connection.execute(text("ALTER TABLE ai_task_statuses ADD COLUMN evidence_summary TEXT"))
     graph_columns = {column["name"] for column in inspect(connection).get_columns("graph_candidates")}
     if "conversation_id" not in graph_columns:
         connection.execute(text("ALTER TABLE graph_candidates ADD COLUMN conversation_id INTEGER"))

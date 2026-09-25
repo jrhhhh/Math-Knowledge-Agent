@@ -34,6 +34,8 @@ class ConversationUpdate(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=12000)
+    agent_mode: bool = False
+    agent_parameters: dict = Field(default_factory=dict)
 
 
 def get_db():
@@ -102,7 +104,7 @@ def persist_answer(conversation: Conversation, user_message: ConversationMessage
     assistant = ConversationMessage(
         conversation_id=conversation.id, role="assistant", content=result.get("answer", ""),
         status="completed", answer_id=result.get("answer_id"), request_id=result.get("request_id"),
-        metadata_json=json.dumps({key: result.get(key) for key in ("answer_source", "answer_quality", "knowledge_graph", "formula_fixes")}, ensure_ascii=False),
+        metadata_json=json.dumps({key: result.get(key) for key in ("answer_source", "answer_quality", "knowledge_graph", "formula_fixes", "agent_tool_evidence")}, ensure_ascii=False),
     )
     db.add(assistant)
     conversation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -178,7 +180,7 @@ def create_message(conversation_id: int, payload: MessageCreate, db: Session = D
     db.add(user_message)
     db.commit()
     prompt = build_context_prompt(conversation, content, db)
-    result = _ask_impl(AskRequest(question=prompt), db, request_id=uuid4().hex[:12])
+    result = _ask_impl(AskRequest(question=prompt, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, request_id=uuid4().hex[:12])
     assistant = persist_answer(conversation, user_message, result, db)
     return {"user_message": serialize_message(user_message), "assistant_message": serialize_message(assistant), "result": result}
 
@@ -202,7 +204,7 @@ async def stream_message(conversation_id: int, payload: MessageCreate):
             prompt = build_context_prompt(conversation, content, db)
             chunks = queue.Queue()
             request_id = uuid4().hex[:12]
-            task = asyncio.create_task(asyncio.to_thread(_ask_impl, AskRequest(question=prompt), db, chunks.put, request_id, cancel_event))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, AskRequest(question=prompt, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, chunks.put, request_id, cancel_event))
             while not task.done():
                 while not chunks.empty():
                     sequence += 1

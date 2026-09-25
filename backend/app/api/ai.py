@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse, PlainTextResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -41,6 +41,11 @@ from app.models.ai_retry_job import AIRetryJob
 from app.models.ai_request_log import AIRequestLog
 from app.models.question_sample import QuestionSample
 from app.models.answer_record import AnswerRecord, AnswerFeedback
+from app.models.answer_evidence import AnswerEvidence
+from app.models.agent_task_event import AgentTaskEvent
+from app.models.agent_subgoal import AgentSubgoal
+from app.models.agent_verification_report import AgentVerificationReport
+from app.models.agent_failed_path import AgentFailedPath
 from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent
@@ -62,6 +67,10 @@ from app.ai.local_fallback import local_math_answer
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
+from app.ai.exact_math import ExactMathError, check_identity, evaluate_exact
+from app.ai.agent_controller import plan_next_action
+from app.ai.tool_capabilities import capability_snapshot
+from app.ai.lean_check import check_known_theorem
 from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, record_security_event, alert_delivery_allowed, mark_alert_delivered, _LOCKOUT_SECONDS
 
 
@@ -114,14 +123,27 @@ def set_task_status(request_id: str | None, status: str, stage: str, detail: str
             "updated_at": now.isoformat(),
         }
     if db is not None:
+        db.add(AgentTaskEvent(request_id=request_id, status=status, stage=stage, detail=detail))
         item = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
         if item is None:
-            item = AITaskStatus(request_id=request_id, question=question, status=status, stage=stage, detail=detail, updated_at=now)
+            item = AITaskStatus(request_id=request_id, question=question, goal=question, status=status, stage=stage, detail=detail, updated_at=now)
             db.add(item)
         else:
             item.status, item.stage, item.detail, item.updated_at = status, stage, detail, now
         if result is not None:
             item.result_json = json.dumps(result, ensure_ascii=False)
+            quality = result.get("answer_quality") or {}
+            item.evidence_summary = json.dumps({
+                "answer_source": result.get("answer_source"),
+                "quality_status": quality.get("correctness_status", "unverified"),
+                "knowledge_source_count": len(result.get("knowledge_sources") or []),
+            }, ensure_ascii=False)
+        if status in {"succeeded", "failed", "cancelled"}:
+            item.termination_reason = {
+                "succeeded": "answer_completed",
+                "failed": "execution_failed",
+                "cancelled": "client_cancelled",
+            }[status]
         db.commit()
 
 
@@ -279,7 +301,63 @@ class EvaluateRequest(BaseModel):
     question: str
     answer: str
     reference_answer: str | None = None
-    knowledge_points: list[str] = []
+    knowledge_points: list[str] = Field(default_factory=list)
+
+
+class ExactMathRequest(BaseModel):
+    expression: str
+
+
+class LeanCheckRequest(BaseModel):
+    theorem: str
+
+
+class IdentityCheckRequest(BaseModel):
+    left: str
+    right: str
+    start: int = -10
+    end: int = 10
+
+
+class AgentPlanRequest(BaseModel):
+    question: str
+    evidence: list[dict] = Field(default_factory=list)
+    iterations: int = 0
+
+
+class AgentStepRequest(BaseModel):
+    question: str
+    request_id: str | None = None
+    action: str | None = None
+    parameters: dict = Field(default_factory=dict)
+    evidence: list[dict] = Field(default_factory=list)
+    iterations: int = 0
+
+
+class AgentRunRequest(BaseModel):
+    question: str
+    request_id: str | None = None
+    max_steps: int = 3
+    parameters: dict = Field(default_factory=dict)
+
+
+class AgentSubgoalRequest(BaseModel):
+    title: str
+    status: str = "pending"
+    depends_on: list[int] = Field(default_factory=list)
+    source: str = "user"
+
+
+class AgentSubgoalUpdateRequest(BaseModel):
+    status: str
+
+
+def record_verification(db: Session, request_id: str, result: dict):
+    db.add(AgentVerificationReport(request_id=request_id, evidence_type=str(result.get("evidence_type", "tool")), status=str(result.get("status", "unknown")), subject=str(result.get("theorem") or result.get("expression") or result.get("left") or "tool result"), details=json.dumps(result, ensure_ascii=False)))
+
+
+def record_failed_path(db: Session, request_id: str, action: str, reason: str, details: str | None = None):
+    db.add(AgentFailedPath(request_id=request_id, action=action, reason=reason, details=details))
 
 
 @router.get("/answers")
@@ -441,6 +519,214 @@ def evaluate_answer_endpoint(request: EvaluateRequest):
     }
 
 
+@router.post("/tools/exact-arithmetic")
+def exact_arithmetic(request: ExactMathRequest):
+    """Run bounded exact arithmetic; this endpoint never executes arbitrary code."""
+    try:
+        return evaluate_exact(request.expression)
+    except ExactMathError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/tools/capabilities")
+def tool_capabilities():
+    return capability_snapshot()
+
+
+@router.post("/tools/lean-check")
+def lean_check(request: LeanCheckRequest):
+    try:
+        return check_known_theorem(request.theorem)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/tools/counterexample-search")
+def counterexample_search(request: IdentityCheckRequest):
+    try:
+        return check_identity(request.left, request.right, start=request.start, end=request.end)
+    except ExactMathError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/plan")
+def agent_plan(request: AgentPlanRequest):
+    try:
+        return plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/step")
+def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
+    """Plan and execute one allowlisted deterministic action."""
+    request_id = request.request_id or uuid4().hex[:12]
+    try:
+        plan = plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    action = request.action or plan["action"]
+    if action != plan["action"] and action not in plan["allowed_actions"]:
+        raise HTTPException(status_code=422, detail="action 不在受限动作白名单中。")
+    parameters = dict(plan.get("parameters") or {})
+    parameters.update(request.parameters or {})
+    set_task_status(request_id, "running", f"执行动作：{action}", db=db, question=request.question)
+    try:
+        if action == "exact_arithmetic":
+            expression = parameters.get("expression")
+            if not expression:
+                raise HTTPException(status_code=422, detail="exact_arithmetic 需要 expression 参数。")
+            result = evaluate_exact(str(expression))
+        elif action == "counterexample_search":
+            if not parameters.get("left") or not parameters.get("right"):
+                raise HTTPException(status_code=422, detail="counterexample_search 需要 left 和 right 参数。")
+            bounds = parameters.get("range", [-10, 10])
+            result = check_identity(str(parameters["left"]), str(parameters["right"]), start=int(bounds[0]), end=int(bounds[1]))
+        elif action == "lean_check":
+            theorem = parameters.get("theorem")
+            if not theorem:
+                raise HTTPException(status_code=422, detail="lean_check 需要已登记的 theorem 参数。")
+            result = check_known_theorem(str(theorem))
+        elif action == "review_proof":
+            proof = parameters.get("proof")
+            if not proof:
+                raise HTTPException(status_code=422, detail="review_proof 需要 proof 参数。")
+            review = analyze_proof(ProofAnalyzeRequest(question=request.question, proof=str(proof)), db)
+            result = {"status": "model_reviewed", "review": review, "assumptions": "这是模型审查结果，不是形式化证明。"}
+        elif action == "revise_answer":
+            answer = parameters.get("answer")
+            feedback = parameters.get("feedback")
+            if not answer or not feedback:
+                raise HTTPException(status_code=422, detail="revise_answer 需要 answer 和 feedback 参数。")
+            revised = call_deepseek(
+                messages=[
+                    {"role": "system", "content": "你是严谨的中文数学教师。根据审查意见修订答案，只输出修订后的答案；不要声称已经形式化验证。"},
+                    {"role": "user", "content": f"题目：{request.question}\n原答案：{answer}\n审查意见：{feedback}"},
+                ],
+                max_retries=1,
+                max_tokens=1800,
+                circuit_enabled=True,
+            )
+            result = {"status": "model_revised", "answer": revised, "assumptions": "修订稿仍需重新审查或独立验证。"}
+        elif action == "review_revise_review":
+            proof = parameters.get("proof")
+            if not proof:
+                raise HTTPException(status_code=422, detail="review_revise_review 需要 proof 参数。")
+            first_review = analyze_proof(ProofAnalyzeRequest(question=request.question, proof=str(proof)), db)
+            if first_review.get("valid"):
+                result = {"status": "model_reviewed", "review": first_review, "revised": False, "assumptions": "模型审查未发现问题，仍不是形式化证明。"}
+            else:
+                revised = call_deepseek(
+                    messages=[
+                        {"role": "system", "content": "你是严谨的中文数学教师。根据审查意见修订证明，只输出修订后的证明；不要声称已经形式化验证。"},
+                        {"role": "user", "content": f"题目：{request.question}\n原证明：{proof}\n审查意见：{json.dumps(first_review, ensure_ascii=False)}"},
+                    ], max_retries=1, max_tokens=1800, circuit_enabled=True,
+                )
+                second_review = analyze_proof(ProofAnalyzeRequest(question=request.question, proof=str(revised)), db)
+                result = {
+                    "status": "model_reviewed_after_revision",
+                    "revised_proof": revised,
+                    "first_review": first_review,
+                    "second_review": second_review,
+                    "assumptions": "最多执行一次模型修订；结果仍需独立或人工验证。",
+                }
+        else:
+            result = {"status": "awaiting_tool", "action": action, "message": "该动作已被规划，但当前版本尚未接入对应执行器。"}
+        if result.get("evidence_type") or result.get("status") in {"model_reviewed", "model_revised", "model_reviewed_after_revision"}:
+            record_verification(db, request_id, result)
+        set_task_status(request_id, "tool_completed", f"动作完成：{action}", db=db, question=request.question, result={"action": action, "tool_result": result})
+        return {"request_id": request_id, "plan": plan, "action": action, "result": result, "completed": result.get("status") in {"computed", "counterexample_found"}}
+    except HTTPException:
+        record_failed_path(db, request_id, action, "invalid_parameters")
+        db.commit()
+        set_task_status(request_id, "failed", f"动作参数无效：{action}", db=db, question=request.question)
+        raise
+    except ExactMathError as exc:
+        record_failed_path(db, request_id, action, "tool_error", str(exc))
+        db.commit()
+        set_task_status(request_id, "failed", f"动作执行失败：{action}", str(exc), db=db, question=request.question)
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValueError as exc:
+        record_failed_path(db, request_id, action, "tool_error", str(exc))
+        db.commit()
+        set_task_status(request_id, "failed", f"动作参数无效：{action}", str(exc), db=db, question=request.question)
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/agent/run")
+def agent_run(request: AgentRunRequest, db: Session = Depends(get_db)):
+    """Run a bounded local agent loop and persist every action as a task event."""
+    if request.max_steps < 1 or request.max_steps > 8:
+        raise HTTPException(status_code=422, detail="max_steps 必须在 1 到 8 之间。")
+    request_id = request.request_id or uuid4().hex[:12]
+    evidence: list[dict] = []
+    trace: list[dict] = []
+    parameters = dict(request.parameters or {})
+    set_task_status(request_id, "running", "开始受控智能体循环", db=db, question=request.question)
+    terminal_status = "inconclusive"
+    try:
+        for iteration in range(request.max_steps):
+            plan = plan_next_action(request.question, evidence=evidence, iterations=iteration)
+            action = plan["action"]
+            if action == "retrieve_knowledge":
+                matched = safe_semantic_retrieve_concepts(db, request.question)
+                source_count = len(retrieve_audited_sources(db, request.question, matched))
+                result = {"status": "retrieved", "concept_count": len(matched), "source_count": source_count}
+                evidence.append({"status": "source_available", **result})
+            elif action == "exact_arithmetic":
+                expression = parameters.get("expression")
+                if not expression:
+                    terminal_status = "needs_clarification"
+                    result = {"status": terminal_status, "missing": ["expression"]}
+                    record_failed_path(db, request_id, action, "missing_parameters", "expression")
+                    trace.append({"iteration": iteration, "action": action, "result": result})
+                    break
+                result = evaluate_exact(str(expression))
+                evidence.append(result)
+                record_verification(db, request_id, result)
+                terminal_status = "completed_with_evidence"
+                trace.append({"iteration": iteration, "action": action, "result": result})
+                break
+            elif action == "counterexample_search":
+                if not parameters.get("left") or not parameters.get("right"):
+                    terminal_status = "needs_clarification"
+                    result = {"status": terminal_status, "missing": ["left", "right"]}
+                    record_failed_path(db, request_id, action, "missing_parameters", "left,right")
+                    trace.append({"iteration": iteration, "action": action, "result": result})
+                    break
+                bounds = parameters.get("range", [-10, 10])
+                result = check_identity(str(parameters["left"]), str(parameters["right"]), start=int(bounds[0]), end=int(bounds[1]))
+                evidence.append(result)
+                record_verification(db, request_id, result)
+                terminal_status = "refuted" if result["status"] == "counterexample_found" else "inconclusive"
+                trace.append({"iteration": iteration, "action": action, "result": result})
+                break
+            else:
+                terminal_status = "inconclusive" if action == "stop_inconclusive" else "needs_clarification"
+                result = {"status": terminal_status, "action": action, "message": "该动作尚未接入执行器。"}
+                trace.append({"iteration": iteration, "action": action, "result": result})
+                break
+            trace.append({"iteration": iteration, "action": action, "result": result})
+        else:
+            terminal_status = "inconclusive"
+        set_task_status(request_id, "succeeded" if terminal_status in {"completed_with_evidence", "refuted"} else "failed", f"智能体循环结束：{terminal_status}", db=db, question=request.question, result={"status": terminal_status, "trace": trace, "evidence": evidence})
+        return {"request_id": request_id, "status": terminal_status, "trace": trace, "evidence": evidence, "steps": len(trace)}
+    except ExactMathError as exc:
+        set_task_status(request_id, "failed", "智能体工具执行失败", str(exc), db=db, question=request.question)
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+@router.get("/answers/{answer_id}/evidence")
+def answer_evidence(answer_id: int, db: Session = Depends(get_db)):
+    if db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first() is None:
+        raise HTTPException(status_code=404, detail="回答记录不存在。")
+    items = db.query(AnswerEvidence).filter(AnswerEvidence.answer_id == answer_id).order_by(AnswerEvidence.id.asc()).all()
+    return {"items": [{
+        "id": item.id, "answer_id": item.answer_id, "evidence_type": item.evidence_type,
+        "status": item.status, "subject": item.subject, "method": item.method,
+        "assumptions": item.assumptions, "details": item.details,
+        "created_at": item.created_at.isoformat(),
+    } for item in items], "total": len(items)}
+
+
 @router.get("/health")
 def ai_health():
     """返回 AI 调用计数和最近失败，便于定位 DeepSeek 不稳定。"""
@@ -471,6 +757,7 @@ def list_task_statuses(status: str | None = None, offset: int = Query(default=0,
     items = query.order_by(AITaskStatus.updated_at.desc()).offset(offset).limit(limit).all()
     return {"items": [{"request_id": item.request_id, "question": item.question, "status": item.status,
                         "stage": item.stage, "detail": item.detail,
+                        "goal": item.goal, "termination_reason": item.termination_reason,
                         "updated_at": item.updated_at.isoformat() if item.updated_at else None} for item in items],
             "total": total, "offset": offset, "limit": limit}
 
@@ -482,6 +769,68 @@ def cleanup_task_statuses(older_than_days: int = Query(default=30, ge=1, le=3650
     deleted = db.query(AITaskStatus).filter(AITaskStatus.status.in_(terminal), AITaskStatus.updated_at < cutoff).delete(synchronize_session=False)
     db.commit()
     return {"deleted": deleted, "older_than_days": older_than_days, "cutoff": cutoff.isoformat()}
+
+
+@router.get("/tasks/{request_id}/events")
+def task_events(request_id: str, db: Session = Depends(get_db)):
+    if db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first() is None:
+        raise HTTPException(status_code=404, detail="未找到该问答任务。")
+    items = db.query(AgentTaskEvent).filter(AgentTaskEvent.request_id == request_id).order_by(AgentTaskEvent.id.asc()).all()
+    return {"request_id": request_id, "items": [{
+        "id": item.id, "status": item.status, "stage": item.stage,
+        "detail": item.detail, "created_at": item.created_at.isoformat(),
+    } for item in items], "total": len(items)}
+
+
+@router.get("/tasks/{request_id}/subgoals")
+def list_subgoals(request_id: str, db: Session = Depends(get_db)):
+    items = db.query(AgentSubgoal).filter(AgentSubgoal.request_id == request_id).order_by(AgentSubgoal.id.asc()).all()
+    return {"request_id": request_id, "items": [{
+        "id": item.id, "title": item.title, "status": item.status,
+        "depends_on": json.loads(item.depends_on or "[]"), "source": item.source,
+        "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat(),
+    } for item in items], "total": len(items)}
+
+
+@router.post("/tasks/{request_id}/subgoals", status_code=201)
+def create_subgoal(request_id: str, request: AgentSubgoalRequest, db: Session = Depends(get_db)):
+    if not request.title.strip():
+        raise HTTPException(status_code=422, detail="子目标标题不能为空。")
+    if request.status not in {"pending", "running", "completed", "blocked", "refuted"}:
+        raise HTTPException(status_code=422, detail="无效的子目标状态。")
+    item = AgentSubgoal(request_id=request_id, title=request.title.strip(), status=request.status,
+                        depends_on=json.dumps(request.depends_on, ensure_ascii=False), source=request.source)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "request_id": item.request_id, "title": item.title, "status": item.status,
+            "depends_on": request.depends_on, "source": item.source}
+
+
+@router.patch("/tasks/{request_id}/subgoals/{subgoal_id}")
+def update_subgoal(request_id: str, subgoal_id: int, request: AgentSubgoalUpdateRequest, db: Session = Depends(get_db)):
+    if request.status not in {"pending", "running", "completed", "blocked", "refuted"}:
+        raise HTTPException(status_code=422, detail="无效的子目标状态。")
+    item = db.query(AgentSubgoal).filter(AgentSubgoal.id == subgoal_id, AgentSubgoal.request_id == request_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="未找到该任务子目标。")
+    item.status = request.status
+    db.commit()
+    db.refresh(item)
+    return {"id": item.id, "request_id": item.request_id, "title": item.title, "status": item.status,
+            "depends_on": json.loads(item.depends_on or "[]"), "source": item.source, "updated_at": item.updated_at.isoformat()}
+
+
+@router.get("/tasks/{request_id}/verification-reports")
+def verification_reports(request_id: str, db: Session = Depends(get_db)):
+    items = db.query(AgentVerificationReport).filter(AgentVerificationReport.request_id == request_id).order_by(AgentVerificationReport.id.asc()).all()
+    return {"request_id": request_id, "items": [{"id": x.id, "evidence_type": x.evidence_type, "status": x.status, "subject": x.subject, "details": json.loads(x.details or "{}"), "created_at": x.created_at.isoformat()} for x in items], "total": len(items)}
+
+
+@router.get("/tasks/{request_id}/failed-paths")
+def failed_paths(request_id: str, db: Session = Depends(get_db)):
+    items = db.query(AgentFailedPath).filter(AgentFailedPath.request_id == request_id).order_by(AgentFailedPath.id.asc()).all()
+    return {"request_id": request_id, "items": [{"id": x.id, "action": x.action, "reason": x.reason, "details": x.details, "created_at": x.created_at.isoformat()} for x in items], "total": len(items)}
 
 
 @router.post("/tasks/{request_id}/retry")
@@ -505,6 +854,8 @@ def task_status(request_id: str, db: Session = Depends(get_db)):
     if persisted:
         live.update({"request_id": persisted.request_id, "status": persisted.status, "stage": persisted.stage,
                      "detail": persisted.detail, "question": persisted.question,
+                     "goal": persisted.goal, "termination_reason": persisted.termination_reason,
+                     "evidence_summary": json.loads(persisted.evidence_summary) if persisted.evidence_summary else None,
                      "updated_at": persisted.updated_at.isoformat() if persisted.updated_at else live.get("updated_at")})
         if persisted.result_json:
             try:
@@ -749,6 +1100,8 @@ def export_operations_dashboard(window_minutes: int = Query(default=60, ge=1, le
 
 class AskRequest(BaseModel):
     question: str
+    agent_mode: bool = False
+    agent_parameters: dict = Field(default_factory=dict)
 
 
 class RelatedGraphRequest(BaseModel):
@@ -2478,6 +2831,7 @@ def _ask_impl(
     started_at = time.perf_counter()
     deadline = started_at + REQUEST_BUDGET_SECONDS
     degradation = []
+    agent_tool_evidence = []
     question = request.question.strip()
     set_task_status(request_id, "queued", "准备问答", db=db, question=question)
     check_request_cancelled(cancel_event)
@@ -2491,7 +2845,7 @@ def _ask_impl(
     db.add(QuestionSample(question_hash=hashlib.sha256(question.encode("utf-8")).hexdigest(), question_length=len(question), source="ask"))
     db.commit()
 
-    cached = cached_answer(question)
+    cached = None if request.agent_mode else cached_answer(question)
     if cached is not None:
         cached = dict(cached)
         cached["request_id"] = request_id
@@ -2513,6 +2867,30 @@ def _ask_impl(
     set_task_status(request_id, "retrieving", "检索知识点", db=db, question=question)
     check_request_cancelled(cancel_event)
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
+
+    if request.agent_mode:
+        plan = plan_next_action(question, evidence=[{"status": "source_available"}] if audited_sources else [], iterations=0)
+        action = plan["action"]
+        params = dict(plan.get("parameters") or {})
+        params.update(request.agent_parameters or {})
+        try:
+            if action == "exact_arithmetic" and params.get("expression"):
+                agent_tool_evidence.append(evaluate_exact(str(params["expression"])))
+            elif action == "counterexample_search" and params.get("left") and params.get("right"):
+                bounds = params.get("range", [-10, 10])
+                agent_tool_evidence.append(check_identity(str(params["left"]), str(params["right"]), start=int(bounds[0]), end=int(bounds[1])))
+            elif action == "lean_check" and params.get("theorem"):
+                agent_tool_evidence.append(check_known_theorem(str(params["theorem"])))
+            else:
+                agent_tool_evidence.append({"status": "needs_clarification", "planned_action": action, "missing_parameters": sorted(set({"exact_arithmetic": ["expression"], "counterexample_search": ["left", "right"], "lean_check": ["theorem"]}.get(action, [])) - set(params))})
+        except ExactMathError as exc:
+            agent_tool_evidence.append({"status": "tool_error", "planned_action": action, "detail": str(exc)})
+        for tool_result in agent_tool_evidence:
+            if tool_result.get("status") == "tool_error":
+                record_failed_path(db, request_id or "unknown", action, "tool_error", tool_result.get("detail"))
+            else:
+                record_verification(db, request_id or "unknown", tool_result)
+        set_task_status(request_id, "tool_completed", f"Agent 预检：{action}", db=db, question=question, result={"agent_tool_evidence": agent_tool_evidence})
 
     # --------------------------------------------------------
     # semantic_retrieve_concepts() 返回的是：
@@ -2614,6 +2992,12 @@ def _ask_impl(
 ============================================================
 
 {question}
+
+============================================================
+受控工具预检证据（仅在 agent_mode 开启时存在）
+============================================================
+
+{json.dumps(agent_tool_evidence, ensure_ascii=False) if agent_tool_evidence else "无。不要声称执行过外部计算。"}
 
 ============================================================
 一、当前问题相关知识点
@@ -2890,6 +3274,7 @@ def _ask_impl(
         "generation_elapsed_seconds": round(time.perf_counter() - started_at, 3),
         "degradation": degradation,
         "knowledge_sources": audited_sources,
+        "agent_tool_evidence": agent_tool_evidence,
 
         "concepts": [
             {
@@ -2937,6 +3322,35 @@ def _ask_impl(
     db.add(answer_record)
     check_request_cancelled(cancel_event)
     db.flush()
+    for tool_result in agent_tool_evidence:
+        db.add(AnswerEvidence(
+            answer_id=answer_record.id,
+            evidence_type=str(tool_result.get("evidence_type") or tool_result.get("planned_action") or "agent_tool"),
+            status=str(tool_result.get("status", "unverified")),
+            subject=str(tool_result.get("expression") or tool_result.get("theorem") or tool_result.get("left") or "受控工具结果"),
+            method=str(tool_result.get("method") or tool_result.get("planned_action") or "controlled_agent"),
+            assumptions=tool_result.get("assumptions"),
+            details=json.dumps(tool_result, ensure_ascii=False),
+        ))
+    db.add(AnswerEvidence(
+        answer_id=answer_record.id,
+        evidence_type="structural_quality",
+        status="unverified",
+        subject="回答的条件、推理、结论和公式结构",
+        method="heuristic_answer_quality",
+        assumptions="结构信号不能证明数学结论正确。",
+        details=json.dumps(result["answer_quality"], ensure_ascii=False),
+    ))
+    if audited_sources:
+        db.add(AnswerEvidence(
+            answer_id=answer_record.id,
+            evidence_type="knowledge_source",
+            status="source_available",
+            subject="回答使用的教材片段",
+            method="reviewed_local_knowledge",
+            assumptions="来源片段支持相关背景，不自动证明当前回答的全部推理。",
+            details=json.dumps(audited_sources, ensure_ascii=False),
+        ))
     if (quality.get("score") or 0.0) < 0.5:
         db.add(AnswerReview(answer_id=answer_record.id, note="自动质量评估为低质量，建议人工核对。"))
     db.add(AIRequestLog(request_id=request_id or "unknown", question=question, status="succeeded", duration_seconds=round(time.perf_counter() - started_at, 3)))

@@ -2,6 +2,11 @@
 __pycache__/
 *.pyc
 
+# Local test and dependency artifacts
+.playwright-cli/
+node_modules/
+*.log
+
 # Virtual environment
 .venv/
 **/.venv/

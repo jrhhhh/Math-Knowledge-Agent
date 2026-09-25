@@ -48,7 +48,7 @@
         <div class="chat-stage">
           <div class="chat-stage-head"><div><span class="pill">CONTEXTUAL MATH ASSISTANT</span><h2 id="conversationTitle">新的数学对话</h2></div><div class="chat-stage-actions"><button type="button" id="renameConversation">重命名</button><button type="button" id="deleteConversation" aria-label="删除当前对话">⌫</button></div></div>
           <div id="chatTimeline" class="chat-timeline" aria-live="polite"><div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div></div>
-          <form id="askForm" class="chat-composer"><textarea id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton">根据本次对话生成图谱 <span>◎</span></button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div></form>
+          <form id="askForm" class="chat-composer"><textarea id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><label class="agent-mode-toggle"><input type="checkbox" id="agentMode"> 启用受控验证</label><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton">根据本次对话生成图谱 <span>◎</span></button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div></form>
         </div>
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>

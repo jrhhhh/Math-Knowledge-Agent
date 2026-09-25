@@ -22,6 +22,11 @@ from app.models.question_sample import QuestionSample
 from app.models.template_audit_log import TemplateAuditLog
 from app.models.template_audit_archive import TemplateAuditArchive
 from app.models.answer_record import AnswerRecord, AnswerFeedback
+from app.models.answer_evidence import AnswerEvidence
+from app.models.agent_task_event import AgentTaskEvent
+from app.models.agent_subgoal import AgentSubgoal
+from app.models.agent_verification_report import AgentVerificationReport
+from app.models.agent_failed_path import AgentFailedPath
 from app.models.answer_review import AnswerReview
 from app.models.answer_review_event import AnswerReviewEvent
 from app.models.security_event import SecurityEvent

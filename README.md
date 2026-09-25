@@ -173,10 +173,23 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 ### AI API
 
 - `POST /ai/ask`：数学问答、知识点检索和历史题推荐
+- `/ai/ask` 可选 `agent_mode=true`：先执行受限工具预检，再将工具证据交给回答生成；默认关闭以保持旧客户端行为
 - `POST /conversations`、`GET /conversations`：创建及查询本地持久化对话
 - `GET/PATCH/DELETE /conversations/{conversation_id}`：恢复、命名或删除对话
 - `POST /conversations/{conversation_id}/messages/stream`：按会话上下文流式生成下一轮数学回答
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
+- `POST /ai/tools/exact-arithmetic`：在受限整数与有理数表达式范围内执行可复现的精确计算；自然语言中的常见算式会自动提取，且不执行任意代码
+- `GET /ai/tools/capabilities`：探测 Lean、SageMath、SymPy、OSQP 和 CVXPY 的运行时可用性；可用不等于结论已验证
+- `POST /ai/tools/lean-check`：仅验证登记的固定 Lean theorem 模板，并返回 `formally_verified` 或明确失败状态
+- `POST /ai/tools/counterexample-search`：在给定整数区间逐点搜索等式反例；未找到反例不等于证明恒等成立
+- `POST /ai/agent/plan`：在受限动作白名单内规划下一步行动；规划器只选择动作，不直接执行工具
+- `POST /ai/agent/step`：规划并执行一个受限动作；当前接入精确计算、反例搜索、`review_proof` 模型审查、`revise_answer` 模型修订和一次性 `review_revise_review` 闭环，其余动作明确返回待接入状态
+- `POST /ai/agent/run`：运行最多 8 步的受控本地智能体循环，保存每步行动、证据和终止状态
+- `GET /ai/answers/{answer_id}/evidence`：读取回答关联的结构检查和教材来源证据；结构检查不会被解释为数学正确性
+- `GET /ai/tasks/{request_id}/events`：读取问答任务的追加式状态事件和终止前行动轨迹；任务同时保存目标、终止原因和证据摘要
+- `GET/POST/PATCH /ai/tasks/{request_id}/subgoals`：读取、创建或更新任务子目标，保存状态、依赖关系和来源
+- `GET /ai/tasks/{request_id}/verification-reports`：读取任务的独立验证报告
+- `GET /ai/tasks/{request_id}/failed-paths`：读取任务失败动作及原因
 - `POST /ai/related-graph`：由 AI 根据问题或完整聊天上下文生成候选知识图谱；相同输入 24 小时内复用缓存
 - `GET /ai/graph-candidates`：分页查看候选图谱，可按状态筛选
 - `GET /ai/graph-candidates/stats`：查看各审核状态的候选数量

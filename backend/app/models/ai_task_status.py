@@ -15,4 +15,7 @@ class AITaskStatus(Base):
     stage = Column(String, nullable=False)
     detail = Column(Text, nullable=True)
     result_json = Column(Text, nullable=True)
+    goal = Column(Text, nullable=True)
+    termination_reason = Column(String(120), nullable=True)
+    evidence_summary = Column(Text, nullable=True)
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
