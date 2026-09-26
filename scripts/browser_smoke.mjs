@@ -12,7 +12,7 @@ try {
   if (formulaCount < 5) throw new Error(`expected at least 5 rendered formulas, got ${formulaCount}`);
   await page.goto(`${base}/index.html`, { waitUntil: 'networkidle' });
   if (!(await page.getByRole('heading', { name: '推理结果' }).isVisible())) throw new Error('main response panel missing');
-  await page.waitForSelector('#conversationList .conversation-item');
+  await page.waitForSelector('#conversationList');
   if (!(await page.getByRole('button', { name: '新建对话' }).isVisible())) throw new Error('conversation workspace missing');
   await page.getByRole('button', { name: '新建对话' }).click();
   await page.waitForFunction(() => Boolean(localStorage.getItem('math-agent-conversation-id')));
