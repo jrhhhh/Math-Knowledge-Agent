@@ -172,6 +172,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - 知识图谱节点知识卡片：点击节点打开可拖动浮层，不会跳转到对话区域
 - 对话历史只展示已有消息的对话；空对话不会出现在历史列表
 - 切换历史对话时恢复最近回答的教材出处、受控验证证据、Agent 过程、相关概念、图谱和反馈上下文
+- 工作台提供独立的“运行 Agent 步骤”入口，可直接观察受限 Agent 的多步轨迹、工具证据与失败原因，不必触发完整问答生成
 
 ### AI API
 
@@ -182,12 +183,19 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /conversations/{conversation_id}/messages/stream`：按会话上下文流式生成下一轮数学回答
 - `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误；外部模型不可用时返回 `review_source=local_rule_fallback` 的本地结构审查，不会将其表述为数学正确性验证
 - `POST /ai/tools/exact-arithmetic`：在受限整数与有理数表达式范围内执行可复现的精确计算；自然语言中的常见算式会自动提取，且不执行任意代码
+- `POST /ai/tools/exact-calculus`：对次数不超过 12 的单变量多项式做精确求导或有理数边界定积分；不支持变量分母、超越函数或任意代码
+- `POST /ai/tools/polynomial-identity`：比较有理数系数单变量多项式的全部系数，返回恒等性及差多项式；不使用有限点代入推断恒等。独立 Agent 支持“验证多项式恒等式 (x+1)^2 = x²+2x+1”。
 - `GET /ai/tools/capabilities`：探测 Lean、SageMath、SymPy、OSQP 和 CVXPY 的运行时可用性；可用不等于结论已验证
 - `POST /ai/tools/lean-check`：仅验证登记的固定 Lean theorem 模板，并返回 `formally_verified` 或明确失败状态
 - `POST /ai/tools/counterexample-search`：在给定整数区间逐点搜索等式反例；未找到反例不等于证明恒等成立
 - `POST /ai/agent/plan`：在受限动作白名单内规划下一步行动；规划器只选择动作，不直接执行工具
-- `POST /ai/agent/step`：规划并执行一个受限动作；当前接入精确计算、反例搜索、`review_proof` 模型审查、`revise_answer` 模型修订和一次性 `review_revise_review` 闭环，其余动作明确返回待接入状态
-- `POST /ai/agent/run`：运行最多 8 步的受控本地智能体循环，保存每步行动、证据和终止状态
+- `POST /ai/agent/step`：规划并执行一个白名单动作；当前接入知识检索、待验证证明草稿、精确计算、有限反例搜索、登记 Lean 模板检查、证明审查与一次修订闭环，并能明确请求补充条件
+- `POST /ai/agent/run`：运行最多 8 步的受控智能体循环；证明任务按检索、草拟、审查推进，计算和反例任务按工具证据停止，保存每步行动、证据和终止状态
+- `POST /ai/agent/{request_id}/resume`：补充等待澄清任务列出的缺失参数，继续同一任务并保留历史步骤及剩余预算；数据库原子认领避免重复恢复。页面支持补充参数表单与刷新后读取待补充任务，不支持运行中任务自动续跑。
+- `GET/POST /ai/tasks/{request_id}/claims`：读取或创建未验证命题及同任务依赖；`POST /ai/tasks/{request_id}/claims/{claim_id}/retract` 撤回前提并将依赖结论、任务标记为待复核，保留历史工具证据。当前不自动提取命题，也不将用户声明视为数学证明。
+
+本批验收：后端 153 项测试通过；真实浏览器测试了多项式求导、定积分、恒等式检查以及刷新后补充积分上下限继续原任务。精确工具只覆盖声明的多项式范围，三角函数等输入会明确报告范围不足。执行时间预算仅在动作之间检查，不是正在执行调用的硬超时；证明模型超时、一般函数与矩阵工具、完整人工评测仍属后续工作，详见 [优化路线](docs/agent-evolution-roadmap.md)。
+
 - `GET /ai/answers/{answer_id}/evidence`：读取回答关联的结构检查和教材来源证据；结构检查不会被解释为数学正确性
 - `GET /ai/tasks/{request_id}/events`：读取问答任务的追加式状态事件和终止前行动轨迹；任务同时保存目标、终止原因和证据摘要
 - `GET/POST/PATCH /ai/tasks/{request_id}/subgoals`：读取、创建或更新任务子目标，保存状态、依赖关系和来源
@@ -224,6 +232,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `GET /problems/{problem_id}/attempts`：读取该题的作答与重测历史
 - `PUT /problems/attempts/{attempt_id}/review`：由审核流程写入 `correct` / `partially_correct` / `incorrect`、错误类型和针对性反馈
 
+独立 Agent 入口可直接处理如“求定积分 `x²`，`x` 从 0 到 1”或“求导 `x³ + 2x`”的单变量多项式微积分题。定积分输出精确有理数值和原函数，求导输出精确导函数；这属于受限符号计算证据，不等于形式化证明，也不覆盖一般函数、极限或不定积分。
+
 练习审核不会把所有提交都当成掌握证据：只有 `correct` 且 `independent=yes` 的作答会自动将关联知识点置为 `completed`；提示后完成或部分正确会保持 `learning`，错误作答会返回关联前置知识点作为补救建议。未审核的作答始终保持 `unverified`。
 
 `/ai/ask` 已采用本地知识点优先检索，并使用知识点综合分数排序历史题，减少不必要的 LLM 调用。回答上的“完整度”只表示条件、推理、结论和公式等结构信号是否齐全；在建立人工审核题集和数学正确性评估器前，界面会明确标注“数学正确性未验证”，不会把完整度伪装成正确率。
@@ -231,6 +241,8 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 仓库中的 `data/answer_benchmark.chapter1.json` 是第 1 章的人工审核基准题集，目前包含 54 道覆盖直接证明、逆反命题、反证法、归纳法、反例、缺失条件、连续追问、错误诊断和引用的代表案例。运行 `python3 scripts/validate_answer_benchmark.py` 可检查题目 ID、评分维度和审核标签结构；该脚本只验证基准数据完整性，不会把模型互评冒充数学证明。
 
 人工审核结果应单独保存为 JSON（每条记录包含 `id` 和 `labels.conclusion/conditions/reasoning/citations`），可运行 `python3 scripts/benchmark_report.py --results path/to/review-results.json` 生成覆盖率和四个维度的一致率。未提供人工结果时，脚本只报告题目数量，不输出任何“正确率”。
+
+要对正在运行的本地服务生成可复现的原始回答基线，可执行 `python3 scripts/run_answer_benchmark.py --limit 5` 先跑 5 道题，完整运行时省略 `--limit`。默认请求 `/ai/ask`；增加 `--mode agent-run` 可采集受控多步循环结果。结果写入被 Git 忽略的 `evaluation/runs/<UTC时间>/`，包含基准文件 SHA-256、运行配置、逐题原始响应和耗时；该脚本不自动判定数学正确性，需另行人工审核。
 
 会话工作台会把每一轮用户问题、AI 回答与相关知识点写入 SQLite。每次新提问时，后端结合最近 8 条消息和压缩后的早期摘要构建上下文；因此可直接追问“继续第二步”或“换一种证明”，同时避免把无上限的完整历史持续发送给模型。现有 `/ai/ask` 接口仍保留，方便旧客户端继续使用。
 

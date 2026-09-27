@@ -68,7 +68,9 @@ from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
 from app.ai.exact_math import ExactMathError, check_identity, evaluate_exact
-from app.ai.agent_controller import plan_next_action
+from app.ai.exact_calculus import differentiate_polynomial, integrate_polynomial_definite, verify_polynomial_identity, polynomial_latex
+from app.ai.agent_controller import plan_next_action, extract_calculus_request
+from app.models.agent_claim import AgentClaim
 from app.ai.tool_capabilities import capability_snapshot
 from app.ai.lean_check import check_known_theorem
 from app.security import require_admin, issue_admin_token, login_allowed, record_login_failure, clear_login_failures, record_security_event, alert_delivery_allowed, mark_alert_delivered, _LOCKOUT_SECONDS
@@ -140,7 +142,7 @@ def set_task_status(request_id: str | None, status: str, stage: str, detail: str
             }, ensure_ascii=False)
         if status in {"succeeded", "failed", "cancelled"}:
             item.termination_reason = {
-                "succeeded": "answer_completed",
+                "succeeded": (result or {}).get("stop_reason") or (result or {}).get("status") or "answer_completed",
                 "failed": "execution_failed",
                 "cancelled": "client_cancelled",
             }[status]
@@ -308,6 +310,14 @@ class ExactMathRequest(BaseModel):
     expression: str
 
 
+class ExactCalculusRequest(BaseModel):
+    operation: str
+    expression: str
+    variable: str = "x"
+    lower: str | int | None = None
+    upper: str | int | None = None
+
+
 class LeanCheckRequest(BaseModel):
     theorem: str
 
@@ -323,6 +333,7 @@ class AgentPlanRequest(BaseModel):
     question: str
     evidence: list[dict] = Field(default_factory=list)
     iterations: int = 0
+    parameters: dict = Field(default_factory=dict)
 
 
 class AgentStepRequest(BaseModel):
@@ -332,13 +343,29 @@ class AgentStepRequest(BaseModel):
     parameters: dict = Field(default_factory=dict)
     evidence: list[dict] = Field(default_factory=list)
     iterations: int = 0
+    approved_plan: dict | None = None
 
 
 class AgentRunRequest(BaseModel):
     question: str
     request_id: str | None = None
     max_steps: int = 3
+    max_elapsed_seconds: float = Field(default=180.0, gt=0, le=600)
     parameters: dict = Field(default_factory=dict)
+
+
+class AgentResumeRequest(BaseModel):
+    parameters: dict = Field(default_factory=dict)
+
+
+class AgentClaimRequest(BaseModel):
+    statement: str = Field(min_length=1, max_length=10000)
+    source: str = Field(min_length=1, max_length=2000)
+    depends_on: list[int] = Field(default_factory=list, max_length=100)
+
+
+class AgentClaimRetraction(BaseModel):
+    reason: str = Field(min_length=1, max_length=2000)
 
 
 class AgentSubgoalRequest(BaseModel):
@@ -528,6 +555,28 @@ def exact_arithmetic(request: ExactMathRequest):
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@router.post("/tools/exact-calculus")
+def exact_calculus(request: ExactCalculusRequest):
+    try:
+        if request.operation in {"differentiate", "derivative"}:
+            return differentiate_polynomial(request.expression, variable=request.variable)
+        if request.operation in {"integrate_definite", "definite_integral"}:
+            if request.lower is None or request.upper is None:
+                raise ExactMathError("定积分需要 lower 和 upper 两个上下限。")
+            return integrate_polynomial_definite(request.expression, request.lower, request.upper, variable=request.variable)
+        raise ExactMathError("operation 只支持 differentiate 或 integrate_definite。")
+    except ExactMathError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/tools/polynomial-identity")
+def polynomial_identity(request: IdentityCheckRequest):
+    try:
+        return verify_polynomial_identity(request.left, request.right)
+    except ExactMathError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.get("/tools/capabilities")
 def tool_capabilities():
     return capability_snapshot()
@@ -552,31 +601,82 @@ def counterexample_search(request: IdentityCheckRequest):
 @router.post("/agent/plan")
 def agent_plan(request: AgentPlanRequest):
     try:
-        return plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations)
+        return plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations, parameters=request.parameters)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/agent/step")
 def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
-    """Plan and execute one allowlisted deterministic action."""
+    """Plan and execute one allowlisted agent action."""
     request_id = request.request_id or uuid4().hex[:12]
     try:
-        plan = plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations)
+        plan = plan_next_action(request.question, evidence=request.evidence, iterations=request.iterations, parameters=request.parameters)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    action = request.action or plan["action"]
+    approved_plan = request.approved_plan
+    if approved_plan:
+        action = request.action or approved_plan.get("action")
+        if action != approved_plan.get("action") or action not in plan["allowed_actions"]:
+            raise HTTPException(status_code=422, detail="action 与已批准计划不一致或不在动作白名单中。")
+        plan = approved_plan
+    else:
+        action = request.action or plan["action"]
     if action != plan["action"] and action not in plan["allowed_actions"]:
         raise HTTPException(status_code=422, detail="action 不在受限动作白名单中。")
     parameters = dict(plan.get("parameters") or {})
     parameters.update(request.parameters or {})
+    if action == "exact_calculus":
+        aliases = {"derivative": "differentiate", "求导": "differentiate", "definite_integral": "integrate_definite", "定积分": "integrate_definite"}
+        parameters["operation"] = aliases.get(parameters.get("operation"), parameters.get("operation"))
     set_task_status(request_id, "running", f"执行动作：{action}", db=db, question=request.question)
     try:
-        if action == "exact_arithmetic":
+        if action == "retrieve_knowledge":
+            matched = safe_semantic_retrieve_concepts(db, request.question)
+            sources = retrieve_audited_sources(db, request.question, matched)
+            result = {
+                "status": "retrieved",
+                "concepts": [{"id": item["concept"].id, "name": item["concept"].name, "type": item["concept"].type, "similarity": item.get("similarity", 0.0)} for item in matched],
+                "sources": sources,
+                "evidence_type": "knowledge_retrieval",
+                "assumptions": "仅返回本地知识库命中与人工审核片段；未命中不代表相关知识不存在。",
+            }
+        elif action == "draft_proof":
+            question = str(parameters.get("question") or request.question)
+            concepts = parameters.get("concepts") or []
+            sources = parameters.get("sources") or []
+            draft = call_deepseek(
+                messages=[
+                    {"role": "system", "content": "你是严谨的数学助教。根据题目和提供的已审核依据写出分步证明草稿；明确列出假设和定理条件，不要声称已验证。若条件不足，指出缺失项。"},
+                    {"role": "user", "content": f"题目：{question}\n已检索知识点：{json.dumps(concepts, ensure_ascii=False)}\n已审核教材片段：{json.dumps(sources, ensure_ascii=False)}"},
+                ],
+                max_retries=1,
+                max_tokens=1800,
+                circuit_enabled=True,
+            )
+            result = {"status": "draft_ready", "proof": draft, "artifact_type": "model_generated_draft", "assumptions": "模型生成草稿，尚未验证数学正确性。"}
+        elif action == "exact_arithmetic":
             expression = parameters.get("expression")
             if not expression:
                 raise HTTPException(status_code=422, detail="exact_arithmetic 需要 expression 参数。")
             result = evaluate_exact(str(expression))
+        elif action == "exact_calculus":
+            operation = parameters.get("operation")
+            expression = parameters.get("expression")
+            if not expression:
+                raise HTTPException(status_code=422, detail="exact_calculus 需要 expression 参数。")
+            if operation == "differentiate":
+                result = differentiate_polynomial(str(expression), variable=str(parameters.get("variable", "x")))
+            elif operation == "integrate_definite":
+                if parameters.get("lower") is None or parameters.get("upper") is None:
+                    raise HTTPException(status_code=422, detail="定积分需要 lower 和 upper 两个上下限。")
+                result = integrate_polynomial_definite(str(expression), parameters["lower"], parameters["upper"], variable=str(parameters.get("variable", "x")))
+            else:
+                raise HTTPException(status_code=422, detail="exact_calculus operation 无效。")
+        elif action == "polynomial_identity":
+            if not parameters.get("left") or not parameters.get("right"):
+                raise HTTPException(status_code=422, detail="多项式恒等式检查需要 left 和 right。")
+            result = verify_polynomial_identity(str(parameters["left"]), str(parameters["right"]))
         elif action == "counterexample_search":
             if not parameters.get("left") or not parameters.get("right"):
                 raise HTTPException(status_code=422, detail="counterexample_search 需要 left 和 right 参数。")
@@ -592,7 +692,7 @@ def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
             if not proof:
                 raise HTTPException(status_code=422, detail="review_proof 需要 proof 参数。")
             review = analyze_proof(ProofAnalyzeRequest(question=request.question, proof=str(proof)), db)
-            result = {"status": "model_reviewed", "review": review, "assumptions": "这是模型审查结果，不是形式化证明。"}
+            result = {"status": "local_rule_reviewed" if review.get("review_source") == "local_rule_fallback" else "model_reviewed", "review": review, "assumptions": "审查结果不是形式化证明；本地规则审查只检查文本结构。"}
         elif action == "revise_answer":
             answer = parameters.get("answer")
             feedback = parameters.get("feedback")
@@ -613,7 +713,9 @@ def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
             if not proof:
                 raise HTTPException(status_code=422, detail="review_revise_review 需要 proof 参数。")
             first_review = analyze_proof(ProofAnalyzeRequest(question=request.question, proof=str(proof)), db)
-            if first_review.get("valid"):
+            if first_review.get("review_source") == "local_rule_fallback":
+                result = {"status": "local_rule_reviewed", "review": first_review, "revised": False, "assumptions": "本地结构审查不触发模型自动修订，也不构成数学正确性证明。"}
+            elif first_review.get("valid"):
                 result = {"status": "model_reviewed", "review": first_review, "revised": False, "assumptions": "模型审查未发现问题，仍不是形式化证明。"}
             else:
                 revised = call_deepseek(
@@ -630,12 +732,16 @@ def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
                     "second_review": second_review,
                     "assumptions": "最多执行一次模型修订；结果仍需独立或人工验证。",
                 }
+        elif action == "request_clarification":
+            result = {"status": "needs_clarification", "missing": parameters.get("missing", []), "message": "继续执行前需要补充缺失信息。"}
+        elif action == "stop_inconclusive":
+            result = {"status": "inconclusive", "message": plan["reason"]}
         else:
             result = {"status": "awaiting_tool", "action": action, "message": "该动作已被规划，但当前版本尚未接入对应执行器。"}
-        if result.get("evidence_type") or result.get("status") in {"model_reviewed", "model_revised", "model_reviewed_after_revision"}:
+        if result.get("evidence_type") or result.get("status") in {"model_reviewed", "local_rule_reviewed", "model_revised", "model_reviewed_after_revision"}:
             record_verification(db, request_id, result)
         set_task_status(request_id, "tool_completed", f"动作完成：{action}", db=db, question=request.question, result={"action": action, "tool_result": result})
-        return {"request_id": request_id, "plan": plan, "action": action, "result": result, "completed": result.get("status") in {"computed", "counterexample_found"}}
+        return {"request_id": request_id, "plan": plan, "action": action, "result": result, "completed": result.get("status") in {"computed", "counterexample_found", "formally_verified"}}
     except HTTPException:
         record_failed_path(db, request_id, action, "invalid_parameters")
         db.commit()
@@ -651,69 +757,139 @@ def agent_step(request: AgentStepRequest, db: Session = Depends(get_db)):
         db.commit()
         set_task_status(request_id, "failed", f"动作参数无效：{action}", str(exc), db=db, question=request.question)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        record_failed_path(db, request_id, action, "action_execution_failed", str(exc)[:1000])
+        db.commit()
+        set_task_status(request_id, "failed", f"动作执行失败：{action}", str(exc)[:1000], db=db, question=request.question)
+        raise HTTPException(status_code=503, detail=f"动作执行失败：{type(exc).__name__}") from exc
 
 
 @router.post("/agent/run")
 def agent_run(request: AgentRunRequest, db: Session = Depends(get_db)):
+    return _execute_agent_run(request, db)
+
+
+@router.post("/agent/{request_id}/resume")
+def resume_agent(request_id: str, request: AgentResumeRequest, db: Session = Depends(get_db)):
+    task = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
+    if task is None:
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    saved = json.loads(task.result_json or "{}")
+    if saved.get("status") != "needs_clarification":
+        raise HTTPException(status_code=409, detail="当前仅支持继续等待补充条件的任务。")
+    previous = saved.get("trace", [])
+    missing = previous[-1].get("result", {}).get("missing", []) if previous else []
+    if not request.parameters or any(key not in missing for key in request.parameters):
+        raise HTTPException(status_code=422, detail="只能补充本任务列出的缺失参数。")
+    state = saved.get("resume_state")
+    if not state:
+        raise HTTPException(status_code=409, detail="旧任务没有恢复状态，请新建任务。")
+    if state["max_elapsed_seconds"] <= 0:
+        raise HTTPException(status_code=409, detail="原任务执行时间预算已耗尽。")
+    inferred = extract_calculus_request(task.question, state["parameters"]) or {}
+    parameters = {**inferred, **state["parameters"], **request.parameters}
+    # Claim the exact persisted revision atomically across threads/processes.
+    # A second reader must not execute using a stale clarification snapshot.
+    claimed = db.query(AITaskStatus).filter(
+        AITaskStatus.request_id == request_id,
+        AITaskStatus.status == "succeeded",
+        AITaskStatus.result_json == task.result_json,
+    ).update({AITaskStatus.status: "running", AITaskStatus.stage: "正在恢复受控任务"}, synchronize_session=False)
+    db.commit()
+    if claimed != 1:
+        raise HTTPException(status_code=409, detail="任务状态已变化或正在恢复，请刷新后重试。")
+    return _execute_agent_run(AgentRunRequest(question=task.question, request_id=request_id,
+        max_steps=state["max_steps"], max_elapsed_seconds=state["max_elapsed_seconds"], parameters=parameters), db, saved)
+
+
+def _execute_agent_run(request: AgentRunRequest, db: Session, resume: dict | None = None):
     """Run a bounded local agent loop and persist every action as a task event."""
     if request.max_steps < 1 or request.max_steps > 8:
         raise HTTPException(status_code=422, detail="max_steps 必须在 1 到 8 之间。")
     request_id = request.request_id or uuid4().hex[:12]
-    evidence: list[dict] = []
-    trace: list[dict] = []
+    # The request ID is the persistent task key. Reusing one could append new
+    # actions to an old task with a different goal, so reject collisions.
+    if resume is None and db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first() is not None:
+        raise HTTPException(status_code=409, detail="request_id 已存在；请为本次任务使用新的标识。")
+    evidence: list[dict] = [item for item in (resume or {}).get("evidence", []) if item.get("status") != "needs_clarification"]
+    trace: list[dict] = list((resume or {}).get("trace", []))
     parameters = dict(request.parameters or {})
     set_task_status(request_id, "running", "开始受控智能体循环", db=db, question=request.question)
     terminal_status = "inconclusive"
+    loop_started = time.monotonic()
+    stop_reason = None
+    executed_actions: set[str] = set()
+    active_attempt = None
     try:
-        for iteration in range(request.max_steps):
-            plan = plan_next_action(request.question, evidence=evidence, iterations=iteration)
+        for iteration in range(len(trace), request.max_steps):
+            if time.monotonic() - loop_started >= request.max_elapsed_seconds:
+                terminal_status = "budget_exhausted"
+                stop_reason = "elapsed_time_budget"
+                break
+            plan = plan_next_action(request.question, evidence=evidence, iterations=iteration, parameters=parameters)
             action = plan["action"]
-            if action == "retrieve_knowledge":
-                matched = safe_semantic_retrieve_concepts(db, request.question)
-                source_count = len(retrieve_audited_sources(db, request.question, matched))
-                result = {"status": "retrieved", "concept_count": len(matched), "source_count": source_count}
-                evidence.append({"status": "source_available", **result})
-            elif action == "exact_arithmetic":
-                expression = parameters.get("expression")
-                if not expression:
-                    terminal_status = "needs_clarification"
-                    result = {"status": terminal_status, "missing": ["expression"]}
-                    record_failed_path(db, request_id, action, "missing_parameters", "expression")
-                    trace.append({"iteration": iteration, "action": action, "result": result})
-                    break
-                result = evaluate_exact(str(expression))
-                evidence.append(result)
-                record_verification(db, request_id, result)
+            action_parameters = {**plan.get("parameters", {}), **parameters}
+            action_key = json.dumps({"action": action, "parameters": action_parameters}, sort_keys=True, ensure_ascii=False)
+            if action_key in executed_actions:
+                terminal_status = "inconclusive"
+                stop_reason = "repeated_action"
+                break
+            executed_actions.add(action_key)
+            action_started = time.monotonic()
+            active_attempt = {"iteration": iteration, "action": action, "parameters": action_parameters}
+            step_result = agent_step(AgentStepRequest(
+                question=request.question,
+                request_id=request_id,
+                action=action,
+                parameters=action_parameters,
+                evidence=evidence,
+                iterations=iteration,
+                approved_plan=plan,
+            ), db)
+            result = step_result["result"]
+            active_attempt = None
+            trace.append({"iteration": iteration, "action": action, "parameters": action_parameters,
+                          "duration_seconds": round(time.monotonic() - action_started, 6), "result": result})
+            # Preserve the action result's top-level fields for existing clients
+            # while tagging provenance for evidence-aware planning.
+            evidence.append({**result, "action": action, "result": result})
+            status = result.get("status")
+            if status == "needs_clarification":
+                terminal_status = "needs_clarification"
+                break
+            if status in {"computed", "formally_verified", "symbolically_verified"}:
                 terminal_status = "completed_with_evidence"
-                trace.append({"iteration": iteration, "action": action, "result": result})
                 break
-            elif action == "counterexample_search":
-                if not parameters.get("left") or not parameters.get("right"):
-                    terminal_status = "needs_clarification"
-                    result = {"status": terminal_status, "missing": ["left", "right"]}
-                    record_failed_path(db, request_id, action, "missing_parameters", "left,right")
-                    trace.append({"iteration": iteration, "action": action, "result": result})
-                    break
-                bounds = parameters.get("range", [-10, 10])
-                result = check_identity(str(parameters["left"]), str(parameters["right"]), start=int(bounds[0]), end=int(bounds[1]))
-                evidence.append(result)
-                record_verification(db, request_id, result)
-                terminal_status = "refuted" if result["status"] == "counterexample_found" else "inconclusive"
-                trace.append({"iteration": iteration, "action": action, "result": result})
+            if status == "counterexample_found":
+                terminal_status = "refuted"
                 break
-            else:
-                terminal_status = "inconclusive" if action == "stop_inconclusive" else "needs_clarification"
-                result = {"status": terminal_status, "action": action, "message": "该动作尚未接入执行器。"}
-                trace.append({"iteration": iteration, "action": action, "result": result})
+            if status == "identity_disproved":
+                terminal_status = "refuted"
                 break
-            trace.append({"iteration": iteration, "action": action, "result": result})
+            if status in {"no_counterexample_in_range", "formal_check_failed", "unavailable", "tool_timeout"}:
+                terminal_status = "inconclusive"
+                break
+            if status in {"model_reviewed", "model_reviewed_after_revision", "local_rule_reviewed", "inconclusive"}:
+                terminal_status = "inconclusive"
+                break
         else:
-            terminal_status = "inconclusive"
-        set_task_status(request_id, "succeeded" if terminal_status in {"completed_with_evidence", "refuted"} else "failed", f"智能体循环结束：{terminal_status}", db=db, question=request.question, result={"status": terminal_status, "trace": trace, "evidence": evidence})
-        return {"request_id": request_id, "status": terminal_status, "trace": trace, "evidence": evidence, "steps": len(trace)}
+            terminal_status = "budget_exhausted"
+            stop_reason = "step_budget"
+        budget = {"max_steps": request.max_steps, "max_elapsed_seconds": request.max_elapsed_seconds, "elapsed_seconds": round(time.monotonic() - loop_started, 3), "enforcement": "between_actions"}
+        resume_state = {"parameters": parameters, "max_steps": request.max_steps, "max_elapsed_seconds": max(0.0, request.max_elapsed_seconds - (time.monotonic() - loop_started))}
+        set_task_status(request_id, "succeeded", f"智能体循环结束：{terminal_status}", db=db, question=request.question, result={"status": terminal_status, "trace": trace, "evidence": evidence, "stop_reason": stop_reason, "budget": budget, "resume_state": resume_state})
+        return {"request_id": request_id, "status": terminal_status, "trace": trace, "evidence": evidence, "steps": len(trace), "stop_reason": stop_reason, "budget": budget}
     except ExactMathError as exc:
         set_task_status(request_id, "failed", "智能体工具执行失败", str(exc), db=db, question=request.question)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        record_failed_path(db, request_id, "agent_run", "action_execution_failed", str(exc)[:1000])
+        db.commit()
+        if active_attempt is not None:
+            active_attempt = {**active_attempt, "status": "failed", "error": str(exc)[:1000], "duration_seconds": round(time.monotonic() - action_started, 6)}
+        failed_result = {"request_id": request_id, "status": "failed", "trace": trace, "evidence": evidence, "steps": len(trace), "error": str(exc), "failed_attempt": active_attempt}
+        set_task_status(request_id, "failed", "智能体动作执行失败", str(exc)[:1000], db=db, question=request.question, result=failed_result)
+        return failed_result
 @router.get("/answers/{answer_id}/evidence")
 def answer_evidence(answer_id: int, db: Session = Depends(get_db)):
     if db.query(AnswerRecord).filter(AnswerRecord.id == answer_id).first() is None:
@@ -790,6 +966,73 @@ def list_subgoals(request_id: str, db: Session = Depends(get_db)):
         "depends_on": json.loads(item.depends_on or "[]"), "source": item.source,
         "created_at": item.created_at.isoformat(), "updated_at": item.updated_at.isoformat(),
     } for item in items], "total": len(items)}
+
+
+def claim_payload(item):
+    return {"id": item.id, "request_id": item.request_id, "statement": item.statement,
+            "status": item.status, "source": item.source, "depends_on": json.loads(item.depends_on),
+            "invalidation_reason": item.invalidation_reason}
+
+
+@router.get("/tasks/{request_id}/claims")
+def list_claims(request_id: str, db: Session = Depends(get_db)):
+    items = db.query(AgentClaim).filter(AgentClaim.request_id == request_id).order_by(AgentClaim.id).all()
+    return {"items": [claim_payload(item) for item in items], "total": len(items)}
+
+
+@router.post("/tasks/{request_id}/claims", status_code=201)
+def create_claim(request_id: str, request: AgentClaimRequest, db: Session = Depends(get_db)):
+    if not request.statement.strip() or not request.source.strip():
+        raise HTTPException(status_code=422, detail="命题与来源不能为空。")
+    if db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first() is None:
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    parents = db.query(AgentClaim).filter(AgentClaim.request_id == request_id, AgentClaim.id.in_(request.depends_on)).all()
+    if len(parents) != len(set(request.depends_on)):
+        raise HTTPException(status_code=422, detail="依赖必须属于同一任务且已经存在。")
+    blocked = any(parent.status in {"retracted", "needs_review"} for parent in parents)
+    item = AgentClaim(request_id=request_id, statement=request.statement.strip(), source=request.source.strip(),
+                      depends_on=json.dumps(sorted(set(request.depends_on))), status="needs_review" if blocked else "unverified",
+                      invalidation_reason="上游依赖已失效" if blocked else None)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return claim_payload(item)
+
+
+@router.post("/tasks/{request_id}/claims/{claim_id}/retract")
+def retract_claim(request_id: str, claim_id: int, request: AgentClaimRetraction, db: Session = Depends(get_db)):
+    if not request.reason.strip():
+        raise HTTPException(status_code=422, detail="撤回原因不能为空。")
+    items = db.query(AgentClaim).filter(AgentClaim.request_id == request_id).all()
+    target = next((item for item in items if item.id == claim_id), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="命题不存在。")
+    target.status = "retracted"
+    target.invalidation_reason = request.reason.strip()
+    affected = {claim_id}
+    while True:
+        descendants = [item for item in items if item.id not in affected and affected.intersection(json.loads(item.depends_on))]
+        if not descendants:
+            break
+        for item in descendants:
+            affected.add(item.id)
+            if item.status != "retracted":
+                item.status = "needs_review"
+                item.invalidation_reason = f"依赖命题 {claim_id} 已撤回：{request.reason.strip()}"
+    db.commit()
+    task = db.query(AITaskStatus).filter(AITaskStatus.request_id == request_id).first()
+    if task is not None:
+        saved = json.loads(task.result_json or "{}")
+        # Preserve original tool evidence as history; a withdrawn assumption
+        # does not mean the historical computation itself became false.
+        saved.setdefault("status_before_claim_review", saved.get("status"))
+        saved["status"] = "needs_review"
+        saved["claim_review"] = {"retracted_claim_id": claim_id, "affected_ids": sorted(affected),
+                                 "reason": request.reason.strip(), "scope": "task_claim_dependencies"}
+        task.termination_reason = "claim_retracted"
+        set_task_status(request_id, "needs_review", "任务含已撤回前提，需要复核依赖结论",
+                        request.reason.strip(), db=db, result=saved)
+    return {"affected_ids": sorted(affected), "items": [claim_payload(item) for item in items if item.id in affected]}
 
 
 @router.post("/tasks/{request_id}/subgoals", status_code=201)
@@ -1100,6 +1343,7 @@ def export_operations_dashboard(window_minutes: int = Query(default=60, ge=1, le
 
 class AskRequest(BaseModel):
     question: str
+    current_question: str | None = None
     agent_mode: bool = False
     agent_parameters: dict = Field(default_factory=dict)
 
@@ -2870,18 +3114,31 @@ def _ask_impl(
     print("[Timing] concept retrieval: %.2fs" % (time.perf_counter() - started_at))
 
     if request.agent_mode:
-        plan = plan_next_action(question, evidence=[{"status": "source_available"}] if audited_sources else [], iterations=0)
+        plan = plan_next_action(request.current_question or question, evidence=[{"status": "source_available"}] if audited_sources else [], iterations=0, parameters=request.agent_parameters)
         action = plan["action"]
         params = dict(plan.get("parameters") or {})
         params.update(request.agent_parameters or {})
+        if action == "exact_calculus":
+            params["operation"] = plan["parameters"]["operation"]
         try:
             if action == "exact_arithmetic" and params.get("expression"):
                 agent_tool_evidence.append(evaluate_exact(str(params["expression"])))
+            elif action == "exact_calculus":
+                if params.get("operation") == "differentiate":
+                    agent_tool_evidence.append(differentiate_polynomial(str(params.get("expression", "")), variable=str(params.get("variable", "x"))))
+                elif params.get("operation") == "integrate_definite":
+                    agent_tool_evidence.append(integrate_polynomial_definite(str(params.get("expression", "")), params.get("lower"), params.get("upper"), variable=str(params.get("variable", "x"))))
+                else:
+                    raise ExactMathError("微积分操作参数无效。")
+            elif action == "polynomial_identity":
+                agent_tool_evidence.append(verify_polynomial_identity(str(params.get("left", "")), str(params.get("right", ""))))
             elif action == "counterexample_search" and params.get("left") and params.get("right"):
                 bounds = params.get("range", [-10, 10])
                 agent_tool_evidence.append(check_identity(str(params["left"]), str(params["right"]), start=int(bounds[0]), end=int(bounds[1])))
             elif action == "lean_check" and params.get("theorem"):
                 agent_tool_evidence.append(check_known_theorem(str(params["theorem"])))
+            elif action == "request_clarification":
+                agent_tool_evidence.append({"status": "needs_clarification", "planned_action": action, "missing_parameters": params.get("missing", []), "detail": plan.get("reason", "请补充题目条件。")})
             else:
                 agent_tool_evidence.append({"status": "needs_clarification", "planned_action": action, "missing_parameters": sorted(set({"exact_arithmetic": ["expression"], "counterexample_search": ["left", "right"], "lean_check": ["theorem"]}.get(action, [])) - set(params))})
         except ExactMathError as exc:
@@ -2889,7 +3146,7 @@ def _ask_impl(
         for tool_result in agent_tool_evidence:
             if tool_result.get("status") == "tool_error":
                 record_failed_path(db, request_id or "unknown", action, "tool_error", tool_result.get("detail"))
-            else:
+            elif tool_result.get("evidence_type"):
                 record_verification(db, request_id or "unknown", tool_result)
         set_task_status(request_id, "tool_completed", f"Agent 预检：{action}", db=db, question=question, result={"agent_tool_evidence": agent_tool_evidence})
 
@@ -3143,10 +3400,18 @@ def _ask_impl(
     # 7. 最终 DeepSeek 调用
     # ========================================================
 
-    answer_source = "deepseek"
+    # A polynomial identity has a deterministic final answer. Do not expose
+    # provisional model tokens that may contradict that result before the guard.
+    deterministic_identity = any(item.get("evidence_type") == "polynomial_identity" for item in agent_tool_evidence)
+    calculus_evidence = next((item for item in agent_tool_evidence if item.get("evidence_type") in {"symbolic_derivative", "exact_definite_integral"}), None)
+    tool_boundary = next((item for item in agent_tool_evidence if (item.get("status") == "tool_error" and item.get("planned_action") in {"exact_calculus", "polynomial_identity"}) or (item.get("status") == "needs_clarification" and item.get("planned_action") == "request_clarification")), None)
+    deterministic_tool_answer = deterministic_identity or calculus_evidence is not None or tool_boundary is not None
+    if deterministic_tool_answer:
+        stream_callback = None
+    answer_source = "exact_tool" if deterministic_tool_answer else "deepseek"
     try:
 
-        answer = call_deepseek(
+        answer = "" if deterministic_tool_answer else call_deepseek(
             messages=[
                 {
                     "role": "system",
@@ -3262,6 +3527,36 @@ def _ask_impl(
         except Exception as quality_exc:
             print("[AI] quality retry skipped:", repr(quality_exc))
 
+    model_answer_before_tool_guard = None
+    if tool_boundary is not None:
+        if tool_boundary["status"] == "needs_clarification":
+            labels = {"expression": "计算表达式", "lower": "积分下限", "upper": "积分上限", "left": "等式左侧", "right": "等式右侧"}
+            missing = "、".join(labels.get(key, key) for key in tool_boundary.get("missing_parameters", []))
+            answer = f"需要补充条件：{missing or '题目目标或必要条件'}。\n{tool_boundary.get('detail', '')}\n尚未执行成功计算，不能给出已验证结论。"
+        else:
+            answer = f"当前受控工具无法处理此输入：{tool_boundary.get('detail', '')}\n这表示工具范围不足，不代表该数学问题无解。本轮没有成功验证证据；可以调整输入或改用其他已配置工具。"
+        answer_source = "tool_boundary"
+    if calculus_evidence is not None:
+        item = calculus_evidence
+        if item["evidence_type"] == "symbolic_derivative":
+            answer = f"结论：对 \\({polynomial_latex(item['expression'])}\\) 求导，导函数为 \\({polynomial_latex(item['derivative'])}\\)。\n依据：对多项式逐项使用幂函数求导法则，系数按有理数精确计算。"
+        else:
+            answer = (f"结论：\\({item['expression_latex']}\\) 在 [{item['lower']}, {item['upper']}] 上的定积分为 {item['value']}。\n"
+                      f"原函数：\\({item['antiderivative_latex']}\\)。\n依据：逐项积分后计算 F(上限) - F(下限)，全程使用精确有理数运算。")
+        answer += f"\n适用范围：{item['assumptions']}"
+        answer_source = "exact_calculus_tool"
+        answer, formula_fixes = repair_formula(answer)
+    identity_evidence = next((item for item in agent_tool_evidence if item.get("evidence_type") == "polynomial_identity"), None)
+    if identity_evidence is not None:
+        model_answer_before_tool_guard = answer or None
+        conclusion = "恒等式成立" if identity_evidence["identity"] else "不是恒等式"
+        answer = (f"结论：{conclusion}。\n\n"
+                  f"比较对象：{identity_evidence['left']} 与 {identity_evidence['right']}。\n"
+                  f"将左侧减去右侧，精确整理得到：{identity_evidence['difference']}。\n"
+                  "依据：比较全部有理数系数，不是有限点代入。\n"
+                  f"适用范围：{identity_evidence['assumptions']}")
+        answer_source = "polynomial_identity_tool"
+        answer, formula_fixes = repair_formula(answer)
     print("[Timing] request=%s total ask: %.2fs" % (request_id, time.perf_counter() - started_at))
     result = {
         "request_id": request_id,
@@ -3269,6 +3564,7 @@ def _ask_impl(
 
         "answer": answer,
         "answer_source": answer_source,
+        "model_answer_before_tool_guard": model_answer_before_tool_guard,
         "answer_quality": evaluate_answer(answer, question),
         "formula_fixes": formula_fixes,
         "generation_budget_seconds": REQUEST_BUDGET_SECONDS,

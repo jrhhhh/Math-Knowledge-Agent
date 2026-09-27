@@ -1,0 +1,14 @@
+[
+  {"id":"calculus-001","type":"exact_integral","question":"求定积分 x²，x 从 0 到 1","expected_status":"completed_with_evidence","expected_result":{"value":"1/3"},"review_basis":"逐项积分及原函数上下限相减"},
+  {"id":"calculus-002","type":"exact_derivative","question":"求导 x³ + 2x - 1","expected_status":"completed_with_evidence","expected_result":{"derivative":"3*x**2 + 2"},"review_basis":"多项式求导法则"},
+  {"id":"calculus-003","type":"unicode_power","question":"求导 x¹²","expected_status":"completed_with_evidence","expected_result":{"derivative":"12*x**11"},"review_basis":"多位上标必须作为一个指数"},
+  {"id":"calculus-004","type":"reversed_interval","question":"求定积分 x，x 从 1/2 到 0","expected_status":"completed_with_evidence","expected_result":{"value":"-1/8"},"review_basis":"积分上下限反向符号改变"},
+  {"id":"calculus-005","type":"symmetric_interval","question":"求定积分 x³，x 从 -1 到 1","expected_status":"completed_with_evidence","expected_result":{"value":"0"},"review_basis":"奇函数对称区间积分"},
+  {"id":"calculus-006","type":"missing_conditions","question":"求定积分 x²","expected_status":"needs_clarification","expected_missing":["lower","upper"],"review_basis":"不能擅自选择积分边界"},
+  {"id":"calculus-007","type":"unsupported_function","question":"求导 sin(x)","expected_status":"failed","review_basis":"当前工具不覆盖超越函数；失败不代表数学问题无解"},
+  {"id":"calculus-008","type":"domain_guard","question":"求导 1/x","expected_status":"failed","review_basis":"当前多项式工具必须拒绝变量分母"},
+  {"id":"calculus-009","type":"polynomial_identity","question":"验证多项式恒等式 (x+1)^2 = x²+2x+1","expected_status":"completed_with_evidence","expected_result":{"identity":true,"difference":"0"},"review_basis":"完整有理数系数比较，不是有限点采样"},
+  {"id":"calculus-010","type":"false_identity","question":"验证多项式恒等式 x*(x-1) = 0","expected_status":"refuted","expected_result":{"identity":false,"difference":"x**2 - x"},"review_basis":"在 0 和 1 两点相等不能推出恒等"},
+  {"id":"calculus-011","type":"proof","question":"证明 f(x)=x² 在区间 [0,1] 上连续且有界","requires_human_review":true,"review_basis":"需要论证连续性与界 0≤x²≤1；模型审查不等于形式化验证"},
+  {"id":"calculus-012","type":"false_proof","question":"证明每个连续函数都可导","requires_human_review":true,"review_basis":"原命题错误；反例 |x| 在 0 处不可导，不能生成成立的证明"}
+]

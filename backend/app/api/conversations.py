@@ -183,7 +183,7 @@ def create_message(conversation_id: int, payload: MessageCreate, db: Session = D
     db.add(user_message)
     db.commit()
     prompt = build_context_prompt(conversation, content, db)
-    result = _ask_impl(AskRequest(question=prompt, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, request_id=uuid4().hex[:12])
+    result = _ask_impl(AskRequest(question=prompt, current_question=content, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, request_id=uuid4().hex[:12])
     assistant = persist_answer(conversation, user_message, result, db)
     return {"user_message": serialize_message(user_message), "assistant_message": serialize_message(assistant), "result": result}
 
@@ -207,7 +207,7 @@ async def stream_message(conversation_id: int, payload: MessageCreate):
             prompt = build_context_prompt(conversation, content, db)
             chunks = queue.Queue()
             request_id = uuid4().hex[:12]
-            task = asyncio.create_task(asyncio.to_thread(_ask_impl, AskRequest(question=prompt, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, chunks.put, request_id, cancel_event))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, AskRequest(question=prompt, current_question=content, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, chunks.put, request_id, cancel_event))
             while not task.done():
                 while not chunks.empty():
                     sequence += 1

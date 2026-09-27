@@ -26,14 +26,16 @@ const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff',
 
 function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : lastAiErrorCode; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
 function clearMessage() { $('message').classList.add('hidden'); }
-function typesetMath(element) { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([element]).then(() => { if (element.id === 'answer' && /\\\(|\\\[|\$/.test(element.textContent) && !element.querySelector('.mjx-container')) showMathRenderError(element); }).catch(() => { showMathRenderError(element); }); }
+function typesetMath(element) { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([element]).then(() => { if (element.id === 'answer' && /\\\(|\\\[|\$/.test(element.textContent) && !element.querySelector('mjx-container, .mjx-container')) showMathRenderError(element); }).catch(() => { showMathRenderError(element); }); }
 function showMathRenderError(element) { if (element.id !== 'answer' || $('mathRenderError')) return; const panel = document.createElement('details'); panel.id = 'mathRenderError'; panel.className = 'formula-fixes'; panel.innerHTML = '<summary>公式渲染失败，查看原始文本</summary><pre></pre>'; panel.querySelector('pre').textContent = element.textContent || ''; element.appendChild(panel); }
 function escapeHtml(s = '') { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function formatAgentPolynomial(expression = '') { return String(expression).replace(/\*\*(\d+)/g, (_, power) => [...power].map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(digit)]).join('')).replace(/\*/g, '·'); }
+function formatMissingAgentParameters(parameters = []) { const labels = { expression: '计算表达式', lower: '积分下限', upper: '积分上限', variable: '变量', left: '等式左侧', right: '等式右侧', theorem: '登记的定理模板', proof: '证明草稿' }; return parameters.map(name => labels[name] || name).join('、'); }
 function renderConcepts(items = []) { $('conceptCount').textContent = items.length; $('concepts').innerHTML = items.length ? items.map(x => `<div class="concept"><div><div class="concept-name">${escapeHtml(x.name)}</div><div class="concept-type">${escapeHtml(x.type || 'concept')}</div></div><span class="similarity">${Math.round((x.similarity || 0) * 100)}%</span></div>`).join('') : '<div class="empty-state">未检索到相关知识点</div>'; }
 function normalizeMathText(text) { return String(text || '').replace(/```(?:latex|tex|math)\s*\n?([\s\S]*?)```/gi, (_, formula) => `\\[${formula.trim()}\\]`); }
 function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').textContent = normalizeMathText(text || '暂无回答'); typesetMath($('answer')); }
 function renderKnowledgeSources(sources = []) { let panel = $('answerSources'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerSources'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } panel.innerHTML = `<summary>教材出处 ${sources.length ? `· ${sources.length} 条` : '· 暂无已审核片段'}</summary>${sources.length ? sources.map(item => `<article><b>${escapeHtml(item.document_title || '课程文档')}</b><small>${escapeHtml(item.chapter || '未分章')} · 第 ${escapeHtml(String(item.page_start || '?'))} 页 · ${escapeHtml(item.chunk_type || '片段')}</small><p>${escapeHtml(item.content || '')}</p></article>`).join('') : '<span class="muted">本次回答没有使用已审核教材片段，不能据此声称有教材出处。</span>'}`; }
-function renderAgentEvidence(items = []) { let panel = $('agentEvidence'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentEvidence'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } const detail = (item) => { if (item.status === 'computed') return `${item.expression} = ${item.value}`; if (item.status === 'counterexample_found') return `反例：${JSON.stringify(item.counterexample)}`; if (item.status === 'formally_verified') return `定理 ${item.theorem || ''} 已通过 Lean 检查`; if (item.status === 'needs_clarification') return `缺少参数：${(item.missing_parameters || item.missing || []).join('、')}`; return item.detail || item.assumptions || JSON.stringify(item); }; panel.innerHTML = `<summary>受控验证证据 ${items.length ? `· ${items.length} 条` : '· 未启用'}</summary>${items.length ? items.map(item => `<article><b>${escapeHtml(item.evidence_type || item.status || '证据')}</b><small>${escapeHtml(item.status || '')} · ${escapeHtml(item.method || item.planned_action || '受控动作')}</small><p>${escapeHtml(detail(item))}</p>${item.assumptions ? `<p class="muted">范围：${escapeHtml(item.assumptions)}</p>` : ''}</article>`).join('') : '<span class="muted">本轮未启用受控验证，回答数学正确性仍未验证。</span>'}`; }
+function renderAgentEvidence(items = []) { let panel = $('agentEvidence'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentEvidence'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } const detail = (item) => { if (item.evidence_type === 'symbolic_derivative') return `d/d${item.variable || 'x'} (${formatAgentPolynomial(item.expression)}) = ${formatAgentPolynomial(item.derivative)}`; if (item.evidence_type === 'exact_definite_integral') return `∫[${item.lower}, ${item.upper}] (${formatAgentPolynomial(item.expression)}) d${item.variable || 'x'} = ${item.value}；原函数：${formatAgentPolynomial(item.antiderivative)}`; if (item.status === 'computed') return `${item.expression} = ${item.value}`; if (item.status === 'counterexample_found') return `反例：${JSON.stringify(item.counterexample)}`; if (item.status === 'formally_verified') return `定理 ${item.theorem || ''} 已通过 Lean 检查`; if (item.status === 'needs_clarification') return `缺少参数：${(item.missing_parameters || item.missing || []).join('、')}`; return item.detail || item.assumptions || JSON.stringify(item); }; panel.innerHTML = `<summary>受控验证证据 ${items.length ? `· ${items.length} 条` : '· 未启用'}</summary>${items.length ? items.map(item => `<article><b>${escapeHtml(item.evidence_type || item.status || '证据')}</b><small>${escapeHtml(item.status || '')} · ${escapeHtml(item.method || item.planned_action || '受控动作')}</small><p>${escapeHtml(detail(item))}</p>${item.assumptions ? `<p class="muted">范围：${escapeHtml(item.assumptions)}</p>` : ''}</article>`).join('') : '<span class="muted">本轮未启用受控验证，回答数学正确性仍未验证。</span>'}`; }
 async function renderAgentTaskEvents(requestId) { let panel = $('agentTaskEvents'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentTaskEvents'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } if (!requestId) { panel.innerHTML = '<summary>Agent 过程 · 未记录</summary>'; return; } try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '任务事件读取失败'); panel.innerHTML = `<summary>Agent 过程 · ${data.total || 0} 个阶段</summary>${(data.items || []).map(item => `<article><b>${escapeHtml(item.stage)}</b><small>${escapeHtml(item.status)} · ${escapeHtml(item.created_at || '')}</small>${item.detail ? `<p>${escapeHtml(item.detail)}</p>` : ''}</article>`).join('') || '<span class="muted">暂无任务事件。</span>'}`; } catch (error) { panel.innerHTML = `<summary>Agent 过程 · 暂不可用</summary><span class="muted">${escapeHtml(error.message)}</span>`; } }
 function ensureAnswerFeedback() { if ($('answerFeedback')) return; const panel = document.createElement('div'); panel.id = 'answerFeedback'; panel.className = 'answer-feedback'; panel.innerHTML = '<span>这份回答有帮助吗？</span><button type="button" data-rating="5">有帮助</button><button type="button" data-rating="2">需改进</button><textarea aria-label="回答反馈" placeholder="可选：指出需要改进的地方"></textarea><output></output>'; $('answer').parentElement?.appendChild(panel); panel.querySelectorAll('[data-rating]').forEach(button => button.addEventListener('click', () => submitAnswerFeedback(Number(button.dataset.rating)))); }
 async function submitAnswerFeedback(rating) { const panel = $('answerFeedback'); const answerId = lastAskResult?.answer_id; if (!answerId) { panel.querySelector('output').textContent = '当前回答尚未保存，暂不能提交反馈。'; return; } panel.querySelectorAll('button').forEach(button => { button.disabled = true; }); try { const response = await fetch(`${API}/ai/answers/${answerId}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rating, feedback: panel.querySelector('textarea').value.trim() || null }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '提交失败'); panel.querySelector('output').textContent = '感谢反馈，已记录。'; } catch (error) { panel.querySelector('output').textContent = error.message; panel.querySelectorAll('button').forEach(button => { button.disabled = false; }); } }
@@ -770,12 +772,20 @@ async function selectConversation(conversationId) {
   try {
     const response = await fetch(`${API}/conversations/${conversationId}`);
     const data = await response.json();
+    if (response.status === 404) {
+      if (String(activeConversationId) === String(conversationId)) {
+        activeConversationId = null;
+        localStorage.removeItem('math-agent-conversation-id');
+      }
+      return false;
+    }
     if (!response.ok) throw new Error(data.detail || '读取失败');
     activeConversationId = conversationId;
     localStorage.setItem('math-agent-conversation-id', String(conversationId));
     renderConversation(data);
     await loadConversationList();
-  } catch (error) { showMessage(`无法打开对话：${error.message}`); }
+    return true;
+  } catch (error) { showMessage(`无法打开对话：${error.message}`); return null; }
 }
 
 async function createConversation() {
@@ -793,7 +803,8 @@ async function createConversation() {
 
 async function ensureConversation() {
   if (activeConversationId) {
-    try { await selectConversation(activeConversationId); return; } catch (error) { activeConversationId = null; }
+    const restored = await selectConversation(activeConversationId);
+    if (restored !== false) return;
   }
   await createConversation();
 }
@@ -882,7 +893,14 @@ async function conversationAsk(event) {
     renderConcepts(data.concepts || []);
     if (data.knowledge_graph) renderGraph(data.knowledge_graph);
     const completeness = data.answer_quality?.completeness_score ?? data.answer_quality?.score;
-    $('answerStatus').textContent = (data.answer_source === 'local_fallback' ? '本地数学推导完成' : '本轮推理完成') + (completeness == null ? '' : ` · 完整度 ${Math.round(completeness * 100)}% · 数学正确性未验证`);
+    const sourceStatus = {
+      tool_boundary: (data.agent_tool_evidence || []).some(item => item.status === 'needs_clarification' || item.result?.status === 'needs_clarification') ? '等待补充条件' : '工具范围未覆盖',
+      exact_calculus_tool: '本地精确计算完成 · 仅覆盖工具声明范围',
+      polynomial_identity_tool: '多项式恒等式检查完成 · 仅覆盖工具声明范围',
+      local_fallback: '本地数学推导完成',
+    };
+    const controlledSource = ['tool_boundary', 'exact_calculus_tool', 'polynomial_identity_tool'].includes(data.answer_source);
+    $('answerStatus').textContent = (sourceStatus[data.answer_source] || '本轮推理完成') + (controlledSource || completeness == null ? '' : ` · 完整度 ${Math.round(completeness * 100)}% · 数学正确性未验证`);
     $('chatContextStatus').textContent = '本轮内容已保存到对话上下文';
     $('question').value = '';
     loadConversationList();
@@ -962,6 +980,116 @@ async function submitPractice(event) {
   } catch (error) { $('practiceStatus').textContent = `提交失败：${error.message}`; } finally { button.disabled = false; }
 }
 
+function renderAgentClarification(data) {
+  $('agentClarification')?.remove();
+  if (data.status !== 'needs_clarification') return;
+  const missing = data.trace?.at(-1)?.result?.missing || [];
+  const form = document.createElement('form');
+  form.id = 'agentClarification';
+  form.className = 'panel';
+  const heading = document.createElement('p');
+  heading.textContent = '补充条件后继续原任务（保留已用步骤与预算）';
+  form.append(heading);
+  for (const key of missing) {
+    const label = document.createElement('label');
+    label.textContent = formatMissingAgentParameters([key]);
+    const input = document.createElement('input');
+    input.name = key;
+    input.required = true;
+    input.type = 'text';
+    label.append(input);
+    form.append(label);
+  }
+  const submit = document.createElement('button');
+  submit.type = 'submit';
+  submit.textContent = '补充并继续原任务';
+  form.append(submit);
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    submit.disabled = true;
+    try {
+      await runAgentWorkflow({ requestId: data.request_id, parameters: Object.fromEntries(new FormData(form)) });
+    } finally { submit.disabled = false; }
+  });
+  $('answer').after(form);
+}
+
+async function restorePendingAgent() {
+  const requestId = localStorage.getItem('math-agent-pending-task');
+  if (!requestId) return;
+  try {
+    const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`);
+    if (response.status === 404) {
+      localStorage.removeItem('math-agent-pending-task');
+      return;
+    }
+    if (!response.ok) throw new Error('任务状态暂不可用');
+    const task = await response.json();
+    if (localStorage.getItem('math-agent-pending-task') !== requestId) return;
+    if (task.result?.status !== 'needs_clarification') {
+      localStorage.removeItem('math-agent-pending-task');
+      return;
+    }
+    renderAgentClarification({ ...task.result, request_id: requestId });
+    $('answerStatus').textContent = '已恢复待补充条件任务';
+    showMessage(`发现尚未完成的 Agent 任务：${task.question}。可以补充条件继续原任务。`);
+  } catch (error) {
+    showMessage('待补充任务暂时无法读取；已保留任务编号，可稍后刷新重试。');
+  }
+}
+
+async function runAgentWorkflow(options = {}) {
+  const question = $('question').value.trim();
+  if (!question && !options.requestId) { showMessage('先输入一个数学问题，再运行 Agent。'); return; }
+  clearMessage();
+  const button = $('runAgentButton');
+  button.disabled = true;
+  button.textContent = 'Agent 执行中…';
+  $('answerStatus').textContent = '受控 Agent 正在执行';
+  try {
+    const response = await fetch(options.requestId ? `${API}/ai/agent/${encodeURIComponent(options.requestId)}/resume` : `${API}/ai/agent/run`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options.requestId ? { parameters: options.parameters } : { question, request_id: `ui-agent-${crypto.randomUUID()}`, max_steps: 4 }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Agent 执行失败');
+    lastAskRequestId = data.request_id;
+    if (data.status === 'needs_clarification') localStorage.setItem('math-agent-pending-task', data.request_id);
+    else localStorage.removeItem('math-agent-pending-task');
+    renderAgentClarification(data);
+    const traceText = (data.trace || []).map((step, index) => {
+      const result = step.result || {};
+      const line = result.evidence_type === 'symbolic_derivative' ? `d/d${result.variable} (${formatAgentPolynomial(result.expression)}) = ${formatAgentPolynomial(result.derivative)}`
+        : result.evidence_type === 'exact_definite_integral' ? `∫[${result.lower}, ${result.upper}] (${formatAgentPolynomial(result.expression)}) d${result.variable} = ${result.value}；原函数：${formatAgentPolynomial(result.antiderivative)}`
+        : result.evidence_type === 'polynomial_identity' ? `${result.identity ? '恒等成立（全部系数比较）' : '不是恒等式'}：${formatAgentPolynomial(result.left)} 与 ${formatAgentPolynomial(result.right)}；左侧减右侧：${formatAgentPolynomial(result.difference)}。范围：有理数系数多项式，变量 x 为实数。`
+        : result.status === 'computed' ? `${result.expression} = ${result.value}`
+        : result.status === 'counterexample_found' ? `找到反例：${JSON.stringify(result.counterexample)}`
+        : result.proof ? `证明草稿（未验证）：\n${result.proof}`
+        : result.status === 'needs_clarification' ? `需要补充：${formatMissingAgentParameters(result.missing || result.missing_parameters || [])}`
+        : result.message || result.assumptions || result.status || '已执行';
+      return `${index + 1}. ${step.action}：${line}`;
+    }).join('\n\n');
+    const failureText = data.error ? `\n\n执行异常：${data.error}` : '';
+    const attempt = data.failed_attempt;
+    const failedInputText = attempt ? `\n失败动作：${attempt.action}；输入：${JSON.stringify(attempt.parameters)}；耗时：${attempt.duration_seconds} 秒。该尝试没有产生成功验证证据。` : '';
+    const stopReasons = { step_budget: '已达到本次任务的步骤上限，现有结果仍未完成目标。', elapsed_time_budget: '已达到动作间时间预算，未再启动下一步；正在执行的动作不受此预算中断。', repeated_action: '规划器重复提出了相同动作和参数，已停止重复执行；已有轨迹保留，目标尚未完成。' };
+    const stopText = data.stop_reason ? `\n\n停止原因：${stopReasons[data.stop_reason] || data.stop_reason}` : '';
+    const budgetText = data.budget ? `\n执行预算：最多 ${data.budget.max_steps} 步，动作间时间预算 ${Number(data.budget.max_elapsed_seconds).toFixed(3)} 秒；本轮已耗时 ${data.budget.elapsed_seconds} 秒。` : '';
+    renderAnswer(`Agent 状态：${data.status}\n\n${traceText || '没有产生执行步骤。'}${failureText}${failedInputText}${stopText}${budgetText}\n\n工具结果不等同于完整数学证明。`);
+    const evidence = (data.evidence || []).map(item => ({ ...item.result, ...item, status: item.status || item.result?.status }));
+    renderAgentEvidence(evidence);
+    renderAgentTaskEvents(data.request_id);
+    const outcomeLabel = data.status === 'failed' ? 'Agent 执行失败' : data.status === 'completed_with_evidence' ? 'Agent 检查完成' : data.status === 'refuted' ? 'Agent 已否定原命题' : data.status === 'budget_exhausted' ? 'Agent 预算耗尽' : data.status === 'needs_clarification' ? 'Agent 等待补充条件' : 'Agent 已停止';
+    $('answerStatus').textContent = `${outcomeLabel} · ${data.steps || 0} 步 · ${data.status}`;
+  } catch (error) {
+    $('answerStatus').textContent = 'Agent 执行失败';
+    showMessage(`受控 Agent 未能完成：${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = '运行 Agent 步骤 <span>⟳</span>';
+  }
+}
+
 $('practiceForm')?.addEventListener('submit', submitPractice);
 $('practiceProblem')?.addEventListener('change', loadPracticeProblem);
 $('refreshPractice')?.addEventListener('click', loadPracticeProblems);
@@ -984,7 +1112,8 @@ $('practiceProblem') && loadPracticeProblems();
 
 $('askForm').removeEventListener('submit', ask);
 $('askForm').addEventListener('submit', conversationAsk);
+$('runAgentButton')?.addEventListener('click', runAgentWorkflow);
 $('newConversation').addEventListener('click', createConversation);
 $('renameConversation').addEventListener('click', renameActiveConversation);
 $('deleteConversation').addEventListener('click', deleteActiveConversation);
-ensureConversation();
+ensureConversation().finally(restorePendingAgent);

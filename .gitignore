@@ -6,6 +6,7 @@ __pycache__/
 .playwright-cli/
 node_modules/
 *.log
+evaluation/runs/
 
 # Virtual environment
 .venv/
