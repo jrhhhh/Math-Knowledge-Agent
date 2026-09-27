@@ -44,3 +44,53 @@ def local_math_answer(question: str, db=None) -> str:
         return matched["answer"]
     return ("建议按以下顺序作答：先写出定义和全部条件，再指出直接适用的定理，逐步完成推导并检查结论。"
             "当前模型暂不可用，因此无法对未覆盖的具体题目生成可靠的完整证明；请稍后重试。")
+
+
+def local_proof_review(question: str, proof: str) -> dict:
+    """Return a transparent structural review when model-backed proof review is unavailable.
+
+    This deliberately does not claim to verify the mathematics.  It identifies
+    whether the submitted text contains a traceable chain of statements and
+    highlights the common missing pieces a human or remote verifier should check.
+    """
+    clauses = [
+        item.strip(" \t-•")
+        for item in re.split(r"\n+|(?<=[。；;])\s*", proof.strip())
+        if item.strip(" \t-•")
+    ]
+    if not clauses:
+        clauses = [proof.strip()]
+
+    justification_markers = ("由", "根据", "因为", "定义", "定理", "假设", "设", "令", "所以", "从而", "因此", "可得", "推出")
+    conclusion_markers = ("所以", "从而", "因此", "故", "可得", "结论")
+    premise_markers = ("假设", "设", "令", "给定", "取")
+    steps = []
+    for index, clause in enumerate(clauses, 1):
+        has_justification = any(marker in clause for marker in justification_markers)
+        steps.append({
+            "step": index,
+            "text": clause,
+            "status": "valid" if has_justification else "invalid",
+            "error_type": "none" if has_justification else "incomplete",
+            "reason": "发现了推导依据或结论连接词，仍需人工核对其数学适用条件。" if has_justification
+            else "本地审查未找到该句与前提或定理之间的明确连接，请补充依据。",
+            "related_concepts": [],
+        })
+
+    missing_assumptions = []
+    if not any(marker in proof for marker in premise_markers):
+        missing_assumptions.append("未显式写出所用定义或定理的适用前提。")
+    if not any(marker in proof for marker in conclusion_markers):
+        missing_assumptions.append("未明确写出从已有推导收束到题目结论的步骤。")
+    return {
+        "valid": False,
+        "review_source": "local_rule_fallback",
+        "summary": "外部证明审查服务暂不可用，已完成本地结构审查；该结果不构成数学正确性验证。",
+        "steps": steps,
+        "missing_assumptions": missing_assumptions,
+        "suggestions": [
+            "逐步注明每个等式、蕴含或定理引用的依据及其适用条件。",
+            "服务恢复后可再次提交，以获得模型辅助的逐步审查。",
+        ],
+        "question": question,
+    }

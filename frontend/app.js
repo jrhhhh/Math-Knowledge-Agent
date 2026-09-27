@@ -37,7 +37,7 @@ function renderAgentEvidence(items = []) { let panel = $('agentEvidence'); if (!
 async function renderAgentTaskEvents(requestId) { let panel = $('agentTaskEvents'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentTaskEvents'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } if (!requestId) { panel.innerHTML = '<summary>Agent 过程 · 未记录</summary>'; return; } try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '任务事件读取失败'); panel.innerHTML = `<summary>Agent 过程 · ${data.total || 0} 个阶段</summary>${(data.items || []).map(item => `<article><b>${escapeHtml(item.stage)}</b><small>${escapeHtml(item.status)} · ${escapeHtml(item.created_at || '')}</small>${item.detail ? `<p>${escapeHtml(item.detail)}</p>` : ''}</article>`).join('') || '<span class="muted">暂无任务事件。</span>'}`; } catch (error) { panel.innerHTML = `<summary>Agent 过程 · 暂不可用</summary><span class="muted">${escapeHtml(error.message)}</span>`; } }
 function ensureAnswerFeedback() { if ($('answerFeedback')) return; const panel = document.createElement('div'); panel.id = 'answerFeedback'; panel.className = 'answer-feedback'; panel.innerHTML = '<span>这份回答有帮助吗？</span><button type="button" data-rating="5">有帮助</button><button type="button" data-rating="2">需改进</button><textarea aria-label="回答反馈" placeholder="可选：指出需要改进的地方"></textarea><output></output>'; $('answer').parentElement?.appendChild(panel); panel.querySelectorAll('[data-rating]').forEach(button => button.addEventListener('click', () => submitAnswerFeedback(Number(button.dataset.rating)))); }
 async function submitAnswerFeedback(rating) { const panel = $('answerFeedback'); const answerId = lastAskResult?.answer_id; if (!answerId) { panel.querySelector('output').textContent = '当前回答尚未保存，暂不能提交反馈。'; return; } panel.querySelectorAll('button').forEach(button => { button.disabled = true; }); try { const response = await fetch(`${API}/ai/answers/${answerId}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rating, feedback: panel.querySelector('textarea').value.trim() || null }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '提交失败'); panel.querySelector('output').textContent = '感谢反馈，已记录。'; } catch (error) { panel.querySelector('output').textContent = error.message; panel.querySelectorAll('button').forEach(button => { button.disabled = false; }); } }
-function renderProof(data) { const status = data.valid ? '通过' : '需要修改'; const steps = (data.steps || []).map((s, i) => `<article class="proof-step ${s.status === 'valid' ? 'is-valid' : 'is-error'}"><div class="step-mark">${s.status === 'valid' ? '✓' : '!'}</div><div><div class="step-top"><b>步骤 ${escapeHtml(String(s.step || i + 1))}</b><span>${escapeHtml(s.error_type || 'none')}</span></div><p>${escapeHtml(s.text || '')}</p><small>${escapeHtml(s.reason || '')}</small></div></article>`).join(''); const list = (title, items) => items?.length ? `<div class="proof-notes"><b>${title}</b><ul>${items.map(x => `<li>${escapeHtml(String(x))}</li>`).join('')}</ul></div>` : ''; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = `<div class="proof-summary"><div><span class="section-label">REVIEW RESULT</span><h3>${status}</h3><p>${escapeHtml(data.summary || '')}</p></div><span class="review-badge ${data.valid ? 'good' : 'warn'}">${data.valid ? 'VALID' : 'REVIEW'}</span></div>${steps ? `<div class="proof-steps">${steps}</div>` : ''}${list('缺失条件', data.missing_assumptions)}${list('建议', data.suggestions)}`; typesetMath($('proofResult')); }
+function renderProof(data) { const status = data.valid ? '通过' : '需要修改'; const source = data.review_source === 'local_rule_fallback' ? '本地结构审查（非数学正确性验证）' : '模型辅助审查'; const steps = (data.steps || []).map((s, i) => `<article class="proof-step ${s.status === 'valid' ? 'is-valid' : 'is-error'}"><div class="step-mark">${s.status === 'valid' ? '✓' : '!'}</div><div><div class="step-top"><b>步骤 ${escapeHtml(String(s.step || i + 1))}</b><span>${escapeHtml(s.error_type || 'none')}</span></div><p>${escapeHtml(s.text || '')}</p><small>${escapeHtml(s.reason || '')}</small></div></article>`).join(''); const list = (title, items) => items?.length ? `<div class="proof-notes"><b>${title}</b><ul>${items.map(x => `<li>${escapeHtml(String(x))}</li>`).join('')}</ul></div>` : ''; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = `<div class="proof-summary"><div><span class="section-label">REVIEW RESULT</span><h3>${status}</h3><p>${escapeHtml(data.summary || '')}</p><small class="muted">审查方式：${source}</small></div><span class="review-badge ${data.valid ? 'good' : 'warn'}">${data.valid ? 'VALID' : 'REVIEW'}</span></div>${steps ? `<div class="proof-steps">${steps}</div>` : ''}${list('缺失条件', data.missing_assumptions)}${list('建议', data.suggestions)}`; typesetMath($('proofResult')); }
 async function requestAskStream(question, signal, requestId = crypto.randomUUID()) { let lastError; for (let attempt = 0; attempt < 2; attempt += 1) { try { const response = await fetch(`${API}/ai/ask-stream?request_id=${encodeURIComponent(requestId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, agent_mode: Boolean($('agentMode')?.checked) }), signal }); if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); } const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '', result = null; $('answer').classList.remove('empty-state'); if (attempt === 0) $('answer').textContent = ''; while (true) { const chunk = await reader.read(); if (chunk.done) break; buffer += decoder.decode(chunk.value, { stream: true }); const frames = buffer.split('\n\n'); buffer = frames.pop(); for (const frame of frames) { const dataLine = frame.split('\n').find(line => line.startsWith('data: ')); if (!dataLine) continue; const data = JSON.parse(dataLine.slice(6)); const eventId = frame.split('\n').find(line => line.startsWith('id: ')); if (eventId) $('answer').dataset.lastEventId = eventId.slice(4); if (frame.includes('event: progress')) $('answerStatus').textContent = data.stage; if (frame.includes('event: token')) { $('answer').textContent += data.text || ''; $('answerStatus').textContent = '正在输出'; } if (frame.includes('event: error')) throw new Error(data.detail || '生成失败'); if (frame.includes('event: result')) result = data; } } if (result) return result; throw new Error('流式连接中断'); } catch (error) { if (error.name === 'AbortError' || attempt === 1) throw error; lastError = error; $('answerStatus').textContent = '连接中断，正在恢复…'; await new Promise(resolve => setTimeout(resolve, 800)); } } throw lastError || new Error('流式连接失败'); }
 
 async function ask(event) {
@@ -712,11 +712,44 @@ function renderConversation(data) {
   $('chatTimeline').replaceChildren();
   $('conversationTitle').textContent = data.conversation.title || '新的数学对话';
   const messages = data.messages || [];
+  restoreConversationAnswer(messages);
   if (!messages.length) {
     $('chatTimeline').innerHTML = '<div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div>';
     return;
   }
   messages.forEach(message => appendChatMessage(message));
+}
+
+function clearRestoredAnswer() {
+  lastAskResult = null;
+  $('answer').classList.add('empty-state');
+  $('answer').textContent = '你的数学解答会显示在这里。';
+  $('answerStatus').textContent = '等待提问';
+  ['answerSources', 'agentEvidence', 'agentTaskEvents', 'formulaFixes', 'mathRenderError'].forEach(id => $(id)?.remove());
+  renderConcepts([]);
+}
+
+function restoreConversationAnswer(messages) {
+  const assistant = [...messages].reverse().find(message => message.role === 'assistant' && message.answer_id);
+  if (!assistant) {
+    clearRestoredAnswer();
+    return;
+  }
+  const metadata = assistant.metadata || {};
+  lastAskResult = {
+    answer: assistant.content,
+    answer_id: assistant.answer_id,
+    request_id: assistant.request_id,
+    ...metadata,
+  };
+  renderAnswer(assistant.content);
+  renderKnowledgeSources(metadata.knowledge_sources || []);
+  renderAgentEvidence(metadata.agent_tool_evidence || []);
+  renderAgentTaskEvents(assistant.request_id);
+  showFormulaFixes(metadata.formula_fixes || []);
+  renderConcepts(metadata.concepts || []);
+  if (metadata.knowledge_graph) renderGraph(metadata.knowledge_graph);
+  $('answerStatus').textContent = '已恢复历史回答 · 数学正确性未验证';
 }
 
 async function loadConversationList() {

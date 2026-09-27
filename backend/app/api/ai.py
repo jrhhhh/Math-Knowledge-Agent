@@ -63,7 +63,7 @@ from app.ai.concept_matcher import (
 )
 from app.ai.telemetry import record_request, snapshot
 from app.ai.retry_queue import enqueue, get_job, queue_stats, cancel_job
-from app.ai.local_fallback import local_math_answer
+from app.ai.local_fallback import local_math_answer, local_proof_review
 from app.ai.answer_quality import evaluate_answer, quality_retry_instruction
 from app.ai.formula_validator import repair_formula
 from app.ai.circuit_breaker import before_call, success as circuit_success, failure as circuit_failure, snapshot as circuit_snapshot
@@ -1190,7 +1190,7 @@ def analyze_proof(
         result = json.loads(raw)
     except Exception as exc:
         print("[AI] proof analysis failed:", repr(exc))
-        raise HTTPException(status_code=503, detail="证明分析服务暂时不可用。")
+        result = local_proof_review(request.question, request.proof)
 
     steps = result.get("steps", [])
     if not isinstance(steps, list):
@@ -1210,6 +1210,7 @@ def analyze_proof(
     return {
         "question": request.question,
         "valid": bool(result.get("valid", False)),
+        "review_source": result.get("review_source", "model"),
         "summary": str(result.get("summary", "")),
         "steps": normalized_steps,
         "missing_assumptions": result.get("missing_assumptions", []),

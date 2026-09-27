@@ -42,6 +42,8 @@ class ConversationTests(unittest.TestCase):
             "answer_source": "mock",
             "concepts": [{"id": concept.id, "similarity": 0.9}],
             "knowledge_graph": {"nodes": [], "edges": []},
+            "knowledge_sources": [{"document_title": "拓扑学讲义", "content": "连续像保持紧性"}],
+            "agent_tool_evidence": [{"status": "computed", "expression": "2 + 2", "value": 4}],
         }
         with patch("app.api.conversations._ask_impl", return_value=result) as asked:
             created = create_message(conversation["id"], MessageCreate(content="为什么连续映射保持紧致性？"), self.db)
@@ -52,6 +54,9 @@ class ConversationTests(unittest.TestCase):
         restored = get_conversation(conversation["id"], self.db)
         self.assertEqual([message["role"] for message in restored["messages"]], ["user", "assistant"])
         self.assertEqual(restored["conversation"]["title"], "为什么连续映射保持紧致性？")
+        metadata = restored["messages"][1]["metadata"]
+        self.assertEqual(metadata["knowledge_sources"][0]["document_title"], "拓扑学讲义")
+        self.assertEqual(metadata["agent_tool_evidence"][0]["value"], 4)
         self.assertEqual(self.db.execute(__import__("sqlalchemy").text("SELECT count(*) FROM message_concepts")).scalar(), 1)
         self.assertEqual(delete_conversation(conversation["id"], self.db)["deleted"], conversation["id"])
         self.assertEqual(self.db.execute(__import__("sqlalchemy").text("SELECT count(*) FROM message_concepts")).scalar(), 0)

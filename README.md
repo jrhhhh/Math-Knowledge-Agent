@@ -14,7 +14,7 @@
 
 ## Project Status
 
-Current Version: v0.3
+Current Version: v0.4
 
 已完成：
 
@@ -41,6 +41,8 @@ Current Version: v0.3
 - [x] AI 自动提取知识点
 - [x] 智能证明分析
 - [x] 分步证明分析
+- [x] 证明审查服务异常时的本地结构审查降级
+- [x] 历史对话恢复回答、证据、Agent 过程与反馈上下文
 - [ ] 个性化学习路径
 
 
@@ -169,6 +171,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - 独立知识库检索面板：按关键词和知识类型筛选，查看详情、加载关系网络并带入当前对话
 - 知识图谱节点知识卡片：点击节点打开可拖动浮层，不会跳转到对话区域
 - 对话历史只展示已有消息的对话；空对话不会出现在历史列表
+- 切换历史对话时恢复最近回答的教材出处、受控验证证据、Agent 过程、相关概念、图谱和反馈上下文
 
 ### AI API
 
@@ -177,7 +180,7 @@ CI 还会使用无头 Chromium 检查公式测试页的 MathJax 实际渲染结�
 - `POST /conversations`、`GET /conversations`：创建及查询本地持久化对话
 - `GET/PATCH/DELETE /conversations/{conversation_id}`：恢复、命名或删除对话
 - `POST /conversations/{conversation_id}/messages/stream`：按会话上下文流式生成下一轮数学回答
-- `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误
+- `POST /ai/proof-analyze`：分步检查证明、缺失条件和逻辑错误；外部模型不可用时返回 `review_source=local_rule_fallback` 的本地结构审查，不会将其表述为数学正确性验证
 - `POST /ai/tools/exact-arithmetic`：在受限整数与有理数表达式范围内执行可复现的精确计算；自然语言中的常见算式会自动提取，且不执行任意代码
 - `GET /ai/tools/capabilities`：探测 Lean、SageMath、SymPy、OSQP 和 CVXPY 的运行时可用性；可用不等于结论已验证
 - `POST /ai/tools/lean-check`：仅验证登记的固定 Lean theorem 模板，并返回 `formally_verified` 或明确失败状态

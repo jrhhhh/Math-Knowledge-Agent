@@ -104,7 +104,10 @@ def persist_answer(conversation: Conversation, user_message: ConversationMessage
     assistant = ConversationMessage(
         conversation_id=conversation.id, role="assistant", content=result.get("answer", ""),
         status="completed", answer_id=result.get("answer_id"), request_id=result.get("request_id"),
-        metadata_json=json.dumps({key: result.get(key) for key in ("answer_source", "answer_quality", "knowledge_graph", "formula_fixes", "agent_tool_evidence")}, ensure_ascii=False),
+        metadata_json=json.dumps({key: result.get(key) for key in (
+            "answer_source", "answer_quality", "knowledge_graph", "formula_fixes",
+            "agent_tool_evidence", "knowledge_sources", "concepts",
+        )}, ensure_ascii=False),
     )
     db.add(assistant)
     conversation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
