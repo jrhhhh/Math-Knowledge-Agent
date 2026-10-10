@@ -3,12 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#dfeaf4" />
+  <meta name="description" content="Math Agent 将数学提问、证明审查、练习与知识图谱连接成清晰的学习路径。" />
   <title>Math Agent · 数学学习助手</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./apple.css" />
   <link rel="stylesheet" href="./apple-mobile.css" />
   <link rel="stylesheet" href="./motion.css" />
   <link rel="stylesheet" href="./glass.css" />
+  <link rel="stylesheet" href="./glass-refinements.css" />
+  <link rel="stylesheet" href="./workspace.css?v=spacing-3" />
+  <link rel="stylesheet" href="./graph-explorer.css?v=orbit-2" />
+  <link rel="stylesheet" href="./ui-interactions.css?v=icons-3" />
   <script>
     window.MathJax = {
       tex: {
@@ -34,11 +41,19 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">∑</span><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
-      <nav><a class="active" href="#ask">✦ 智能问答</a><a href="#knowledge-library">⌕ 知识库</a><a href="#proof">✓ 证明审查</a><a href="#graph">◎ 知识图谱</a></nav>
-      <div class="side-note"><span class="status-dot"></span><div><b>系统在线</b><small>连接本地知识库</small></div></div>
+      <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#knowledge-library">知识库</a><a href="#study-notes">笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
+      <div class="side-note"><span class="status-dot"></span><div><b id="workspaceConnection">连接中</b><small>本地学习空间</small></div></div>
     </aside>
     <main class="main-content">
-      <header class="topbar"><div><p class="eyebrow">MATH LEARNING WORKSPACE</p><h1>把难题，变成清晰的思路。</h1></div><button class="ghost-btn" id="refreshGraph">↻ 刷新图谱</button></header>
+      <header class="topbar"><div><p class="eyebrow">MATH LEARNING WORKSPACE</p><h1 id="workspaceTitle">把难题，变成清晰的思路。</h1></div><button class="ghost-btn" id="refreshGraph">↻ 刷新图谱</button></header>
+      <div class="study-mode-bar" id="studyModeBar">
+        <div class="study-mode-controls" role="group" aria-label="学习方式">
+          <button type="button" data-study-mode="explain" aria-pressed="true">讲解题目</button>
+          <button type="button" data-study-mode="hint" aria-pressed="false">给我提示</button>
+          <button type="button" data-study-mode="check" aria-pressed="false">检查解答</button>
+        </div>
+        <p id="studyModeDescription">讲清条件、方法和每一步依据。</p>
+      </div>
       <section class="chat-workbench" id="ask" aria-label="数学对话工作台">
         <aside class="conversation-rail">
           <div class="conversation-rail-head"><span class="section-label">CONVERSATIONS</span><button type="button" id="newConversation" aria-label="新建对话">＋</button></div>
@@ -47,13 +62,14 @@
         </aside>
         <div class="chat-stage">
           <div class="chat-stage-head"><div><span class="pill">CONTEXTUAL MATH ASSISTANT</span><h2 id="conversationTitle">新的数学对话</h2></div><div class="chat-stage-actions"><button type="button" id="renameConversation">重命名</button><button type="button" id="deleteConversation" aria-label="删除当前对话">⌫</button></div></div>
-          <div id="chatTimeline" class="chat-timeline" aria-live="polite"><div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div></div>
-          <form id="askForm" class="chat-composer"><textarea id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><label class="agent-mode-toggle"><input type="checkbox" id="agentMode"> 启用受控验证</label><div class="form-actions"><button type="button" class="graph-trigger" id="runAgentButton">运行 Agent 步骤 <span>⟳</span></button><button type="button" class="graph-trigger" id="generateGraphButton">根据本次对话生成图谱 <span>◎</span></button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div></form>
+          <div id="chatTimeline" class="chat-timeline" aria-live="polite"><div class="chat-welcome"><span>∫</span><div class="chat-welcome-content"><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p><div class="prompt-gallery" aria-label="示例数学问题"><button type="button" data-example-prompt="证明连续映射把紧集映为紧集。"><small>01 / 拓扑</small><strong>连续映射如何保紧？</strong><em>展开证明 →</em></button><button type="button" data-example-prompt="为什么一致收敛的连续函数列，其极限函数仍连续？"><small>02 / 分析</small><strong>一致收敛为何保连续？</strong><em>梳理条件 →</em></button><button type="button" data-example-prompt="特征值相同的两个矩阵一定相似吗？请给出证明或反例。"><small>03 / 代数</small><strong>同特征值矩阵一定相似吗？</strong><em>寻找反例 →</em></button></div></div></div></div>
+          <form id="askForm" class="chat-composer"><textarea aria-label="数学问题" id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="submit" id="askButton">发送 <span>↑</span></button></div></div><details class="composer-tools"><summary>学习工具</summary><div><label class="agent-mode-toggle"><input type="checkbox" id="agentMode" checked> 自动使用适用的计算工具</label><button type="button" class="graph-trigger" id="runAgentButton">查看计算步骤</button><button type="button" class="graph-trigger" id="generateGraphButton">生成本次对话图谱</button></div></details></form>
         </div>
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
       <div id="message" class="message hidden"></div>
-      <section class="knowledge-library" id="knowledge-library" aria-label="知识库检索">
+      <section id="math-lab" class="math-lab workspace-hidden" aria-label="数学交互实验"><div class="panel-heading"><div><span class="section-label">MATH EXPLORATION</span><h2>改变参数，看见数学。</h2></div><button id="labReset" type="button">恢复默认参数</button></div><div class="lab-tabs"><button data-lab-mode="derivative" type="button">导数</button><button data-lab-mode="integral" type="button">积分</button><button data-lab-mode="linear" type="button">线性变换</button></div><div class="lab-layout"><div class="lab-controls"><label id="labFunctionControl">函数<select id="labFunction"><option value="square">x²</option><option value="cube">x³</option><option value="sine">sin x</option><option value="absolute">|x|</option></select></label><div id="lab-derivative"><label>切点 x₀ <output data-lab-value="labX"></output><input id="labX" type="range" min="-2" max="2" step="0.1" value="1"></label><label>增量 h<select id="labH"><option value="1">1</option><option value="0.1">0.1</option><option value="0.01">0.01</option><option value="-1">−1</option><option value="-0.1">−0.1</option><option value="-0.01">−0.01</option></select></label><p>比较不同增量的割线与切线。试试 |x| 在原点的左右差商。</p></div><div id="lab-integral" hidden><label>下限 a <output data-lab-value="labA"></output><input id="labA" type="range" min="-3" max="3" step="0.1" value="0"></label><label>上限 b <output data-lab-value="labB"></output><input id="labB" type="range" min="-3" max="3" step="0.1" value="1"></label><label>矩形数 n <output data-lab-value="labN"></output><input id="labN" type="range" min="1" max="100" step="1" value="10"></label><p>蓝色为非负函数值，棕色为负函数值。比较细分前后的误差。</p></div><div id="lab-linear" hidden><p>A = [a b; c d]</p><div class="lab-matrix"><label>a<input id="labM11" type="range" min="-3" max="3" step="0.5" value="1"></label><label>b<input id="labM12" type="range" min="-3" max="3" step="0.5" value="0"></label><label>c<input id="labM21" type="range" min="-3" max="3" step="0.5" value="0"></label><label>d<input id="labM22" type="range" min="-3" max="3" step="0.5" value="1"></label></div><label>向量横坐标<input id="labV1" type="range" min="-3" max="3" step="0.5" value="1"></label><label>向量纵坐标<input id="labV2" type="range" min="-3" max="3" step="0.5" value="1"></label><p>变换网格和单位正方形，观察面积与方向。</p></div></div><div class="lab-canvas"><svg id="labPlot" viewBox="0 0 640 440" role="img" aria-label="数学参数实验图"></svg><output id="labResult" aria-live="polite"></output></div></div><p id="labCondition" class="lab-condition"></p><button type="button" id="labToStudy">带着实验继续提问 ↗</button></section>
+      <section class="knowledge-library" id="knowledge-library" aria-label="知识库检索"><div class="library-tabs"><button type="button" data-library-view="concepts" aria-pressed="true">概念与定理</button><button type="button" data-library-view="textbooks" aria-pressed="false">教材与阅读</button></div>
         <div class="library-intro"><span class="pill">LOCAL KNOWLEDGE LIBRARY</span><h2>从已有知识出发。</h2><p>检索本地已保存的概念、定理、性质和方法，查看关系网络，再把知识点带回当前对话。</p></div>
         <div class="library-workbench">
           <form id="knowledgeSearchForm" class="library-search-form">
@@ -64,24 +80,26 @@
           <div id="knowledgeSearchResults" class="library-results" aria-live="polite"><div class="library-empty">检索结果会显示在这里</div></div>
           <aside id="knowledgeDetail" class="library-detail hidden" aria-live="polite"></aside>
         </div>
+        <div id="textbookWorkspace" class="textbook-workspace workspace-hidden"><div class="panel-heading"><div><span class="section-label">SOURCE READER</span><h2>对照原页，读懂教材。</h2></div><button type="button" id="openTextbookImport">导入 PDF</button></div><p class="muted">提取文字后请校对公式；只有教材和片段均已审核，才进入回答引用。</p><div id="textbookList" class="textbook-list"></div><div id="textbookReader" hidden><div class="reader-toolbar"><h3 id="readerTitle"></h3><select id="readerPage" aria-label="教材页码"></select><a id="originalPdfLink" target="_blank" rel="noopener">打开原稿 ↗</a></div><details class="document-review"><summary>课程、章节与教材审核</summary><label>标题<input id="readerDocumentTitle"></label><label>课程<input id="readerCourse"></label><label>章节<input id="readerChapter"></label><label>教材状态<select id="readerDocumentStatus"><option value="draft">待审核</option><option value="approved">已审核</option><option value="rejected">不采用</option></select></label><button type="button" id="saveDocumentReview">保存教材信息</button></details><div class="reader-columns"><div class="reader-text"><label>片段章节<input id="readerHeading"></label><label>提取文字与公式<textarea id="readerText" aria-label="教材片段文本"></textarea></label><div class="reader-actions"><select id="readerChunkStatus" aria-label="片段审核状态"><option value="unreviewed">待校对</option><option value="approved">已审核</option><option value="rejected">不采用</option></select><button type="button" id="previewReaderMath">预览公式</button><button type="button" id="saveChunkReview">保存校对</button></div><div id="readerMathPreview" class="reader-preview"></div><details><summary>修订记录与恢复</summary><div id="chunkRevisionList"></div></details><div class="reader-question"><label>选段后输入问题<input id="readerQuestion" placeholder="这一步使用了什么条件？"></label><button type="button" id="askReadingSelection">选段带入学习 ↗</button><small>在上方文本框中选中一段；未选中时不会默认发送整本教材。</small></div></div><div class="reader-original"><iframe id="originalPdf" title="教材原始 PDF 页面"></iframe><div id="originalPdfUnavailable" hidden>此旧资料尚未附加可读原稿，请导入 PDF。</div></div></div><output id="readerStatus"></output></div><dialog id="textbookImportDialog" aria-labelledby="textbookImportTitle"><form id="textbookImportForm"><div class="panel-heading"><h3 id="textbookImportTitle">导入教材 PDF</h3><button type="button" id="closeTextbookImport" aria-label="关闭教材导入">×</button></div><label>教材标题<input id="importBookTitle" required maxlength="240"></label><label>课程<input id="importBookCourse" required maxlength="160"></label><label>章节<input id="importBookChapter" maxlength="160"></label><label>PDF 文件<input id="importBookFile" type="file" accept="application/pdf,.pdf" required></label><p class="muted">最大 50 MB、1000 页。扫描页若无文字层，会保留原页并标为待补录。公式提取不保证准确。</p><output id="textbookImportStatus"></output><button type="submit" id="submitTextbookImport">导入并校对</button></form></dialog></div>
       </section>
+      <section id="study-notes" class="panel notes-workspace" aria-label="学习笔记"><div class="panel-heading"><div><span class="section-label">LEARNING ARCHIVE</span><h2>留下自己的理解。</h2></div><button type="button" id="newNote">新建笔记</button></div><div class="notes-toolbar"><input id="noteSearch" type="search" aria-label="搜索笔记" placeholder="搜索标题或正文"><select id="noteCourse" aria-label="笔记课程"><option value="">全部课程</option></select><select id="noteFilter" aria-label="笔记状态"><option value="active">当前笔记</option><option value="favorite">收藏</option><option value="archived">已归档</option></select></div><div id="noteList"></div><dialog id="noteDialog" aria-labelledby="noteDialogTitle"><form id="noteForm"><div class="panel-heading"><h3 id="noteDialogTitle">编辑笔记</h3><button type="button" id="closeNote" aria-label="关闭笔记编辑">×</button></div><label>标题<input id="noteTitle" required maxlength="240"></label><label>课程<input id="noteCourseEdit" required maxlength="160"></label><label>正文<textarea id="noteContent" required></textarea></label><p class="muted">你的编辑不会覆盖保存时的原回答与证据。</p><output id="noteStatus"></output><button type="submit" id="saveNoteEdit">保存笔记</button></form></dialog></section>
       <section class="proof-workbench" id="proof">
         <div class="proof-intro"><span class="pill">PROOF REVIEW</span><h2>把证明交给第二双眼睛。</h2><p>逐步检查推理链，定位缺失条件与逻辑跳跃。适合提交自己的证明草稿。</p></div>
         <form id="proofForm" class="proof-form">
           <label>题目 / 要证明什么<textarea id="proofQuestion" placeholder="例如：证明连续映射把紧集映射为紧集" required></textarea></label>
           <label>你的证明草稿<textarea id="proofDraft" placeholder="写下你的证明步骤…" required></textarea></label>
-          <div class="proof-actions"><span>AI 会标记每一步的逻辑状态</span><button type="submit" id="proofButton">检查证明 <span>→</span></button></div>
+          <div class="proof-actions"><span>数学问题与草稿会保留，可随时返回讲解或提示。</span><button type="submit" id="proofButton">检查证明 <span>→</span></button></div>
         </form>
         <div id="proofResult" class="proof-result empty-state">提交证明后，这里会出现逐步审查结果。</div>
       </section>
       <section class="practice-workbench" id="practice">
         <div class="practice-intro"><span class="pill">PRACTICE LOOP</span><h2>做一道题，留下可验证的进步。</h2><p>作答会先保存为“未验证”。只有经过审核的结果，才会影响学习判断。</p></div>
         <div class="practice-panel">
-          <div class="practice-toolbar"><label for="practiceProblem">选择练习</label><select id="practiceProblem"><option value="">正在加载题目…</option></select><button type="button" id="refreshPractice">刷新</button></div>
+          <div class="practice-toolbar"><label for="practiceProblem">选择练习</label><select id="practiceProblem"><option value="">正在加载题目…</option></select><button type="button" id="refreshPractice">刷新</button><button type="button" id="practiceToStudy">带入学习</button></div>
           <div id="practicePrompt" class="practice-prompt">选择一道题开始作答。</div>
-          <form id="practiceForm" class="practice-form"><textarea id="practiceAnswer" placeholder="写出你的思路、计算或证明步骤…" required></textarea><div><label><input type="checkbox" id="practiceIndependent"> 我在没有提示的情况下完成</label><button type="button" id="practiceHint">获取一级提示</button><button type="submit" id="practiceSubmit">提交作答</button></div><div id="practiceHints" class="practice-hints" aria-live="polite"></div></form>
-          <div id="practiceStatus" class="practice-status muted">作答结果会显示在这里</div>
-          <div id="practiceHistory" class="practice-history"><span class="muted">暂无作答记录</span></div>
+          <form id="practiceForm" class="practice-form"><textarea aria-label="练习解答" id="practiceAnswer" placeholder="写出你的思路、计算或证明步骤…" required></textarea><div><label><input type="checkbox" id="practiceIndependent"> 我在没有提示的情况下完成</label><button type="button" id="practiceHint">获取一级提示</button><button type="submit" id="practiceSubmit">提交作答</button></div><div id="practiceHints" class="practice-hints" aria-live="polite"></div></form>
+          <div id="practiceRevision" class="practice-revision" hidden></div><div id="practiceStatus" class="practice-status muted">作答结果会显示在这里</div>
+          <details id="reviewWorkspace" class="review-workspace"><summary>错题与复习 <span id="reviewCounts">正在读取…</span></summary><p class="muted">当天重复作答不计延迟重测。完成历史保留，当前状态按最新审核证据判断。</p><div class="review-filters"><button type="button" data-review-filter="due" aria-pressed="true">待复习</button><button type="button" data-review-filter="wrong" aria-pressed="false">错题档案</button><button type="button" data-review-filter="all" aria-pressed="false">全部记录</button></div><div id="reviewList"></div></details><div id="practiceHistory" class="practice-history"><span class="muted">暂无作答记录</span></div>
         </div>
       </section>
       <section class="dashboard-grid">
@@ -89,10 +107,22 @@
         <div class="panel concepts-panel"><div class="panel-heading"><div><span class="section-label">02 / CONCEPTS</span><h3>相关知识点</h3></div><span id="conceptCount" class="count">0</span></div><div id="concepts" class="concept-list"><div class="empty-state">提问后显示相关概念</div></div></div>
       </section>
       <section class="panel graph-panel" id="graph"><div class="panel-heading"><div><span class="section-label">03 / KNOWLEDGE GRAPH</span><h3>知识关系网络</h3></div><div class="graph-tools"><span id="graphStatus" class="muted">正在加载</span><button type="button" id="saveGraphButton" class="graph-save hidden">校验并保存</button></div></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state">加载知识图谱中…</div></div><div id="legend" class="legend"></div><details id="graphHistory" class="graph-history"><summary>候选图谱历史</summary><div class="candidate-filter"><label for="candidateStatusFilter">状态</label><select id="candidateStatusFilter"><option value="">全部</option><option value="pending">待审核</option><option value="needs_review">需复核</option><option value="validated">已校验</option><option value="saved">已保存</option><option value="rejected">已拒绝</option></select></div><div id="candidateList" class="candidate-list"><span class="muted">正在加载候选记录…</span></div></details><details id="graphEditorPanel" class="graph-editor"><summary>审核并编辑候选图谱</summary><p>可修改节点或关系；应用后需要重新进行 AI 校验。</p><textarea id="graphEditor" spellcheck="false" aria-label="候选图谱 JSON"></textarea><button type="button" id="applyGraphEdit" class="graph-edit-button">应用修改</button></details></section>
+      <section class="management-workbench panel" id="management" aria-label="管理工作区"><div class="panel-heading"><div><span class="section-label">WORKSPACE MANAGEMENT</span><h2>管理与审核</h2></div><p>运行状态、后台任务和资料维护。</p></div><details id="learningMetrics" class="learning-metrics"><summary>学习闭环与使用记录</summary><div class="metrics-toolbar"><label>统计范围<select id="metricsDays"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="0">全部记录</option></select></label><button type="button" id="refreshLearningMetrics">刷新</button><button type="button" id="exportLearningMetrics" disabled>导出明细 JSON</button></div><p id="metricsStatus" role="status"></p><div id="metricsCards" class="metrics-cards"></div><p id="metricsVisits"></p><details><summary>统计口径与限制</summary><p>同一时间范围内有作答的题目为统一分母。每一步按题目去重，反馈后再练要求新作答晚于前次人工审核；延迟独立完成还要求至少相隔 24 小时、审核正确、独立、无提示且非修订。未审核作答不计正确。</p><p>审核等待为提交至当前审核时间的中位数；重复审核会覆盖该时间。回答帮助度按每份回答最新评分去重。访问按上海日期每日去重，仅本地记录，刷新不会增加活跃天数。历史未采集的回访无法恢复；这些统计不证明学习效果提升。</p></details><details><summary>查看原始记录编号与时间</summary><div id="metricsEvidence"></div></details></details><div id="managementTools"></div></section>
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=agent-refresh-resume-1"></script>
-  <script src="./motion.js?v=graph-evidence-2"></script>
+  <script src="./app.js?v=orbit-2"></script>
+  <script src="./workspace.js?v=final-1"></script>
+  <script src="./evidence.js?v=final-1"></script>
+  <script src="./practice.js?v=final-1"></script>
+  <script src="./review.js?v=final-1"></script>
+  <script src="./notes.js?v=final-1"></script>
+  <script src="./math-lab-core.js?v=final-1"></script>
+  <script src="./math-lab.js?v=final-1"></script>
+  <script src="./textbooks.js?v=final-1"></script>
+  <script src="./learning-metrics.js?v=final-1"></script>
+  <script src="./graph-explorer.js?v=orbit-2"></script>
+  <script src="./ui-interactions.js?v=icons-3"></script>
+  <script src="./motion.js?v=final-1"></script>
 </body>
 </html>

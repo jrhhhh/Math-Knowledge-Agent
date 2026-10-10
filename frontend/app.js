@@ -24,7 +24,7 @@ function notifySecurityAlerts(alerts) { if (!alerts?.length || !window.Notificat
 function ensureAdminPanel() { if ($('adminPanel')) return; const panel = document.createElement('details'); panel.id = 'adminPanel'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>管理权限</summary><div class="template-preview"><input id="adminKeyInput" type="password" placeholder="输入管理员密钥（仅当前会话）" aria-label="管理员密钥"><button type="button" id="saveAdminKey">登录</button><button type="button" id="clearAdminKey">清除</button><output id="adminKeyStatus"></output></div>'; $('graph').appendChild(panel); $('adminKeyInput').value = adminKey; $('saveAdminKey').onclick = async () => { const key = $('adminKeyInput').value.trim(); if (!key) { $('adminKeyStatus').textContent = '请输入密钥'; return; } try { const response = await nativeFetch(`${API}/ai/auth/login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key})}); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '登录失败'); adminKey = key; adminToken = data.access_token; sessionStorage.setItem('math-agent-admin-key', adminKey); sessionStorage.setItem('math-agent-admin-token', adminToken); $('adminKeyStatus').textContent = '登录成功，token 有效 1 小时'; } catch (error) { adminToken = ''; sessionStorage.removeItem('math-agent-admin-token'); $('adminKeyStatus').textContent = error.message; } }; $('clearAdminKey').onclick = () => { adminKey = ''; adminToken = ''; sessionStorage.removeItem('math-agent-admin-key'); sessionStorage.removeItem('math-agent-admin-token'); $('adminKeyInput').value = ''; $('adminKeyStatus').textContent = '已清除'; }; }
 const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff', method: '#77f2ad' };
 
-function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : lastAiErrorCode; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
+function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : /失败|错误|异常/.test(text) ? lastAiErrorCode : ''; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
 function clearMessage() { $('message').classList.add('hidden'); }
 function typesetMath(element) { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([element]).then(() => { if (element.id === 'answer' && /\\\(|\\\[|\$/.test(element.textContent) && !element.querySelector('mjx-container, .mjx-container')) showMathRenderError(element); }).catch(() => { showMathRenderError(element); }); }
 function showMathRenderError(element) { if (element.id !== 'answer' || $('mathRenderError')) return; const panel = document.createElement('details'); panel.id = 'mathRenderError'; panel.className = 'formula-fixes'; panel.innerHTML = '<summary>公式渲染失败，查看原始文本</summary><pre></pre>'; panel.querySelector('pre').textContent = element.textContent || ''; element.appendChild(panel); }
@@ -33,13 +33,28 @@ function formatAgentPolynomial(expression = '') { return String(expression).repl
 function formatMissingAgentParameters(parameters = []) { const labels = { expression: '计算表达式', lower: '积分下限', upper: '积分上限', variable: '变量', left: '等式左侧', right: '等式右侧', theorem: '登记的定理模板', proof: '证明草稿' }; return parameters.map(name => labels[name] || name).join('、'); }
 function renderConcepts(items = []) { $('conceptCount').textContent = items.length; $('concepts').innerHTML = items.length ? items.map(x => `<div class="concept"><div><div class="concept-name">${escapeHtml(x.name)}</div><div class="concept-type">${escapeHtml(x.type || 'concept')}</div></div><span class="similarity">${Math.round((x.similarity || 0) * 100)}%</span></div>`).join('') : '<div class="empty-state">未检索到相关知识点</div>'; }
 function normalizeMathText(text) { return String(text || '').replace(/```(?:latex|tex|math)\s*\n?([\s\S]*?)```/gi, (_, formula) => `\\[${formula.trim()}\\]`); }
-function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').textContent = normalizeMathText(text || '暂无回答'); typesetMath($('answer')); }
+function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').textContent = normalizeMathText(text || '暂无回答'); typesetMath($('answer')); syncAnswerFeedback(); window.MathEvidence?.render(lastAskResult?.answer === text ? lastAskResult : { answer: text }); window.MathNotes?.sync(); }
 function renderKnowledgeSources(sources = []) { let panel = $('answerSources'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerSources'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } panel.innerHTML = `<summary>教材出处 ${sources.length ? `· ${sources.length} 条` : '· 暂无已审核片段'}</summary>${sources.length ? sources.map(item => `<article><b>${escapeHtml(item.document_title || '课程文档')}</b><small>${escapeHtml(item.chapter || '未分章')} · 第 ${escapeHtml(String(item.page_start || '?'))} 页 · ${escapeHtml(item.chunk_type || '片段')}</small><p>${escapeHtml(item.content || '')}</p></article>`).join('') : '<span class="muted">本次回答没有使用已审核教材片段，不能据此声称有教材出处。</span>'}`; }
 function renderAgentEvidence(items = []) { let panel = $('agentEvidence'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentEvidence'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } const detail = (item) => { if (item.evidence_type === 'symbolic_derivative') return `d/d${item.variable || 'x'} (${formatAgentPolynomial(item.expression)}) = ${formatAgentPolynomial(item.derivative)}`; if (item.evidence_type === 'exact_definite_integral') return `∫[${item.lower}, ${item.upper}] (${formatAgentPolynomial(item.expression)}) d${item.variable || 'x'} = ${item.value}；原函数：${formatAgentPolynomial(item.antiderivative)}`; if (item.status === 'computed') return `${item.expression} = ${item.value}`; if (item.status === 'counterexample_found') return `反例：${JSON.stringify(item.counterexample)}`; if (item.status === 'formally_verified') return `定理 ${item.theorem || ''} 已通过 Lean 检查`; if (item.status === 'needs_clarification') return `缺少参数：${(item.missing_parameters || item.missing || []).join('、')}`; return item.detail || item.assumptions || JSON.stringify(item); }; panel.innerHTML = `<summary>受控验证证据 ${items.length ? `· ${items.length} 条` : '· 未启用'}</summary>${items.length ? items.map(item => `<article><b>${escapeHtml(item.evidence_type || item.status || '证据')}</b><small>${escapeHtml(item.status || '')} · ${escapeHtml(item.method || item.planned_action || '受控动作')}</small><p>${escapeHtml(detail(item))}</p>${item.assumptions ? `<p class="muted">范围：${escapeHtml(item.assumptions)}</p>` : ''}</article>`).join('') : '<span class="muted">本轮未启用受控验证，回答数学正确性仍未验证。</span>'}`; }
 async function renderAgentTaskEvents(requestId) { let panel = $('agentTaskEvents'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentTaskEvents'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } if (!requestId) { panel.innerHTML = '<summary>Agent 过程 · 未记录</summary>'; return; } try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '任务事件读取失败'); panel.innerHTML = `<summary>Agent 过程 · ${data.total || 0} 个阶段</summary>${(data.items || []).map(item => `<article><b>${escapeHtml(item.stage)}</b><small>${escapeHtml(item.status)} · ${escapeHtml(item.created_at || '')}</small>${item.detail ? `<p>${escapeHtml(item.detail)}</p>` : ''}</article>`).join('') || '<span class="muted">暂无任务事件。</span>'}`; } catch (error) { panel.innerHTML = `<summary>Agent 过程 · 暂不可用</summary><span class="muted">${escapeHtml(error.message)}</span>`; } }
-function ensureAnswerFeedback() { if ($('answerFeedback')) return; const panel = document.createElement('div'); panel.id = 'answerFeedback'; panel.className = 'answer-feedback'; panel.innerHTML = '<span>这份回答有帮助吗？</span><button type="button" data-rating="5">有帮助</button><button type="button" data-rating="2">需改进</button><textarea aria-label="回答反馈" placeholder="可选：指出需要改进的地方"></textarea><output></output>'; $('answer').parentElement?.appendChild(panel); panel.querySelectorAll('[data-rating]').forEach(button => button.addEventListener('click', () => submitAnswerFeedback(Number(button.dataset.rating)))); }
+function ensureAnswerFeedback() { if ($('answerFeedback')) return; const panel = document.createElement('div'); panel.id = 'answerFeedback'; panel.className = 'answer-feedback'; panel.innerHTML = '<span>这份回答有帮助吗？</span><button type="button" data-rating="5">有帮助</button><button type="button" data-rating="2">需改进</button><textarea aria-label="回答反馈" placeholder="可选：指出需要改进的地方"></textarea><output></output>'; $('answer').parentElement?.appendChild(panel); panel.querySelectorAll('[data-rating]').forEach(button => button.addEventListener('click', () => submitAnswerFeedback(Number(button.dataset.rating)))); syncAnswerFeedback(); }
+function syncAnswerFeedback() { const panel = $('answerFeedback'); if (!panel) return; const answerId = lastAskResult?.answer_id; panel.hidden = !answerId; if (!answerId) return; if (panel.dataset.answerId !== String(answerId)) { panel.dataset.answerId = String(answerId); panel.querySelectorAll('button').forEach(button => { button.disabled = false; }); panel.querySelector('textarea').value = ''; panel.querySelector('output').textContent = ''; } }
 async function submitAnswerFeedback(rating) { const panel = $('answerFeedback'); const answerId = lastAskResult?.answer_id; if (!answerId) { panel.querySelector('output').textContent = '当前回答尚未保存，暂不能提交反馈。'; return; } panel.querySelectorAll('button').forEach(button => { button.disabled = true; }); try { const response = await fetch(`${API}/ai/answers/${answerId}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rating, feedback: panel.querySelector('textarea').value.trim() || null }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '提交失败'); panel.querySelector('output').textContent = '感谢反馈，已记录。'; } catch (error) { panel.querySelector('output').textContent = error.message; panel.querySelectorAll('button').forEach(button => { button.disabled = false; }); } }
-function renderProof(data) { const status = data.valid ? '通过' : '需要修改'; const source = data.review_source === 'local_rule_fallback' ? '本地结构审查（非数学正确性验证）' : '模型辅助审查'; const steps = (data.steps || []).map((s, i) => `<article class="proof-step ${s.status === 'valid' ? 'is-valid' : 'is-error'}"><div class="step-mark">${s.status === 'valid' ? '✓' : '!'}</div><div><div class="step-top"><b>步骤 ${escapeHtml(String(s.step || i + 1))}</b><span>${escapeHtml(s.error_type || 'none')}</span></div><p>${escapeHtml(s.text || '')}</p><small>${escapeHtml(s.reason || '')}</small></div></article>`).join(''); const list = (title, items) => items?.length ? `<div class="proof-notes"><b>${title}</b><ul>${items.map(x => `<li>${escapeHtml(String(x))}</li>`).join('')}</ul></div>` : ''; $('proofResult').classList.remove('empty-state'); $('proofResult').innerHTML = `<div class="proof-summary"><div><span class="section-label">REVIEW RESULT</span><h3>${status}</h3><p>${escapeHtml(data.summary || '')}</p><small class="muted">审查方式：${source}</small></div><span class="review-badge ${data.valid ? 'good' : 'warn'}">${data.valid ? 'VALID' : 'REVIEW'}</span></div>${steps ? `<div class="proof-steps">${steps}</div>` : ''}${list('缺失条件', data.missing_assumptions)}${list('建议', data.suggestions)}`; typesetMath($('proofResult')); }
+function renderProof(data) {
+  const local = data.review_source === 'local_rule_fallback';
+  const status = local ? '结构检查完成 · 仍需复核' : (data.valid ? '模型审查未发现明显问题' : '建议修改');
+  const source = local ? '本地结构检查' : '模型辅助审查';
+  const errorNames = { missing_assumption: '条件缺失', invalid_inference: '推理缺口', wrong_theorem: '定理使用不当', undefined_symbol: '符号未定义', circular_reasoning: '循环论证', incomplete: '过程不完整', none: '未标记错误' };
+  const steps = (data.steps || []).map((step, index) => `<article class="proof-step ${step.status === 'valid' ? 'is-valid' : 'is-error'}"><div class="step-mark">${step.status === 'valid' ? '·' : '!'}</div><div><div class="step-top"><b>步骤 ${escapeHtml(String(step.step || index + 1))}</b><span>${escapeHtml(errorNames[step.error_type] || '待核对')}</span></div><p>${escapeHtml(step.text || '')}</p><small>${escapeHtml(step.reason || '')}</small></div></article>`).join('');
+  const list = (title, items) => items?.length ? `<div class="proof-notes"><b>${title}</b><ul>${items.map(item => `<li>${escapeHtml(String(item))}</li>`).join('')}</ul></div>` : '';
+  $('proofResult').classList.remove('empty-state');
+  $('proofResult').innerHTML = `<div class="proof-summary"><div><span class="section-label">REVIEW RESULT</span><h3>${status}</h3><p>${escapeHtml(data.summary || '')}</p><small class="muted">${source} · 数学正确性尚未形式验证</small></div><span class="review-badge ${data.valid ? 'good' : 'warn'}">${local ? '结构检查' : '模型审查'}</span></div>${steps ? `<div class="proof-steps">${steps}</div>` : ''}${list('需补充或核对的条件', data.missing_assumptions)}${list('修改建议', data.suggestions)}`;
+  typesetMath($('proofResult'));
+}
+
+function ensureTaskDetailPanel() { if ($('taskDetail')) return; const panel = document.createElement('details'); panel.id = 'taskDetail'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>任务详情</summary><div class="task-detail-info"><span class="muted">选择一个任务查看详情</span></div>'; $('graph').appendChild(panel); }
+async function retryTask(requestId) { try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/retry`, { method: 'POST' }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '重新执行失败'); showMessage(`任务已重新加入队列：${data.job_id}`); $('taskDetail').querySelector('[data-task-retry]')?.remove(); loadTaskHistory(); } catch (error) { showMessage(`重新执行失败：${error.message}`); } }
+function renderTaskDetail(task) { ensureTaskDetailPanel(); const result = task.result || {}; const degradation = (result.degradation || []).join(' → ') || '无'; $('taskDetail').open = true; $('taskDetail').querySelector('.task-detail-info').innerHTML = `<div><b>${escapeHtml(task.status || '未知')}</b> · ${escapeHtml(task.stage || '')}</div><div>请求 ID：<code>${escapeHtml(task.request_id || '')}</code></div><div>更新时间：${escapeHtml(task.updated_at || '—')}</div>${result.generation_elapsed_seconds != null ? `<div>生成耗时：${result.generation_elapsed_seconds}s / 预算 ${result.generation_budget_seconds || '—'}s</div>` : ''}<div>降级链路：${escapeHtml(degradation)}</div>${task.error_detail || task.detail ? `<div class="task-error">错误：${escapeHtml(task.error_detail || task.detail)}</div>` : ''}`; }
 async function requestAskStream(question, signal, requestId = crypto.randomUUID()) { let lastError; for (let attempt = 0; attempt < 2; attempt += 1) { try { const response = await fetch(`${API}/ai/ask-stream?request_id=${encodeURIComponent(requestId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, agent_mode: Boolean($('agentMode')?.checked) }), signal }); if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); } const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '', result = null; $('answer').classList.remove('empty-state'); if (attempt === 0) $('answer').textContent = ''; while (true) { const chunk = await reader.read(); if (chunk.done) break; buffer += decoder.decode(chunk.value, { stream: true }); const frames = buffer.split('\n\n'); buffer = frames.pop(); for (const frame of frames) { const dataLine = frame.split('\n').find(line => line.startsWith('data: ')); if (!dataLine) continue; const data = JSON.parse(dataLine.slice(6)); const eventId = frame.split('\n').find(line => line.startsWith('id: ')); if (eventId) $('answer').dataset.lastEventId = eventId.slice(4); if (frame.includes('event: progress')) $('answerStatus').textContent = data.stage; if (frame.includes('event: token')) { $('answer').textContent += data.text || ''; $('answerStatus').textContent = '正在输出'; } if (frame.includes('event: error')) throw new Error(data.detail || '生成失败'); if (frame.includes('event: result')) result = data; } } if (result) return result; throw new Error('流式连接中断'); } catch (error) { if (error.name === 'AbortError' || attempt === 1) throw error; lastError = error; $('answerStatus').textContent = '连接中断，正在恢复…'; await new Promise(resolve => setTimeout(resolve, 800)); } } throw lastError || new Error('流式连接失败'); }
 
 async function ask(event) {
@@ -89,6 +104,7 @@ async function ask(event) {
   } finally {
     clearTimeout(timeout);
     askController = null;
+    window.MathNotes?.sync();
     $('askButton').disabled = false;
     $('askButton').innerHTML = '开始推理 <span>→</span>';
     $('cancelAskButton').classList.add('hidden');
@@ -147,6 +163,7 @@ async function generateRelatedGraph() {
     $('graphEditorPanel').open = false;
     renderConcepts(data.concepts);
     renderGraph(data.knowledge_graph);
+    window.MathWorkspace?.showView('graph');
     document.querySelector('#graph').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (error) {
     $('graphStatus').textContent = '生成失败';
@@ -253,6 +270,7 @@ function initKnowledgeLibrary() {
       question.value = prefix + '请结合知识点“' + item.name + '”继续讲解。';
       question.focus();
       showMessage('已将“' + item.name + '”带入当前对话输入框。');
+      window.MathWorkspace?.setMode('explain');
       document.querySelector('#ask')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     detail.querySelector('[data-library-network]').onclick = async event => {
@@ -266,6 +284,7 @@ function initKnowledgeLibrary() {
         renderGraph(network);
         $('graphStatus').textContent = '已加载：' + item.name + ' · ' + network.nodes.length + ' 个节点';
         detail.querySelector('.library-detail-network').textContent = '已加载 ' + network.nodes.length + ' 个节点、' + network.edges.length + ' 条关系。';
+        window.MathWorkspace?.showView('graph');
         document.querySelector('#graph')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
         detail.querySelector('.library-detail-network').textContent = '关系网络暂不可用：' + error.message;
@@ -320,7 +339,7 @@ async function loadRetryJobs() { let panel = $('retryJobs'); if (!panel) { panel
 async function loadCacheStatus() { let panel = $('cacheStatus'); if (!panel) { panel = document.createElement('details'); panel.id = 'cacheStatus'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>答案缓存</summary><div class="cache-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/cache`); const data = await response.json(); if (!response.ok) throw new Error(); panel.querySelector('.cache-info').innerHTML = `<span>${data.entries} 条缓存 · 命中率 ${data.hit_rate == null ? '—' : `${Math.round(data.hit_rate * 100)}%`}</span><button type="button" id="clearAnswerCache">清空答案缓存</button>`; $('clearAnswerCache').onclick = async () => { await fetch(`${API}/ai/cache`, { method: 'DELETE' }); showMessage('答案缓存已清空。'); loadCacheStatus(); }; } catch (error) { panel.querySelector('.cache-info').textContent = '缓存状态暂不可用'; } }
 async function loadHealthMetrics() { let panel = $('healthMetrics'); if (!panel) { panel = document.createElement('details'); panel.id = 'healthMetrics'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>AI 性能监控</summary><div class="health-info"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/health`); const data = await response.json(); if (!response.ok) throw new Error(); const queue = Object.entries(data.retry_queue || {}).map(([status, count]) => `${status} ${count}`).join(' · ') || '无任务'; const duration = data.average_duration_seconds, firstToken = data.average_first_token_seconds; const providers = data.providers || {}; const labels = { primary: '主模型', backup: '备用模型' }; const states = { healthy: '正常', degraded: '异常', unknown: '未使用' }; const providerText = ['primary', 'backup'].map(name => { const item = providers[name] || {}; const state = states[item.state] || item.state || '未知'; const detail = item.last_error ? `：${escapeHtml(String(item.last_error).slice(0, 100))}` : ''; return `<span class="provider-status provider-${escapeHtml(item.state || 'unknown')}">${labels[name]} ${state}（成功 ${item.successes || 0} / 失败 ${item.failures || 0}）${detail}</span>`; }).join(''); const config = data.primary_model_configured ? `模型 ${escapeHtml(data.primary_model || '未知')}` : '<b class="health-warning">主模型密钥未配置</b>'; const circuitState = data.model_circuit?.state || '未知'; const circuitLabel = { open: '熔断中', half_open: '恢复探测中', closed: '正常' }[circuitState] || circuitState; const warning = duration > 20 || firstToken > 3 ? '<em class="health-warning">⚠ 检测到慢请求</em>' : ''; panel.querySelector('.health-info').innerHTML = `<div>成功率 ${data.success_rate == null ? '—' : `${Math.round(data.success_rate * 100)}%`} · 平均响应 ${duration == null ? '—' : `${duration}s`} · 首 token ${firstToken == null ? '—' : `${firstToken}s`} · 慢请求 ${data.slow_requests || 0} · 队列 ${escapeHtml(queue)}</div><div class="provider-status-list">${providerText}</div><div class="provider-config">${config} · ${escapeHtml(circuitLabel)}${warning ? ` · ${warning}` : ''}</div>`; } catch (error) { panel.querySelector('.health-info').textContent = '性能指标暂不可用'; } }
 async function loadTaskHistory() { let panel = $('taskHistory'); if (!panel) { panel = document.createElement('details'); panel.id = 'taskHistory'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>最近问答任务</summary><div class="task-list"></div>'; $('graph').appendChild(panel); } try { const response = await fetch(`${API}/ai/tasks?limit=10`); const data = await response.json(); if (!response.ok) throw new Error(); const names = { queued: '准备中', retrieving: '检索中', generating: '生成中', degraded: '降级中', succeeded: '已完成', failed: '失败', cancelled: '已取消' }; panel.querySelector('.task-list').innerHTML = (data.items || []).map(item => `<div class="task-item"><span><b>${escapeHtml((item.question || '').slice(0, 48))}</b><small>${escapeHtml(names[item.status] || item.status)} · ${escapeHtml(item.stage || '')}</small></span><button type="button" data-task-id="${escapeHtml(item.request_id)}">查看</button></div>`).join('') || '<span class="muted">暂无任务记录</span>'; panel.querySelectorAll('[data-task-id]').forEach(button => button.onclick = () => restoreTask(button.dataset.taskId)); } catch (error) { panel.querySelector('.task-list').textContent = '任务历史暂不可用'; } }
-async function restoreTask(requestId) { try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`); const task = await response.json(); if (!response.ok) throw new Error(task.detail || '任务读取失败'); if (!task.result?.answer) { $('answerStatus').textContent = task.stage || task.status; showMessage(`任务当前状态：${task.stage || task.status}。结果将在任务完成后可恢复。`); return; } lastAskResult = task.result; renderAnswer(task.result.answer); renderConcepts(task.result.concepts); if (task.result.knowledge_graph) renderGraph(task.result.knowledge_graph); $('answerStatus').textContent = '已从任务历史恢复'; document.querySelector('#answer')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (error) { showMessage(`任务恢复失败：${error.message}`); } }
+async function restoreTask(requestId) { try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}`); const task = await response.json(); if (!response.ok) throw new Error(task.detail || '任务读取失败'); if (!task.result?.answer) { $('answerStatus').textContent = task.stage || task.status; showMessage(`任务当前状态：${task.stage || task.status}。结果将在任务完成后可恢复。`); return; } lastAskResult = task.result; renderAnswer(task.result.answer); renderConcepts(task.result.concepts); if (task.result.knowledge_graph) renderGraph(task.result.knowledge_graph); $('answerStatus').textContent = '已从任务历史恢复'; window.MathWorkspace?.setMode('explain'); document.querySelector('#answer')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (error) { showMessage(`任务恢复失败：${error.message}`); } }
 async function lookupRequestTrace() { const input = $('traceRequestId'); const output = $('traceResult'); const requestId = input.value.trim(); if (!requestId) { output.textContent = '请输入 request_id'; return; } output.textContent = '查询中…'; try { const response = await fetch(`${API}/ai/requests/${encodeURIComponent(requestId)}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '查询失败'); output.innerHTML = data.items.map(item => `<div class="trace-row"><b>${escapeHtml(item.status)}</b><span>${item.duration_seconds == null ? '—' : `${item.duration_seconds}s`}</span><span>${escapeHtml(item.error_code || 'success')}</span><small>${escapeHtml(item.created_at || '')}</small></div>`).join(''); } catch (error) { output.textContent = error.message; } }
 async function loadAnswerStats() { let panel = $('answerStats'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerStats'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>答案质量统计</summary><div class="health-info"></div>'; $('graph').appendChild(panel); } try { const data = await (await fetch(`${API}/ai/answers/stats`)).json(); const levels = data.quality_levels || {}; const sources = Object.entries(data.by_source || {}).map(([name, value]) => `${escapeHtml(name)} ${Math.round((value.average_quality || 0) * 100)}%/${value.count}次`).join(' · '); panel.querySelector('.health-info').innerHTML = `回答 ${data.total || 0} · 反馈 ${data.feedback_count || 0} · 平均评分 ${data.average_rating ?? '—'}<br>质量：优 ${levels.good || 0} · 部分 ${levels.partial || 0} · 弱 ${levels.weak || 0}${sources ? `<br>来源：${sources}` : ''}`; } catch (error) { panel.querySelector('.health-info').textContent = '质量统计暂不可用'; } }
 async function loadAnswerHistory() { let panel = $('answerHistory'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerHistory'; panel.className = 'retry-jobs'; panel.innerHTML = '<summary>答案历史</summary><div class="answer-history-controls"><select id="answerHistoryLevel"><option value="">全部质量</option><option value="good">优质</option><option value="partial">部分</option><option value="weak">低质量</option></select><input id="answerHistorySource" placeholder="模型来源"><button type="button" id="refreshAnswerHistory">刷新</button><a id="answerHistoryExport" target="_blank">导出 CSV</a></div><div class="template-list" id="answerHistoryList"></div><pre class="answer-history-detail" id="answerHistoryDetail"></pre>'; $('graph').appendChild(panel); $('refreshAnswerHistory').onclick = loadAnswerHistory; $('answerHistoryLevel').onchange = loadAnswerHistory; } try { const query = new URLSearchParams({limit:'12'}); const level = $('answerHistoryLevel').value, source = $('answerHistorySource').value.trim(); if (level) query.set('level', level); if (source) query.set('source', source); $('answerHistoryExport').href = `${API}/ai/answers/export?${query}`; const response = await fetch(`${API}/ai/answers?${query}`); const data = await response.json(); if (!response.ok) throw new Error(); $('answerHistoryList').innerHTML = (data.items || []).map(item => `<button type="button" class="template-item" data-answer-id="${item.id}"><span><b>${escapeHtml(item.question.slice(0, 42))}</b><small>${escapeHtml(item.answer_source)} · 质量 ${Math.round((item.quality_score || 0) * 100)}%</small></span><small>${escapeHtml(item.created_at)}</small></button>`).join('') || '<span class="muted">暂无历史回答</span>'; $('answerHistoryList').querySelectorAll('[data-answer-id]').forEach(button => button.onclick = () => loadAnswerDetail(button.dataset.answerId)); } catch (error) { $('answerHistoryList').textContent = '答案历史暂不可用'; } }
@@ -417,15 +436,18 @@ async function batchSaveCandidates() {
 }
 
 function renderGraph(graph) {
-  const nodes = (graph.nodes || []).slice(0, 28), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target })).slice(0, 45);
+  const nodes = (graph.nodes || []), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target }));
   activeGraphContext = { nodes, edges };
-  if (!nodes.length) { $('graphCanvas').innerHTML = '<div class="empty-state">知识图谱暂无数据</div>'; return; }
-  const width = 1000, height = 420, center = { x: width / 2, y: height / 2 }, positions = {};
-  nodes.forEach((node, index) => { const ring = index < 5 ? 0 : index < 14 ? 1 : 2, count = ring === 0 ? Math.min(nodes.length, 5) : ring === 1 ? Math.min(Math.max(nodes.length - 5, 0), 9) : Math.max(nodes.length - 14, 1), offset = ring === 0 ? index : ring === 1 ? index - 5 : index - 14, angle = (Math.PI * 2 * offset / count) - Math.PI / 2 + (ring ? .18 : 0), radius = [90, 160, 245][ring], jitter = (graphHash(node.id) % 18) - 9; positions[node.id] = { x: center.x + Math.cos(angle) * (radius + jitter), y: center.y + Math.sin(angle) * (radius + jitter), ring }; });
-  const particles = Array.from({ length: 46 }, (_, index) => { const seed = graphHash(`particle-${index}`), x = 18 + (seed % 965), y = 14 + ((seed >>> 9) % 390), size = 1 + ((seed >>> 17) % 3); return `<circle class="ambient-particle" cx="${x}" cy="${y}" r="${size / 2}" style="animation-delay:-${(seed % 6000) / 1000}s"/>`; }).join('');
+  if (!nodes.length) { $('graphStatus').textContent = '暂无节点'; $('graphCanvas').innerHTML = '<div class="graph-empty"><span aria-hidden="true">◎</span><strong>关系尚未成形</strong><p>检索已有知识点，或从一次对话生成候选图谱。</p></div>'; window.GraphExplorer?.refresh(); return; }
+  const outerRing = Math.max(0, Math.floor((nodes.length - 15) / 16));
+  const outerRadius = 245 + outerRing * 85;
+  const width = Math.max(1000, outerRadius * 2 + 220), height = Math.max(620, outerRadius * 2 + 140), center = { x: width / 2, y: height / 2 }, positions = {};
+  nodes.forEach((node, index) => { const ring = index < 5 ? 0 : index < 14 ? 1 : 2 + Math.floor((index - 14) / 16), count = ring === 0 ? Math.min(nodes.length, 5) : ring === 1 ? Math.min(Math.max(nodes.length - 5, 0), 9) : Math.min(Math.max(nodes.length - 14 - (ring - 2) * 16, 1), 16), offset = ring === 0 ? index : ring === 1 ? index - 5 : (index - 14) % 16, angle = (Math.PI * 2 * offset / count) - Math.PI / 2 + (ring ? .18 : 0), radius = ring < 2 ? [90, 160][ring] : 245 + (ring - 2) * 85, jitter = (graphHash(node.id) % 18) - 9; positions[node.id] = { x: center.x + Math.cos(angle) * (radius + jitter), y: center.y + Math.sin(angle) * (radius + jitter), ring }; });
+  const particles = Array.from({ length: 160 }, (_, index) => { const seed = (Math.imul(index + 1, 2654435761) ^ Math.imul(index + 37, 1597334677)) >>> 0, x = 18 + (seed % (width - 35)), y = 14 + ((seed >>> 9) % (height - 28)), size = 1 + ((seed >>> 17) % 3); return `<circle class="ambient-particle" cx="${x}" cy="${y}" r="${size / 2}" style="animation-delay:-${(seed % 6000) / 1000}s"/>`; }).join('');
   const edgeMarkup = edges.filter(edge => positions[edge.source] && positions[edge.target]).map((edge, index) => { const a = positions[edge.source], b = positions[edge.target], color = typeColor[nodes.find(n => n.id === edge.source)?.type] || '#55d8ff', path = `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)}`; return `<g class="graph-edge"><path d="${path}"/><path class="edge-glow" d="${path}"/><circle class="edge-pulse" r="2.2" fill="${color}"><animateMotion dur="${3.8 + (index % 4) * .7}s" repeatCount="indefinite" path="${path}"/></circle></g>`; }).join('');
-  const nodeMarkup = nodes.map((node, index) => { const p = positions[node.id], color = typeColor[node.type] || typeColor.concept, radius = p.ring === 0 ? 16 : p.ring === 1 ? 13 : 10, labelY = p.y + radius + 19; return `<g class="graph-node graph-node-${escapeHtml(node.type || 'concept')}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(node.name)} 在聊天中的出处" data-graph-node-id="${escapeHtml(String(node.id))}" style="--node-color:${color};animation-delay:${index * 65}ms"><circle class="node-orbit" cx="${p.x}" cy="${p.y}" r="${radius + 10}"/><circle class="node-halo" cx="${p.x}" cy="${p.y}" r="${radius + 5}"/><circle class="node-core" cx="${p.x}" cy="${p.y}" r="${radius}"/><circle class="node-specular" cx="${p.x - radius * .28}" cy="${p.y - radius * .32}" r="${Math.max(2, radius * .22)}"/><text x="${p.x}" y="${labelY}" text-anchor="middle">${escapeHtml(node.name).slice(0, 14)}</text><title>${escapeHtml(node.name)} · ${escapeHtml(node.type || 'concept')} · 点击回看聊天出处</title></g>`; }).join('');
+  const nodeMarkup = nodes.map((node, index) => { const p = positions[node.id], color = typeColor[node.type] || typeColor.concept, radius = p.ring === 0 ? 16 : p.ring === 1 ? 13 : 10, labelY = p.y + radius + 19; return `<g class="graph-node graph-node-${escapeHtml(node.type || 'concept')}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(node.name)} 在聊天中的出处" data-graph-node-id="${escapeHtml(String(node.id))}" style="--node-color:${color};animation-delay:${Math.min(index * 35, 700)}ms"><circle class="node-orbit" cx="${p.x}" cy="${p.y}" r="${radius + 10}"/><circle class="node-halo" cx="${p.x}" cy="${p.y}" r="${radius + 5}"/><circle class="node-core" cx="${p.x}" cy="${p.y}" r="${radius}"/><circle class="node-specular" cx="${p.x - radius * .28}" cy="${p.y - radius * .32}" r="${Math.max(2, radius * .22)}"/><text x="${p.x}" y="${labelY}" text-anchor="middle">${escapeHtml(node.name).slice(0, 14)}</text><title>${escapeHtml(node.name)} · ${escapeHtml(node.type || 'concept')} · 点击回看聊天出处</title></g>`; }).join('');
   $('graphCanvas').innerHTML = `<div class="graph-vignette"></div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="数学知识图谱，包含 ${nodes.length} 个知识点和 ${edges.length} 条关系"><defs><radialGradient id="graph-depth" cx="50%" cy="44%"><stop offset="0" stop-color="#163b59"/><stop offset=".5" stop-color="#0b1e32"/><stop offset="1" stop-color="#07111f"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#graph-depth)"/>${particles}<g class="graph-rings"><circle cx="${center.x}" cy="${center.y}" r="90"/><circle cx="${center.x}" cy="${center.y}" r="160"/><circle cx="${center.x}" cy="${center.y}" r="245"/></g><g class="graph-edges">${edgeMarkup}</g><g class="graph-nodes">${nodeMarkup}</g></svg>`;
+  window.GraphExplorer?.refresh();
   $('graphCanvas').querySelectorAll('[data-graph-node-id]').forEach(element => {
     const node = nodes.find(item => String(item.id) === element.dataset.graphNodeId);
     const showNode = () => { openGraphConceptCard(node); };
@@ -435,6 +457,14 @@ function renderGraph(graph) {
   $('graphStatus').textContent = `${nodes.length} 个节点 · ${edges.length} 条关系`;
   $('legend').innerHTML = '<span class="legend-concept">概念</span><span class="legend-theorem">定理</span><span class="legend-property">性质</span><span class="legend-method">方法</span><em>点击节点查看知识卡片</em>';
 }
+
+let graphWasCompact = window.matchMedia('(max-width: 540px)').matches;
+window.addEventListener('resize', () => {
+  const compact = window.matchMedia('(max-width: 540px)').matches;
+  if (compact === graphWasCompact) return;
+  graphWasCompact = compact;
+  if (activeGraphContext.nodes.length) renderGraph(activeGraphContext);
+});
 
 function highlightConversationMessages(conceptName) {
   const needle = String(conceptName || '').trim().toLocaleLowerCase();
@@ -457,6 +487,7 @@ async function loadOperationsDashboard() { let panel = $('operationsDashboard');
 async function openGraphConceptCard(concept) {
   const card = $('graphConceptCard');
   if (!card || !concept) return;
+  const trigger = document.activeElement;
   initGraphCardDrag(card);
   const sourceMessages = conversationMatches(concept.name);
   const nodeEvidence = activeGraphEvidence.filter(item => item.subject_type === 'node' && String(item.subject_key) === String(concept.id));
@@ -473,9 +504,14 @@ async function openGraphConceptCard(concept) {
     }).join('')
     : '<span>暂无当前图谱关系</span>';
   card.classList.remove('hidden');
+  card.dataset.conceptId = String(concept.id);
   const evidenceMarkup = nodeEvidence.length ? nodeEvidence.map(item => `<blockquote><small>消息 ${escapeHtml(String(item.source_message_id || ''))} · ${escapeHtml(item.review_status || '未审核')}</small>${escapeHtml(item.excerpt || '')}</blockquote>`).join('') : '';
-  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4>${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
-  card.querySelector('.graph-card-close').onclick = () => card.classList.add('hidden');
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.setAttribute('aria-labelledby', 'graphCardTitle');
+  const closeCard = () => { card.classList.add('hidden'); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
+  card.querySelector('.graph-card-close').onclick = closeCard;
+  card.onkeydown = (event) => { if (event.key === 'Escape') { event.preventDefault(); closeCard(); } };
+  card.querySelector('.graph-card-close').focus({ preventScroll: true });
   try {
     const [response, pathResponse, progressResponse] = await Promise.all([
       fetch(`${API}/concepts/${encodeURIComponent(concept.id)}/relations`),
@@ -483,18 +519,25 @@ async function openGraphConceptCard(concept) {
       fetch(`${API}/concepts/learning-progress`),
     ]);
     const [data, path, progress] = await Promise.all([response.json(), pathResponse.json(), progressResponse.json()]);
+    if (card.dataset.conceptId !== String(concept.id)) return;
     if (!response.ok) throw new Error(data.detail || '关联读取失败');
     const links = [...(data.prerequisites || []), ...(data.next_concepts || []), ...(data.related || [])].slice(0, 8);
     card.querySelector('.graph-card-links').innerHTML = links.length
       ? links.map(item => `<span>${escapeHtml(item.name)} · ${escapeHtml(item.relation || 'related')}</span>`).join('')
       : '<span>暂无已保存的直接关联</span>';
     const pathElement = card.querySelector('.graph-card-path');
-    const completedIds = new Set(progress.completed_concept_ids || []);
-    const progressById = new Map((progress.items || []).map(item => [Number(item.concept_id), item]));
-    const statusLabel = { completed: '独立作答已掌握', learning: '学习中', unverified: '待验证' };
-    pathElement.innerHTML = pathResponse.ok
-      ? `<b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><div>${(path.steps || []).map((item, index) => { const state = progressById.get(Number(item.id)); const status = state?.status || 'unverified'; return `<span class="learning-step${status === 'completed' ? ' is-complete' : ''}" title="${escapeHtml(statusLabel[status] || status)}">${status === 'completed' ? '✓ ' : ''}${index + 1}. ${escapeHtml(item.name)}<small>${escapeHtml(statusLabel[status] || statusLabel.unverified)}</small></span>`; }).join('<i>→</i>')}${path.cycle_detected ? '<small>已忽略循环前置关系</small>' : ''}</div>`
-      : '<b>推荐学习顺序</b><span>暂时无法生成路径</span>';
+    const statusLabel = {stable:'稳定掌握',independent_complete:'独立完成 · 待重测',hinted_complete:'提示后完成',needs_review:'需要复习',unverified:'尚无审核证据'};
+    pathElement.innerHTML = pathResponse.ok ? `<b>推荐学习路径</b><small class="learning-evidence-note">依据已保存的前置关系和最新作答；历史完成不等于当前稳定掌握。</small><div class="path-step-list">${(path.steps || []).map((item,index)=>`<article class="path-study-step${item.id===path.recommended_concept_id?' recommended':''}"><div><b>${index+1}. ${escapeHtml(item.name)}</b><small>${statusLabel[item.current_state] || '尚无审核证据'}${item.id===path.recommended_concept_id?' · 建议从这里开始':''}</small></div><p>${escapeHtml(item.reason)}</p><button type="button" data-path-study="${item.id}">学习这一节 ↗</button>${(item.problems || []).map(problem=>`<button type="button" data-path-practice="${problem.id}">练习：${escapeHtml(problem.title)} ↗</button>`).join('')}${item.relation_ids?.length?`<small>关系记录：${item.relation_ids.map(id=>`#${id}`).join('、')}</small>`:''}</article>`).join('')}</div>${path.cycle_detected?'<small>前置关系存在循环，已终止重复遍历；建议复核图谱。</small>':''}` : '<b>推荐学习路径</b><span>暂时无法生成路径</span>';
+    pathElement.querySelectorAll('[data-path-study]').forEach(button=>button.onclick=()=>{
+      const item=path.steps.find(x=>String(x.id)===button.dataset.pathStudy);
+      closeCard(); MathWorkspace.setMode('explain'); MathWorkspace.showView('ask');
+      $('question').value=`请讲解“${item.name}”的定义、适用条件和一个例子，说明它对学习“${path.concept.name}”的作用。`;
+      $('question').dispatchEvent(new Event('input',{bubbles:true})); $('question').focus();
+    });
+    pathElement.querySelectorAll('[data-path-practice]').forEach(button=>button.onclick=async()=>{
+      closeCard();MathWorkspace.showView('practice');MathPractice.clearRevision();$('practiceProblem').value=button.dataset.pathPractice;$('practiceAnswer').value='';$('practiceHistory').hidden=false;
+      await loadPracticeProblem();$('practiceStatus').textContent=`依据“${path.concept.name}”的学习路径推荐；提交作答后再确认理解。`;
+    });
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
   }
@@ -529,14 +572,15 @@ async function loadLearningPulse() {
     if (!response.ok) throw new Error(data.detail || '读取失败');
     const summary = data.summary || {};
     panel.querySelector('.learning-pulse-track i').style.width = `${summary.percent || 0}%`;
-    panel.querySelector('strong').textContent = summary.total ? `已掌握 ${summary.completed || 0} / ${summary.total} · ${summary.percent || 0}%` : '知识库尚未加入可学习的知识点';
+    panel.querySelector('strong').textContent = summary.total ? `历史独立完成 ${summary.completed || 0} / ${summary.total} · ${summary.percent || 0}%` : '知识库尚未加入可学习的知识点';
     const next = panel.querySelector('.learning-pulse-next');
     const concepts = summary.next_concepts || [];
-    next.innerHTML = concepts.length ? concepts.map(item => `<button type="button" data-pulse-concept="${item.id}">下一步：${escapeHtml(item.name)}</button>`).join('') : '<span class="muted">已完成当前知识库</span>';
+    next.innerHTML = concepts.length ? concepts.map(item => `<button type="button" data-pulse-concept="${item.id}">下一步：${escapeHtml(item.name)}</button>`).join('') : `<span class="muted">${summary.total ? '已独立完成当前知识库，仍需延迟复习' : '添加知识点后，学习路径会在这里展开'}</span>`;
     next.querySelectorAll('[data-pulse-concept]').forEach(button => button.addEventListener('click', async () => {
       const response = await fetch(`${API}/concepts/${encodeURIComponent(button.dataset.pulseConcept)}`);
       const concept = await response.json();
       if (!response.ok || !concept.id) { showMessage('知识点暂不可用。'); return; }
+      window.MathWorkspace?.showView('graph');
       $('graph').scrollIntoView({ behavior: 'smooth', block: 'start' });
       openGraphConceptCard(concept);
     }));
@@ -648,8 +692,8 @@ function ensureUtilityDrawer() {
   drawer.className = 'utility-drawer';
   drawer.innerHTML = '<summary><span><b>更多工具</b><small>运维、历史、模板与审核功能</small></span><em>按需展开</em></summary><div class="utility-grid"></div>';
   const grid = drawer.querySelector('.utility-grid');
-  [...graph.children].filter(element => element.matches('details.retry-jobs, details.graph-history, details.graph-editor')).forEach(element => grid.appendChild(element));
-  graph.appendChild(drawer);
+  [...graph.children].filter(element => element.matches('details.retry-jobs')).forEach(element => grid.appendChild(element));
+  $('managementTools').appendChild(drawer);
 }
 ensureUtilityDrawer();
 ensureConceptSearch();
@@ -677,6 +721,21 @@ $('askForm').addEventListener('submit', ask);
 // Conversation workspace: the legacy /ai/ask flow remains available, while the
 // primary UI writes each turn to a durable context-aware conversation.
 let activeConversationId = Number(localStorage.getItem('math-agent-conversation-id')) || null;
+let conversationSwitchBusy = false;
+function setConversationSwitchBusy(busy) {
+  conversationSwitchBusy = busy;
+  ['newConversation', 'askButton', 'renameConversation', 'deleteConversation'].forEach(id => { $(id).disabled = busy || Boolean(askController); });
+}
+
+
+const welcomeMarkup = `<div class="chat-welcome"><span>∫</span><div class="chat-welcome-content"><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p><div class="prompt-gallery" aria-label="示例数学问题"><button type="button" data-example-prompt="证明连续映射把紧集映为紧集。"><small>01 / 拓扑</small><strong>连续映射如何保紧？</strong><em>展开证明 →</em></button><button type="button" data-example-prompt="为什么一致收敛的连续函数列，其极限函数仍连续？"><small>02 / 分析</small><strong>一致收敛为何保连续？</strong><em>梳理条件 →</em></button><button type="button" data-example-prompt="特征值相同的两个矩阵一定相似吗？请给出证明或反例。"><small>03 / 代数</small><strong>同特征值矩阵一定相似吗？</strong><em>寻找反例 →</em></button></div></div></div>`;
+
+$('chatTimeline').addEventListener('click', (event) => {
+  const example = event.target.closest('[data-example-prompt]');
+  if (!example) return;
+  $('question').value = example.dataset.examplePrompt;
+  $('question').focus();
+});
 
 function conversationTime(value) {
   if (!value) return '';
@@ -715,8 +774,9 @@ function renderConversation(data) {
   $('conversationTitle').textContent = data.conversation.title || '新的数学对话';
   const messages = data.messages || [];
   restoreConversationAnswer(messages);
+  window.MathWorkspace?.restoreContext(messages);
   if (!messages.length) {
-    $('chatTimeline').innerHTML = '<div class="chat-welcome"><span>∫</span><div><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p></div></div>';
+    $('chatTimeline').innerHTML = welcomeMarkup;
     return;
   }
   messages.forEach(message => appendChatMessage(message));
@@ -724,10 +784,11 @@ function renderConversation(data) {
 
 function clearRestoredAnswer() {
   lastAskResult = null;
+  syncAnswerFeedback();
   $('answer').classList.add('empty-state');
   $('answer').textContent = '你的数学解答会显示在这里。';
   $('answerStatus').textContent = '等待提问';
-  ['answerSources', 'agentEvidence', 'agentTaskEvents', 'formulaFixes', 'mathRenderError'].forEach(id => $(id)?.remove());
+  ['answerSources', 'agentEvidence', 'agentTaskEvents', 'formulaFixes', 'mathRenderError', 'answerStepEvidence'].forEach(id => $(id)?.remove());
   renderConcepts([]);
 }
 
@@ -751,7 +812,7 @@ function restoreConversationAnswer(messages) {
   showFormulaFixes(metadata.formula_fixes || []);
   renderConcepts(metadata.concepts || []);
   if (metadata.knowledge_graph) renderGraph(metadata.knowledge_graph);
-  $('answerStatus').textContent = '已恢复历史回答 · 数学正确性未验证';
+  $('answerStatus').textContent = '已恢复历史回答 · ' + (metadata.answer_source === 'exact_calculus_tool' ? '受限多项式精确计算' : metadata.teaching_mode === 'hint' ? '教学提示' : '数学正确性未验证');
 }
 
 async function loadConversationList() {
@@ -769,6 +830,8 @@ async function loadConversationList() {
 }
 
 async function selectConversation(conversationId) {
+  if (conversationSwitchBusy || askController) return null;
+  setConversationSwitchBusy(true);
   try {
     const response = await fetch(`${API}/conversations/${conversationId}`);
     const data = await response.json();
@@ -786,9 +849,12 @@ async function selectConversation(conversationId) {
     await loadConversationList();
     return true;
   } catch (error) { showMessage(`无法打开对话：${error.message}`); return null; }
+  finally { setConversationSwitchBusy(false); }
 }
 
 async function createConversation() {
+  if (conversationSwitchBusy || askController) return;
+  setConversationSwitchBusy(true);
   try {
     const response = await fetch(`${API}/conversations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
     const item = await response.json();
@@ -799,6 +865,7 @@ async function createConversation() {
     await loadConversationList();
     $('question').focus();
   } catch (error) { showMessage(`无法新建对话：${error.message}`); }
+  finally { setConversationSwitchBusy(false); }
 }
 
 async function ensureConversation() {
@@ -834,7 +901,7 @@ async function deleteActiveConversation() {
 }
 
 async function requestConversationStream(question, signal) {
-  const response = await fetch(`${API}/conversations/${activeConversationId}/messages/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: question, agent_mode: Boolean($('agentMode')?.checked) }), signal });
+  const response = await fetch(`${API}/conversations/${activeConversationId}/messages/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: question, teaching_mode: window.MathWorkspace?.mode === 'hint' ? 'hint' : 'explain', automatic_verification: Boolean($('agentMode')?.checked) }), signal });
   if (!response.ok) { const data = await response.json(); throw new Error(data.detail || '请求失败'); }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -875,13 +942,16 @@ async function requestConversationStream(question, signal) {
 async function conversationAsk(event) {
   event.preventDefault();
   const question = $('question').value.trim();
-  if (!question || !activeConversationId) return;
+  if (!question || !activeConversationId || conversationSwitchBusy || askController) return;
   clearMessage();
+  window.MathWorkspace?.rememberQuestion(question);
   askController = new AbortController();
+  setConversationSwitchBusy(false);
   $('askButton').disabled = true;
   $('askButton').innerHTML = '推理中 <span>···</span>';
   $('cancelAskButton').classList.remove('hidden');
   $('answerStatus').textContent = '结合上下文推理中';
+  if ($('answerFeedback')) $('answerFeedback').hidden = true;
   $('chatContextStatus').textContent = '正在保存并构建上下文…';
   try {
     const data = await requestConversationStream(question, askController.signal);
@@ -891,13 +961,15 @@ async function conversationAsk(event) {
     renderAgentEvidence(data.agent_tool_evidence);
     renderAgentTaskEvents(data.request_id);
     renderConcepts(data.concepts || []);
-    if (data.knowledge_graph) renderGraph(data.knowledge_graph);
+    if (data.knowledge_graph && data.teaching_mode !== 'hint') renderGraph(data.knowledge_graph);
     const completeness = data.answer_quality?.completeness_score ?? data.answer_quality?.score;
     const sourceStatus = {
       tool_boundary: (data.agent_tool_evidence || []).some(item => item.status === 'needs_clarification' || item.result?.status === 'needs_clarification') ? '等待补充条件' : '工具范围未覆盖',
       exact_calculus_tool: '本地精确计算完成 · 仅覆盖工具声明范围',
       polynomial_identity_tool: '多项式恒等式检查完成 · 仅覆盖工具声明范围',
       local_fallback: '本地数学推导完成',
+      tutor_hint: '一级提示已生成 · 供你继续尝试',
+      local_hint: '本地一级提示 · 供你继续尝试',
     };
     const controlledSource = ['tool_boundary', 'exact_calculus_tool', 'polynomial_identity_tool'].includes(data.answer_source);
     $('answerStatus').textContent = (sourceStatus[data.answer_source] || '本轮推理完成') + (controlledSource || completeness == null ? '' : ` · 完整度 ${Math.round(completeness * 100)}% · 数学正确性未验证`);
@@ -910,6 +982,8 @@ async function conversationAsk(event) {
     else { $('answerStatus').textContent = '生成失败'; showMessage(`暂时无法完成本轮对话：${error.message}`); }
   } finally {
     askController = null;
+    window.MathNotes?.sync();
+    setConversationSwitchBusy(false);
     $('askButton').disabled = false;
     $('askButton').innerHTML = '发送 <span>↑</span>';
     $('cancelAskButton').classList.add('hidden');
@@ -941,8 +1015,8 @@ async function loadPracticeProblem() {
     $('practicePrompt').innerHTML = problem ? `<b>${escapeHtml(problem.title)}</b>：${escapeHtml(problem.content)}${(problem.sources || []).length ? `<small class="practice-source">教材来源：${problem.sources.map(source => `${escapeHtml(source.document_title || '课程文档')} · ${escapeHtml(source.chapter || '未分章')} · 第 ${escapeHtml(String(source.page_start || '?'))} 页`).join('；')}</small>` : '<small class="practice-source">暂无已审核教材出处</small>'}` : '题目不存在';
     const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
     const history = await historyResponse.json();
-    $('practiceHistory').innerHTML = (history.items || []).length ? history.items.map(item => `<article class="practice-attempt"><div><b>${escapeHtml(item.correctness === 'unverified' ? '待审核' : item.correctness)}</b><small>${escapeHtml(item.created_at || '')}</small></div><p>${escapeHtml(item.answer)}</p>${item.feedback ? `<span>${escapeHtml(item.feedback)}</span>` : '<span class="muted">尚无审核反馈</span>'}${item.correctness === 'unverified' ? `<div class="attempt-review" data-attempt-id="${item.id}"><select aria-label="审核正确性"><option value="correct">正确</option><option value="partially_correct">部分正确</option><option value="incorrect">错误</option></select><input data-review-error placeholder="错误类型（可选）"><textarea data-review-feedback placeholder="给学生的反馈（可选）"></textarea><button type="button" data-review-submit>保存审核</button></div>` : ''}</article>`).join('') : '<span class="muted">暂无作答记录</span>';
-    $('practiceHistory').querySelectorAll('[data-review-submit]').forEach(button => button.addEventListener('click', () => reviewPracticeAttempt(button.closest('[data-attempt-id]'))));
+    window.MathPractice?.render(history.items || []);
+    window.MathReview?.load();
   } catch (error) { $('practiceStatus').textContent = `练习记录暂不可用：${error.message}`; }
 }
 
@@ -969,10 +1043,11 @@ async function submitPractice(event) {
   button.disabled = true;
   try {
     const independent = practiceHintLevel === 0 && $('practiceIndependent').checked;
-    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, hint_level: practiceHintLevel, independent }) });
+    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, hint_level: practiceHintLevel, independent, parent_attempt_id: window.MathPractice?.parentId || null }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '提交失败');
     $('practiceAnswer').value = '';
+    window.MathPractice?.clearRevision();
     $('practiceIndependent').checked = false;
     practiceHintLevel = 0;
     $('practiceStatus').textContent = '已记录：数学正确性未验证，等待审核反馈。';

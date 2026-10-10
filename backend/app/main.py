@@ -33,6 +33,9 @@ from app.models.security_event import SecurityEvent
 from app.models.ai_task_status import AITaskStatus
 from app.models.concept_learning_progress import ConceptLearningProgress
 from app.models.problem_attempt import ProblemAttempt
+from app.models.study_note import StudyNote
+from app.models.chunk_revision import ChunkRevision
+from app.models.learning_visit import LearningVisit
 from app.models.problem_hint import ProblemHint
 from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.problem_source import ProblemSource
@@ -49,6 +52,10 @@ from app.api.templates import router as template_router
 from app.api.maintenance import router as maintenance_router
 from app.api.conversations import router as conversations_router
 from app.api.problem_attempts import router as problem_attempt_router
+from app.api.learning import router as learning_router
+from app.api.notes import router as notes_router
+from app.api.textbooks import router as textbooks_router
+from app.api.learning_metrics import router as learning_metrics_router
 
 
 Base.metadata.create_all(
@@ -83,6 +90,10 @@ app.include_router(template_router)
 app.include_router(maintenance_router)
 app.include_router(conversations_router)
 app.include_router(problem_attempt_router)
+app.include_router(learning_router)
+app.include_router(notes_router)
+app.include_router(textbooks_router)
+app.include_router(learning_metrics_router)
 
 
 @app.get("/")

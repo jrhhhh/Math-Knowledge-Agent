@@ -7,6 +7,7 @@ import queue
 import threading
 from datetime import datetime, timezone
 from uuid import uuid4
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -17,6 +18,7 @@ from app.database import SessionLocal
 from app.models.conversation import Conversation, ConversationMessage, MessageConcept
 from app.models.concept import Concept
 from app.api.ai import AskRequest, _ask_impl, classify_ai_error, RequestCancelledError, set_task_status
+from app.ai.agent_controller import plan_next_action
 
 
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
@@ -36,6 +38,18 @@ class MessageCreate(BaseModel):
     content: str = Field(min_length=1, max_length=12000)
     agent_mode: bool = False
     agent_parameters: dict = Field(default_factory=dict)
+    teaching_mode: Literal["explain", "hint"] = "explain"
+    automatic_verification: bool = False
+
+
+def ask_request(payload: MessageCreate, prompt: str) -> AskRequest:
+    automatic = False
+    if payload.automatic_verification and payload.teaching_mode == "explain":
+        planned = plan_next_action(payload.content, evidence=[], iterations=0, parameters=payload.agent_parameters)
+        automatic = planned["action"] in {"exact_arithmetic", "exact_calculus", "polynomial_identity", "lean_check"}
+    return AskRequest(question=prompt, current_question=payload.content,
+                      agent_mode=(payload.agent_mode or automatic) and payload.teaching_mode != "hint",
+                      agent_parameters=payload.agent_parameters, teaching_mode=payload.teaching_mode)
 
 
 def get_db():
@@ -107,6 +121,8 @@ def persist_answer(conversation: Conversation, user_message: ConversationMessage
         metadata_json=json.dumps({key: result.get(key) for key in (
             "answer_source", "answer_quality", "knowledge_graph", "formula_fixes",
             "agent_tool_evidence", "knowledge_sources", "concepts",
+            "teaching_mode",
+            "answer_steps",
         )}, ensure_ascii=False),
     )
     db.add(assistant)
@@ -179,11 +195,12 @@ def delete_conversation(conversation_id: int, db: Session = Depends(get_db)):
 def create_message(conversation_id: int, payload: MessageCreate, db: Session = Depends(get_db)):
     conversation = get_conversation_or_404(conversation_id, db)
     content = payload.content.strip()
-    user_message = ConversationMessage(conversation_id=conversation.id, role="user", content=content)
+    user_message = ConversationMessage(conversation_id=conversation.id, role="user", content=content,
+                                      metadata_json=json.dumps({"teaching_mode": payload.teaching_mode}))
     db.add(user_message)
     db.commit()
     prompt = build_context_prompt(conversation, content, db)
-    result = _ask_impl(AskRequest(question=prompt, current_question=content, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, request_id=uuid4().hex[:12])
+    result = _ask_impl(ask_request(payload, prompt), db, request_id=uuid4().hex[:12])
     assistant = persist_answer(conversation, user_message, result, db)
     return {"user_message": serialize_message(user_message), "assistant_message": serialize_message(assistant), "result": result}
 
@@ -198,7 +215,8 @@ async def stream_message(conversation_id: int, payload: MessageCreate):
         try:
             conversation = get_conversation_or_404(conversation_id, db)
             content = payload.content.strip()
-            user_message = ConversationMessage(conversation_id=conversation.id, role="user", content=content, status="completed")
+            user_message = ConversationMessage(conversation_id=conversation.id, role="user", content=content, status="completed",
+                                              metadata_json=json.dumps({"teaching_mode": payload.teaching_mode}))
             db.add(user_message)
             db.commit()
             db.refresh(user_message)
@@ -207,7 +225,7 @@ async def stream_message(conversation_id: int, payload: MessageCreate):
             prompt = build_context_prompt(conversation, content, db)
             chunks = queue.Queue()
             request_id = uuid4().hex[:12]
-            task = asyncio.create_task(asyncio.to_thread(_ask_impl, AskRequest(question=prompt, current_question=content, agent_mode=payload.agent_mode, agent_parameters=payload.agent_parameters), db, chunks.put, request_id, cancel_event))
+            task = asyncio.create_task(asyncio.to_thread(_ask_impl, ask_request(payload, prompt), db, chunks.put, request_id, cancel_event))
             while not task.done():
                 while not chunks.empty():
                     sequence += 1

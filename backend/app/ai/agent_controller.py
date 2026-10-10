@@ -74,7 +74,7 @@ def extract_calculus_request(question: str, parameters: dict | None = None) -> d
     if operation in {"integrate_definite", "definite_integral", "定积分"}:
         return {"operation": "integrate_definite", "expression": expression, "lower": supplied.get("lower"), "upper": supplied.get("upper")}
 
-    text = question.strip()
+    text = question.strip().rstrip("。.!?！？；;").strip()
     text = re.sub(r"[⁰¹²³⁴⁵⁶⁷⁸⁹]+", lambda match: "**" + match.group().translate(str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")), text)
     integral = re.search(
         rf"(?:求|计算)?\s*(?:定积分|积分)\s*[:：]?\s*(.+?)\s*[，,;；]?\s*x\s*从\s*({_CALCULUS_BOUND})\s*到\s*({_CALCULUS_BOUND})\s*$",

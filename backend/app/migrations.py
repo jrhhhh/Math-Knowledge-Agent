@@ -1,8 +1,12 @@
 from sqlalchemy import inspect, text
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 def run_schema_migrations(connection):
+    attempt_columns = {column["name"] for column in inspect(connection).get_columns("problem_attempts")}
+    for column, definition in (("parent_attempt_id", "INTEGER"), ("first_error_step", "INTEGER"), ("analysis_json", "TEXT")):
+        if column not in attempt_columns:
+            connection.execute(text(f"ALTER TABLE problem_attempts ADD COLUMN {column} {definition}"))
     connection.execute(text("CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY, applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
     columns = {column["name"] for column in inspect(connection).get_columns("local_answer_template_events")}
     if "snapshot" not in columns:

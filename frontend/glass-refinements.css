@@ -1,0 +1,131 @@
+/* Usability details for the original blue and white liquid glass theme. */
+.sidebar { display: flex; flex-direction: row; align-items: center; }
+.sidebar nav { flex: 0 1 auto; }
+.sidebar nav a.active { position: relative; }
+.sidebar nav a.active::after {
+  content: ""; position: absolute; height: 2px; left: 2px; right: 2px; bottom: 11px;
+  border-radius: 2px; background: var(--glass-blue);
+}
+:where(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid #2575e8; outline-offset: 3px;
+}
+.main-content > section, .main-content > .dashboard-grid { scroll-margin-top: 94px; }
+.topbar h1 { max-width: 900px; white-space: normal; text-wrap: balance; }
+
+.chat-welcome { width: 100%; max-width: 790px; align-items: flex-start; margin: auto 0; }
+.chat-welcome-content { min-width: 0; flex: 1; }
+.prompt-gallery {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+  margin-top: 25px;
+}
+.prompt-gallery button {
+  display: flex; min-width: 0; min-height: 122px; flex-direction: column;
+  align-items: flex-start; padding: 15px 16px 13px; text-align: left;
+  border: 1px solid rgba(154, 190, 230, .55); border-radius: 15px;
+  background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(222,237,253,.48));
+  color: #203955; box-shadow: inset 0 1px rgba(255,255,255,.9);
+  cursor: pointer; transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.prompt-gallery button:hover {
+  transform: translateY(-3px); border-color: rgba(37,117,232,.65);
+  box-shadow: 0 12px 28px rgba(38,91,155,.14), inset 0 1px #fff;
+}
+.prompt-gallery small { color: #627d9a; font: 700 10px var(--mono); letter-spacing: .1em; }
+.prompt-gallery strong { margin-top: 14px; font: 600 14px/1.35 var(--sans); }
+.prompt-gallery em {
+  margin-top: auto; padding-top: 10px; color: #216ed2;
+  font: 600 11px var(--sans); font-style: normal;
+}
+.chat-message, .chat-message .chat-bubble { min-width: 0; }
+.chat-message .chat-bubble { max-width: 100%; overflow-wrap: anywhere; }
+.chat-bubble mjx-container[display="true"],
+.proof-result mjx-container[display="true"] {
+  display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: .25em 0;
+}
+#answerFeedback[hidden] { display: none !important; }
+
+.graph-empty {
+  display: flex; min-height: 420px; flex-direction: column; align-items: center;
+  justify-content: center; padding: 38px; text-align: center; color: #e7f5ff;
+}
+.graph-empty > span {
+  display: grid; place-items: center; width: 75px; height: 75px;
+  border: 1px solid #548bc0; border-radius: 50%;
+  box-shadow: 0 0 0 17px #65b9ff0b, 0 0 0 35px #65b9ff08;
+  color: #8fd8ff; font: 38px/1 Georgia, serif;
+}
+.graph-empty strong { margin-top: 38px; font: 600 21px var(--sans); }
+.graph-empty p { max-width: 260px; margin: 10px 0 0; color: #adc9dc; font: 12px/1.65 var(--sans); }
+.graph-card-close { display: grid; place-items: center; min-width: 40px; min-height: 40px; border-radius: 10px; }
+.graph-card-close:hover { background: rgba(37,117,232,.1); }
+.graph-node:focus-visible .node-core { stroke: #fff; stroke-width: 3; filter: drop-shadow(0 0 11px #b4e7ff); }
+
+@media (max-width: 850px) {
+  .sidebar { justify-content: space-between; gap: 16px; }
+  .sidebar nav {
+    display: flex; flex: 1 1 auto; min-width: 0; justify-content: flex-start;
+    gap: 18px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  }
+  .sidebar nav::-webkit-scrollbar { display: none; }
+  .sidebar nav a { display: block !important; flex: 0 0 auto; white-space: nowrap; }
+  .practice-workbench { grid-template-columns: minmax(0, 1fr); }
+  .practice-panel { min-width: 0; }
+}
+@media (max-width: 540px) {
+  .sidebar {
+    height: 94px; flex-direction: column; align-items: stretch;
+    justify-content: center; gap: 0; padding: 5px 14px;
+  }
+  .brand { height: 35px; flex: 0 0 auto; }
+  .sidebar nav {
+    width: 100%; height: 43px; flex: 0 0 auto;
+    justify-content: space-between; gap: 6px; overflow: visible;
+  }
+  .sidebar nav a { font-size: 11px; line-height: 43px; padding: 0 2px; }
+  .sidebar nav a.active::after { bottom: 1px; }
+  .main-content { padding-top: 49px; }
+  .topbar { display: block; margin-bottom: 30px; }
+  .topbar h1 { font-size: clamp(34px, 9vw, 42px); line-height: 1.14; }
+  .topbar .ghost-btn { display: inline-flex; margin-top: 16px; }
+  .prompt-gallery {
+    display: flex; gap: 8px; margin-top: 19px; margin-right: -18px;
+    padding: 2px 18px 12px 1px; overflow-x: auto;
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .prompt-gallery::-webkit-scrollbar { display: none; }
+  .prompt-gallery button { flex: 0 0 190px; min-height: 116px; scroll-snap-align: start; }
+  .chat-composer .form-footer button.graph-trigger,
+  .chat-composer .form-footer button.hidden { display: none !important; }
+  .chat-composer .form-actions { max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
+  .conversation-rail-head button, .chat-stage-actions button { min-width: 44px; min-height: 44px; }
+  .chat-composer .form-footer button#askButton,
+  .proof-actions button, .practice-form button, .practice-toolbar button { min-height: 44px; }
+  .practice-toolbar { display: flex; flex-wrap: wrap; }
+  .practice-toolbar select { min-width: 0; flex: 1 1 140px; }
+  .graph-canvas {
+    min-height: 420px; overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-inline: contain; scrollbar-color: #548bc0 #0d273d;
+  }
+  .graph-canvas svg { display: block; width: 600px; max-width: none; height: 420px; }
+  .graph-panel .legend em::after { content: " · 左右滑动探索网络"; }
+  .graph-concept-card { touch-action: pan-y; }
+  .graph-card-head { touch-action: none; }
+  .graph-card-close { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 370px) {
+  .sidebar {
+    height: 97px; padding: 6px 12px;
+  }
+  .brand { height: 33px; flex: 0 0 auto; }
+  .sidebar nav {
+    width: 100%; height: 44px; flex: 0 0 auto;
+    overflow: visible; justify-content: space-between; gap: 5px;
+  }
+  .sidebar nav a { font-size: 10px; line-height: 44px; padding: 0 1px; }
+  .sidebar nav a.active::after { bottom: 2px; }
+  .main-content { padding-top: 49px; }
+  .main-content > section, .main-content > .dashboard-grid { scroll-margin-top: 115px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prompt-gallery button { animation: none; transition: none; }
+}

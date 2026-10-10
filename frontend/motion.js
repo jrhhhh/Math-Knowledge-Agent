@@ -2,6 +2,7 @@
   const root = document.documentElement;
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const scrollReadout = document.querySelector('.scroll-coordinate span');
+  const sectionLinks = [...document.querySelectorAll('.sidebar nav a[href^="#"]')];
   let pointerFrame = 0;
   let scrollFrame = 0;
 
@@ -11,6 +12,22 @@
     const progress = Math.min(1, Math.max(0, window.scrollY / maximum));
     root.style.setProperty('--scroll-progress', progress.toFixed(4));
     if (scrollReadout) scrollReadout.textContent = progress.toFixed(3);
+    if (window.MathWorkspace) {
+      document.querySelector('.proof-workbench')?.style.setProperty('--proof-turn', String(Math.round(progress * 18)));
+      return;
+    }
+    const currentSection = sectionLinks
+      .map((link) => ({ link, section: document.getElementById(link.hash.slice(1)) }))
+      .filter(({ section }) => section)
+      .sort((a, b) => a.section.getBoundingClientRect().top - b.section.getBoundingClientRect().top)
+      .filter(({ section }) => section.getBoundingClientRect().top <= 360)
+      .at(-1)?.link || sectionLinks[0];
+    sectionLinks.forEach((link) => {
+      const isCurrent = link === currentSection;
+      link.classList.toggle('active', isCurrent);
+      if (isCurrent) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
     document.querySelector('.proof-workbench')?.style.setProperty('--proof-turn', String(Math.round(progress * 18)));
   };
 

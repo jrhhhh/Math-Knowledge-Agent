@@ -22,3 +22,9 @@ evaluation/runs/
 .venv/
 __pycache__/
 *.pyc
+
+# Uploaded private course PDFs
+backend/uploads/
+
+# Local browser acceptance screenshots and generated artifacts
+output/

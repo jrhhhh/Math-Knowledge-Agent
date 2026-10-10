@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');const C=require('../math-lab-core.js');
+assert.equal(C.derivative('square',1,.01).tangent,2);
+assert(Math.abs(C.derivative('square',1,.01).secant-2.01)<1e-10);
+assert.equal(C.derivative('absolute',0,.01).tangent,null);
+assert.equal(C.derivative('absolute',0,-.01).secant,-1);
+assert.equal(C.derivative('absolute',0,.01).secant,1);
+assert.throws(()=>C.derivative('square',0,0));
+assert(Math.abs(C.integral('square',0,1,100).exact-1/3)<1e-12);
+assert(C.integral('square',0,1,100).sum>C.integral('square',0,1,10).sum);
+assert.equal(C.integral('cube',1,-1,10).exact,0);
+assert.equal(C.integral('absolute',-1,1,10).exact,1);
+assert.equal(C.integral('absolute',1,-1,10).exact,-1);
+assert.equal(C.integral('sine',1,1,10).sum,0);
+assert.throws(()=>C.integral('square',0,1,0));
+assert.deepEqual(C.transform([0,-1,1,0],[1,2]),[-2,1]);
+assert.equal(C.determinant([1,2,2,4]),0);
+assert.equal(C.determinant([-1,0,0,1]),-1);
+console.log('Math lab numeric boundaries passed');

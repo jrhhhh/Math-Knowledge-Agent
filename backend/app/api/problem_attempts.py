@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -37,6 +38,9 @@ def attempt_response(attempt: ProblemAttempt) -> dict:
         "independent": attempt.independent,
         "created_at": attempt.created_at.isoformat() if attempt.created_at else None,
         "reviewed_at": attempt.reviewed_at.isoformat() if attempt.reviewed_at else None,
+        "parent_attempt_id": attempt.parent_attempt_id,
+        "first_error_step": attempt.first_error_step,
+        "analysis": json.loads(attempt.analysis_json) if attempt.analysis_json else None,
     }
 
 
@@ -48,11 +52,17 @@ def submit_attempt(problem_id: int, payload: dict, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Problem not found")
     if not answer:
         raise HTTPException(status_code=422, detail="answer 不能为空")
+    parent_id = payload.get("parent_attempt_id")
+    if parent_id is not None:
+        parent = db.query(ProblemAttempt).filter(ProblemAttempt.id == parent_id).first()
+        if parent is None or parent.problem_id != problem_id:
+            raise HTTPException(status_code=422, detail="修订必须关联同一题目的原作答")
     attempt = ProblemAttempt(
         problem_id=problem_id,
         answer=answer,
         hint_level=max(0, int(payload.get("hint_level", 0) or 0)),
         independent="yes" if payload.get("independent") is True else "unknown",
+        parent_attempt_id=parent_id,
     )
     db.add(attempt)
     db.commit()
@@ -88,6 +98,10 @@ def review_attempt(attempt_id: int, payload: dict, db: Session = Depends(get_db)
     correctness = payload.get("correctness")
     if correctness not in {"correct", "partially_correct", "incorrect", "unverified"}:
         raise HTTPException(status_code=422, detail="correctness 必须是可审核状态")
+    first_error = payload.get("first_error_step")
+    if first_error is not None and (type(first_error) is not int or first_error < 1):
+        raise HTTPException(status_code=422, detail="首错步骤应为正整数")
+    attempt.first_error_step = first_error if correctness in {"incorrect", "partially_correct"} else None
     attempt.correctness = correctness
     attempt.status = "reviewed" if correctness != "unverified" else "submitted"
     attempt.error_type = str(payload["error_type"]).strip() if payload.get("error_type") else None
@@ -98,6 +112,20 @@ def review_attempt(attempt_id: int, payload: dict, db: Session = Depends(get_db)
     db.commit()
     db.refresh(attempt)
     return {**attempt_response(attempt), "learning_update": learning_update}
+
+
+@router.post("/attempts/{attempt_id}/analyze")
+def analyze_attempt(attempt_id: int, db: Session = Depends(get_db)):
+    """Persist a model/structural suggestion without granting correctness."""
+    from app.api.ai import ProofAnalyzeRequest, analyze_proof
+    attempt = db.query(ProblemAttempt).filter(ProblemAttempt.id == attempt_id).first()
+    if attempt is None:
+        raise HTTPException(status_code=404, detail="Attempt not found")
+    problem = db.query(Problem).filter(Problem.id == attempt.problem_id).first()
+    analysis = analyze_proof(ProofAnalyzeRequest(question=problem.content, proof=attempt.answer), db)
+    attempt.analysis_json = json.dumps(analysis, ensure_ascii=False)
+    db.commit()
+    return attempt_response(attempt)
 
 
 @router.get("/next")

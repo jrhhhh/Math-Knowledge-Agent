@@ -510,9 +510,35 @@ def get_learning_path(concept_id: int, max_depth: int = 4, db: Session = Depends
         "depth": 0,
         "stage": "focus",
     })
+    from app.models.problem import Problem
+    from app.models.problem_concept import ProblemConcept
+    from app.models.problem_attempt import ProblemAttempt
+    from app.api.learning import review_state
+    grouped = {}
+    for attempt in db.query(ProblemAttempt).all():
+        grouped.setdefault(attempt.problem_id, []).append(attempt)
+    priorities = {'needs_review': 0, 'unverified': 1, 'hinted_complete': 2, 'independent_complete': 3, 'stable': 4}
+    for step in steps:
+        rows = db.query(Problem).join(ProblemConcept, ProblemConcept.problem_id == Problem.id).filter(ProblemConcept.concept_id == step['id']).order_by(Problem.id).all()
+        problems = []
+        for problem in rows:
+            state = review_state(grouped.get(problem.id, []))
+            problems.append({'id':problem.id,'title':problem.title,'state':state['state'] if state else 'unverified'})
+        step['problems'] = problems
+        step['current_state'] = min((x['state'] for x in problems), key=lambda x:priorities[x]) if problems else 'unverified'
+        relations = [relation for target in visited for relation in parent_relations.get(target, []) if relation.source_concept_id == step['id']]
+        step['relation_ids'] = [relation.id for relation in relations]
+        targets = [concepts[relation.target_concept_id].name for relation in relations if relation.target_concept_id in concepts]
+        step['reason'] = ('这是当前目标知识点，需通过作答确认理解。' if step['id'] == concept_id else '已保存的前置关系表明，它是“' + '、'.join(dict.fromkeys(targets)) + '”的基础。')
+        if step['current_state'] == 'needs_review':
+            step['reason'] += ' 关联练习的最新审核存在错误，建议优先补学。'
+        elif not problems:
+            step['reason'] += ' 当前没有关联练习，可先学习概念；不据此认定掌握。'
+    recommendation = next((step for step in steps if step['current_state'] == 'needs_review'), None) or next((step for step in steps if step['current_state'] != 'stable'), steps[-1])
     return {
         "concept": {"id": concept.id, "name": concept.name, "type": concept.type},
         "steps": steps,
         "cycle_detected": cycle_detected,
         "max_depth": max_depth,
+        "recommended_concept_id": recommendation['id'],
     }

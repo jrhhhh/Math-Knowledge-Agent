@@ -45,6 +45,37 @@ class ProblemAttemptTests(unittest.TestCase):
         with self.assertRaises(Exception):
             submit_attempt(self.problem_id, {"answer": "  "}, self.db)
 
+    def test_revision_retains_prior_feedback_and_requires_same_problem(self):
+        original = submit_attempt(self.problem_id, {"answer": "最小值是1"}, self.db)
+        review_attempt(original["id"], {"correctness": "incorrect", "first_error_step": 1, "feedback": "检查 x=0"}, self.db)
+        revised = submit_attempt(self.problem_id, {"answer": "x=0时为0", "parent_attempt_id": original["id"]}, self.db)
+        self.assertEqual(revised["parent_attempt_id"], original["id"])
+        self.assertEqual(revised["correctness"], "unverified")
+        history = list_attempts(self.problem_id, self.db)["items"]
+        self.assertEqual(history[1]["first_error_step"], 1)
+        self.assertEqual(history[1]["feedback"], "检查 x=0")
+        other = Problem(title="另一题", content="求1+1", solution="2")
+        self.db.add(other)
+        self.db.commit()
+        with self.assertRaises(Exception):
+            submit_attempt(other.id, {"answer": "2", "parent_attempt_id": original["id"]}, self.db)
+
+    def test_model_analysis_does_not_grant_correctness(self):
+        from unittest.mock import patch
+        from app.api.problem_attempts import analyze_attempt
+        original = submit_attempt(self.problem_id, {"answer": "x²≥0"}, self.db)
+        with patch("app.api.ai.analyze_proof", return_value={"valid": True, "review_source": "model", "steps": []}):
+            result = analyze_attempt(original["id"], self.db)
+        self.assertTrue(result["analysis"]["valid"])
+        self.assertEqual(result["correctness"], "unverified")
+        self.assertEqual(self.db.query(ConceptLearningProgress).count(), 0)
+
+    def test_invalid_first_error_does_not_change_review(self):
+        original = submit_attempt(self.problem_id, {"answer": "1"}, self.db)
+        with self.assertRaises(Exception):
+            review_attempt(original["id"], {"correctness": "incorrect", "first_error_step": 0}, self.db)
+        self.assertEqual(list_attempts(self.problem_id, self.db)["items"][0]["correctness"], "unverified")
+
     def test_recommendation_prefers_same_concept_retest(self):
         second = Problem(title="极值重测", content="再次求 x^2 的最小值", solution="0", difficulty="基础")
         self.db.add(second)

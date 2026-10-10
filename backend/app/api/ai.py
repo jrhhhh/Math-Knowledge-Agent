@@ -14,12 +14,15 @@ from uuid import uuid4
 import time
 import threading
 from datetime import datetime, timedelta, timezone
+from typing import Literal
+from app.ai.tutoring import HINT_INSTRUCTION, local_hint, complete_hint
+from app.ai.answer_links import build_answer_links
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 from openai import (
     APIConnectionError,
@@ -1346,6 +1349,41 @@ class AskRequest(BaseModel):
     current_question: str | None = None
     agent_mode: bool = False
     agent_parameters: dict = Field(default_factory=dict)
+    teaching_mode: Literal["explain", "hint"] = "explain"
+
+
+def generate_hint(request, db, request_id, cancel_event=None):
+    """Hints have their own generation and persistence path, without answer repair."""
+    started = time.perf_counter()
+    question = (request.current_question or request.question).strip()
+    set_task_status(request_id, "generating", "准备一级提示", db=db, question=question)
+    check_request_cancelled(cancel_event)
+    answer_source = "tutor_hint"
+    try:
+        answer = call_deepseek(
+            messages=[{"role": "system", "content": HINT_INSTRUCTION},
+                      {"role": "user", "content": request.question}],
+            max_retries=1, max_tokens=600, timeout=20.0, circuit_enabled=True,
+            extra_body={"thinking": {"type": "disabled"}},
+        )
+        if not complete_hint(answer):
+            raise ValueError("incomplete hint")
+    except Exception:
+        answer, answer_source = local_hint(question), "local_hint"
+    check_request_cancelled(cancel_event)
+    record = AnswerRecord(request_id=request_id or "unknown", question=question, answer=answer,
+                          answer_source=answer_source, duration_seconds=time.perf_counter() - started)
+    db.add(record)
+    db.flush()
+    result = {"request_id": request_id, "question": question, "answer": answer,
+              "answer_id": record.id, "answer_source": answer_source, "teaching_mode": "hint",
+              "concepts": [], "knowledge_sources": [], "agent_tool_evidence": [],
+              "knowledge_graph": {"nodes": [], "relations": []}, "cache_hit": False,
+              "answer_quality": {"correctness_status": "unverified"}}
+    result["answer_steps"] = build_answer_links(answer, [], [], answer_source)
+    db.commit()
+    set_task_status(request_id, "succeeded", "一级提示已生成", db=db, question=question, result=result)
+    return result
 
 
 class RelatedGraphRequest(BaseModel):
@@ -1386,7 +1424,7 @@ def analyze_proof(
     if not request.question.strip() or not request.proof.strip():
         raise HTTPException(status_code=422, detail="question 和 proof 不能为空。")
 
-    matched = safe_semantic_retrieve_concepts(db, request.question)
+    matched = safe_semantic_retrieve_concepts(db, request.question, local_only=True)
     concept_context = [
         {
             "id": item["concept"].id,
@@ -1427,9 +1465,11 @@ def analyze_proof(
                 {"role": "system", "content": "你是严谨的数学证明验证器，只输出合法 JSON。"},
                 {"role": "user", "content": prompt},
             ],
-            max_retries=2,
+            max_retries=1,
             retry_delay=1.0,
             response_format={"type": "json_object"},
+            max_tokens=2000, timeout=25.0,
+            extra_body={"thinking": {"type": "disabled"}},
         )
         result = json.loads(raw)
     except Exception as exc:
@@ -1454,6 +1494,7 @@ def analyze_proof(
     return {
         "question": request.question,
         "valid": bool(result.get("valid", False)),
+        "correctness_status": "unverified",
         "review_source": result.get("review_source", "model"),
         "summary": str(result.get("summary", "")),
         "steps": normalized_steps,
@@ -1616,7 +1657,8 @@ def call_deepseek(
 
 def safe_semantic_retrieve_concepts(
     db: Session,
-    question: str
+    question: str,
+    local_only: bool = False,
 ):
     """
     知识点语义检索。
@@ -1666,7 +1708,7 @@ def safe_semantic_retrieve_concepts(
 
     # 短输入通常是“定理/概念名称”查询。若本地库未收录，直接交给
     # 数学回答模型比先等待一次全库语义检索更快，也不会丢失答案质量。
-    if len(normalized_question) <= 20:
+    if local_only or len(normalized_question) <= 20:
         print("[AI] skipping semantic retrieval for short unmatched query")
         return []
 
@@ -2899,13 +2941,18 @@ def retrieve_audited_sources(db: Session, question: str, matched_concepts: list[
     query = db.query(KnowledgeChunk, KnowledgeDocument).join(
         KnowledgeDocument, KnowledgeDocument.id == KnowledgeChunk.document_id
     ).filter(KnowledgeChunk.review_status == "approved", KnowledgeDocument.review_status == "approved")
-    if concept_ids:
-        query = query.filter(KnowledgeChunk.concept_id.in_(concept_ids))
-    else:
-        terms = [term for term in re.split(r"\s+", question.strip()) if len(term) >= 2][:5]
-        if not terms:
-            return []
-        query = query.filter(*[KnowledgeChunk.content.ilike(f"%{term}%") for term in terms])
+    terms = [item["concept"].name for item in matched_concepts if item.get("concept") and item["concept"].name]
+    textbook_names = {"直接证明法": "直接法", "数学归纳法": "归纳法", "逆反命题": "对位证明法"}
+    terms += [textbook_names[term] for term in list(terms) if term in textbook_names]
+    if not terms:
+        terms = [term for term in re.split(r"[\s，。！？、：；]+", question.strip()) if 2 <= len(term) <= 30][:5]
+    conditions = [KnowledgeChunk.concept_id.in_(concept_ids)] if concept_ids else []
+    if terms:
+        keyword_match = or_(*[or_(KnowledgeChunk.content.ilike(f"%{term}%"), KnowledgeChunk.heading.ilike(f"%{term}%")) for term in terms])
+        conditions.append(and_(KnowledgeChunk.concept_id.is_(None), keyword_match))
+    if not conditions:
+        return []
+    query = query.filter(or_(*conditions))
     rows = query.order_by(KnowledgeChunk.page_start.asc(), KnowledgeChunk.id.asc()).limit(limit).all()
     return [{"chunk_id": chunk.id, "document_id": document.id, "document_title": document.title,
              "course": document.course, "chapter": document.chapter, "page_start": chunk.page_start,
@@ -2917,7 +2964,7 @@ def format_audited_sources(sources: list[dict]) -> str:
     if not sources:
         return "暂无经过审核的教材片段；不要声称已有教材出处。"
     return "\n".join(
-        f"[{item['document_title']} · {item.get('chapter') or '未分章'} · 第 {item.get('page_start') or '?'} 页 · 片段 {item['chunk_id']}]\n{item['content']}"
+        f"[S{item['chunk_id']}] {item['document_title']} · {item.get('chapter') or '未分章'} · 第 {item.get('page_start') or '?'} 页\n{item['content']}"
         for item in sources
     )
 
@@ -3087,6 +3134,9 @@ def _ask_impl(
             detail="问题不能为空。"
         )
 
+    if request.teaching_mode == "hint":
+        return generate_hint(request, db, request_id, cancel_event)
+
     db.add(QuestionSample(question_hash=hashlib.sha256(question.encode("utf-8")).hexdigest(), question_length=len(question), source="ask"))
     db.commit()
 
@@ -3102,10 +3152,13 @@ def _ask_impl(
     # 1. 语义检索知识点
     # ========================================================
 
+    explicit_tool_plan = plan_next_action(request.current_question or question, evidence=[], iterations=0, parameters=request.agent_parameters) if request.agent_mode else None
+    local_retrieval_only = explicit_tool_plan is not None and explicit_tool_plan["action"] in {"exact_arithmetic", "exact_calculus", "polynomial_identity", "lean_check"}
     matched_concepts = (
         safe_semantic_retrieve_concepts(
             db,
-            question
+            question,
+            **({"local_only": True} if local_retrieval_only else {}),
         )
     )
     audited_sources = retrieve_audited_sources(db, question, matched_concepts)
@@ -3393,6 +3446,10 @@ def _ask_impl(
 
 请直接给出数学内容，不要提及知识库、系统或无法回答。"""
     primary_prompt = compact_prompt if matched_concepts else direct_math_prompt
+    primary_prompt += ("\n\n教材引用规则：只有确实使用提供的片段时，才在对应推理段落末尾写 [S片段编号]，例如 [S12]。"
+                       "不得引用未提供的编号；引用只说明资料来源，不等于该推理已被验证。")
+    if not matched_concepts and audited_sources:
+        primary_prompt += "\n可引用的已审核教材片段：\n" + format_audited_sources(audited_sources)
     primary_timeout = 25.0 if matched_concepts else 70.0
     primary_max_tokens = 900 if matched_concepts else 1600
 
@@ -3609,6 +3666,7 @@ def _ask_impl(
         }
     }
     result["cache_hit"] = False
+    result["answer_steps"] = build_answer_links(answer, audited_sources, agent_tool_evidence, answer_source)
     _answer_cache[question.casefold()] = {"at": time.monotonic(), "version": _knowledge_version, "value": result}
     quality = result["answer_quality"]
     if quality.get("score", 1.0) < 0.75 and not (request_id or "").startswith("retry-"):
@@ -3619,6 +3677,10 @@ def _ask_impl(
     db.add(answer_record)
     check_request_cancelled(cancel_event)
     db.flush()
+    db.add(AnswerEvidence(answer_id=answer_record.id, evidence_type="step_links", status="mapped",
+                          subject="逐步引用与工具范围", method="explicit_citations_and_scoped_tools",
+                          assumptions="引用不等于推理正确；工具只覆盖它实际计算的对象。",
+                          details=json.dumps(result["answer_steps"], ensure_ascii=False)))
     for tool_result in agent_tool_evidence:
         db.add(AnswerEvidence(
             answer_id=answer_record.id,

@@ -21,3 +21,6 @@ class ProblemAttempt(Base):
     independent = Column(String, nullable=False, default="unknown")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     reviewed_at = Column(DateTime, nullable=True)
+    parent_attempt_id = Column(Integer, ForeignKey("problem_attempts.id"), nullable=True)
+    first_error_step = Column(Integer, nullable=True)
+    analysis_json = Column(Text, nullable=True)
