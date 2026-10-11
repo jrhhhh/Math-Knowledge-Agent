@@ -1,48 +1,54 @@
+/* Symbolic values come only from the bounded local math service. */
 (() => {
-  const C=MathLabCore, svg=$('labPlot');let mode='derivative';
-  const format=n=>n===null?'不存在':Number(n.toFixed(6)).toString();
+  const $=id=>document.getElementById(id), API=window.MATH_AGENT_API||'http://127.0.0.1:8000';
+  const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt=v=>v==null?'不存在或不可计算':Number(v.toPrecision(7)).toString();
+  const catalog=[
+    ['幂函数与基本函数',[['square','x²','x^2',1,0,1],['cube','x³','x^3',1,0,1],['linear','x','x',1,0,1],['constant','常数 1','1',1,0,1],['power','xⁿ 示例 x⁴','x^4',1,0,1],['root','√x','sqrt(x)',1,0,2],['reciprocal','1/x','1/x',1,1,2],['reciprocal2','1/x²','1/x^2',1,1,2],['absolute','|x|','abs(x)',0,-1,1]]],
+    ['指数与对数',[['exp','eˣ','exp(x)',1,0,1],['base2','2ˣ','2^x',1,0,1],['log','ln x','log(x)',1,1,2],['log10','log₁₀ x','log(x)/log(10)',1,1,2]]],
+    ['三角与反三角',[['sine','sin x','sin(x)',1,0,1],['cosine','cos x','cos(x)',1,0,1],['tangent','tan x','tan(x)',.5,0,1],['cotangent','cot x','cot(x)',1,.5,1],['secant','sec x','sec(x)',.5,0,1],['cosecant','csc x','csc(x)',1,.5,1],['arcsine','arcsin x','asin(x)',.5,-.5,.5],['arccosine','arccos x','acos(x)',.5,-.5,.5],['arctangent','arctan x','atan(x)',1,0,1]]],
+    ['双曲与常用积分型',[['sinh','sinh x','sinh(x)',1,0,1],['cosh','cosh x','cosh(x)',1,0,1],['tanh','tanh x','tanh(x)',1,0,1],['atanform','1/(1+x²)','1/(1+x^2)',1,0,1],['asinform','1/√(1−x²)','1/sqrt(1-x^2)',.5,-.5,.5],['gaussian','e^(−x²)','exp(-x^2)',1,-1,1],['product','x eˣ','x*exp(x)',1,0,1],['composition','sin(x²)','sin(x^2)',1,0,1]]]
+  ];
+  const examples=catalog.flatMap(g=>g[1]), presets={symmetric:'2 1\n1 2',rotation:'0 -1\n1 0',jordan:'1 1\n0 1',singular:'1 2\n2 4',three:'2 1 0\n1 2 1\n0 1 2',four:'1 0 0 0\n0 2 0 0\n0 0 3 0\n0 0 0 4'};
+  $('labFunction').innerHTML=catalog.map(([title,list])=>`<optgroup label="${title}">${list.map(e=>`<option value="${e[0]}">${e[1]}</option>`).join('')}</optgroup>`).join('')+'<option value="custom">自定义表达式</option>';
+  let mode='derivative',requestVersion=0,controller=null,timer=null,lastMatrix=null;
   const number=id=>Number($(id).value);
-  function line(x1,y1,x2,y2,color,width=2,dash='') {return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}" ${dash?`stroke-dasharray="${dash}"`:''}/>`;}
-  function draw() {
-    const key=$('labFunction').value,e=C.examples[key];let shapes='',result='',condition=e.condition;
-    let extent=mode==='linear'?8:6;
-    if(mode!=='linear') {const xmax=mode==='derivative'?Math.max(Math.abs(number('labX')),Math.abs(number('labX')+number('labH'))):Math.max(Math.abs(number('labA')),Math.abs(number('labB')));extent=Math.max(6,Math.abs(xmax)+1,Math.abs(e.f(xmax))+1,Math.abs(e.f(-xmax))+1);}
-    const X=x=>320+(mode==='linear'?180:270)*x/extent,Y=y=>220-180*y/extent;
-    for(let i=-5;i<=5;i++){const p=i*extent/5;shapes+=line(X(p),40,X(p),400,'#dce7f4',1)+line(50,Y(p),590,Y(p),'#dce7f4',1);}
-    shapes+=line(50,Y(0),590,Y(0),'#95acc6')+line(X(0),40,X(0),400,'#95acc6');
-    shapes+=`<text x="592" y="${Y(0)-8}">x</text><text x="${X(0)+8}" y="32">y</text><text x="${X(-extent)}" y="414">−${format(extent)}</text><text x="${X(extent)}" y="414">${format(extent)}</text>`;
-    if(mode==='linear') {
-      const m=['labM11','labM12','labM21','labM22'].map(number),v=[number('labV1'),number('labV2')],w=C.transform(m,v),det=C.determinant(m);
-      // Fit both the transformed grid and vector without clipping large valid values.
-      const largest=Math.max(8,3*(Math.abs(m[0])+Math.abs(m[1])),3*(Math.abs(m[2])+Math.abs(m[3])),...w.map(Math.abs));
-      if(largest>extent){extent=largest+1;shapes='';for(let i=-5;i<=5;i++){shapes+=line(X(i),Y(-5),X(i),Y(5),'#dce7f4',1)+line(X(-5),Y(i),X(5),Y(i),'#dce7f4',1);}shapes+=line(30,Y(0),610,Y(0),'#95acc6')+line(X(0),20,X(0),420,'#95acc6');}
-      for(let i=-3;i<=3;i++){let a=C.transform(m,[i,-3]),b=C.transform(m,[i,3]);shapes+=line(X(a[0]),Y(a[1]),X(b[0]),Y(b[1]),'#75b7bd',1);a=C.transform(m,[-3,i]);b=C.transform(m,[3,i]);shapes+=line(X(a[0]),Y(a[1]),X(b[0]),Y(b[1]),'#75b7bd',1);}
-      const corners=[[0,0],[m[0],m[2]],[m[0]+m[1],m[2]+m[3]],[m[1],m[3]]];shapes+=`<polygon points="${corners.map(p=>`${X(p[0])},${Y(p[1])}`).join(' ')}" fill="#6bafba33" stroke="#5b9fac"/>`;
-      shapes+=line(X(0),Y(0),X(v[0]),Y(v[1]),'#377ddd',3)+line(X(0),Y(0),X(w[0]),Y(w[1]),'#bc7853',3)+`<circle cx="${X(w[0])}" cy="${Y(w[1])}" r="5" fill="#bc7853"/>`;
-      result=`A = [${format(m[0])}, ${format(m[1])}; ${format(m[2])}, ${format(m[3])}] · v = (${format(v[0])}, ${format(v[1])}) · Av = (${format(w[0])}, ${format(w[1])}) · det A = ${format(det)}。${det===0?'矩阵奇异，平面被压缩为线或点。':`单位正方形面积变为 ${format(Math.abs(det))}；${det<0?'方向翻转。':'方向保持。'}`}`;
-      condition='二维实矩阵作用于列向量；图示与读数使用浮点运算。蓝色是原向量，棕色是变换后的向量，青色是变换后的网格。';
-    } else {
-      if(mode==='integral') {const a=number('labA'),b=number('labB'),n=number('labN'),r=C.integral(key,a,b,n);for(const q of r.rectangles){shapes+=`<rect x="${Math.min(X(q.x),X(q.x+q.dx))}" y="${Math.min(Y(0),Y(q.y))}" width="${Math.abs(X(q.x+q.dx)-X(q.x))}" height="${Math.abs(Y(q.y)-Y(0))}" fill="${q.y>=0?'#71a6ee55':'#dd986955'}" stroke="#6d9fd655"/>`;}
-        result=`∫₍${format(a)}₎⁽${format(b)}⁾ ${e.label} dx = ${format(r.exact)}；中点矩形和 (${n} 份) = ${format(r.sum)}；误差 = ${format(Math.abs(r.sum-r.exact))}。`;
-        condition+=' 定积分为带符号累积量，反向上下限会改变符号；矩形和为近似值，解析公式读数也按浮点显示。';
-      }
-      let points=[];for(let i=0;i<=360;i++){const x=-extent+2*extent*i/360,y=e.f(x);if(Math.abs(y)<=extent)points.push(`${X(x)},${Y(y)}`);else if(points.length){shapes+=`<polyline points="${points.join(' ')}" fill="none" stroke="#377ddd" stroke-width="3"/>`;points=[];}}
-      if(points.length)shapes+=`<polyline points="${points.join(' ')}" fill="none" stroke="#377ddd" stroke-width="3"/>`;
-      if(mode==='derivative') {const x=number('labX'),h=number('labH'),r=C.derivative(key,x,h),ray=(s,color,dash)=>line(X(-extent),Y(r.y+s*(-extent-x)),X(extent),Y(r.y+s*(extent-x)),color,2,dash);
-        shapes+=ray(r.secant,'#bc7853','7 5');if(r.tangent!==null)shapes+=ray(r.tangent,'#559b98','');
-        shapes+=`<circle cx="${X(x)}" cy="${Y(r.y)}" r="5" fill="#377ddd"/><circle cx="${X(x+h)}" cy="${Y(r.end)}" r="5" fill="#bc7853"/>`;
-        result=`x₀ = ${format(x)} · h = ${format(h)} · 割线斜率 = ${format(r.secant)} · 导数 = ${format(r.tangent)}。`;
-        condition+=' 棕色虚线为割线，青色为切线；单个 h 的差商不能证明导数存在。';
-      }
-    }
-    svg.innerHTML=`<title>${mode==='linear'?'二维线性变换':mode==='integral'?'积分矩形和':'导数的割线与切线'}</title><defs><clipPath id="labClip"><rect x="30" y="20" width="580" height="400"/></clipPath></defs><g clip-path="url(#labClip)">${shapes}</g>`;
-    $('labResult').textContent=result;$('labCondition').textContent=condition;
-    ['labX','labH','labA','labB','labN'].forEach(id=>{const out=document.querySelector(`[data-lab-value="${id}"]`);if(out)out.textContent=$(id).value;});
+  const typeset=()=>window.MathJax?.typesetPromise?.([$ ('labFormula'),$('labMatrixResults')]).catch(()=>{});
+  const formula=(label,latex)=>`<div><span>${label}</span><div>\\[${escape(latex)}\\]</div></div>`;
+  const matrixTable=m=>`<table class="lab-matrix-table"><tbody>${m.map(r=>`<tr>${r.map(v=>`<td>${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  function axes(xmin=-6,xmax=6,ymax=6){const X=x=>50+(x-xmin)/(xmax-xmin)*540,Y=y=>220-y/ymax*180;let markup='';for(let i=0;i<=10;i++){const x=xmin+(xmax-xmin)*i/10;markup+=`<path d="M${X(x)} 30V410 M50 ${40+36*i}H590" stroke="#dce7f4" fill="none"/>`;if(i%2===0)markup+=`<text x="${X(x)}" y="429" text-anchor="middle">${fmt(x)}</text>`;}markup+=`<path d="M50 ${Y(0)}H590 M${X(0)} 30V410" stroke="#94abc9"/><text x="598" y="${Y(0)-8}">x</text><text x="${X(0)+8}" y="28">y</text>`;return {X,Y,markup,ymax};}
+  function plot(data){const ys=data.samples.map(p=>p[1]).filter(Number.isFinite).map(Math.abs).sort((a,b)=>a-b),ymax=Math.max(2,Math.min(100,ys[Math.floor(ys.length*.85)]||6),Math.abs(data.y||0)*1.25,Math.abs(data.end||0)*1.25);const {X,Y,markup}=axes(data.x_min,data.x_max,ymax);let shapes=markup;
+    for(const r of data.rectangles||[])shapes+=`<rect x="${Math.min(X(r.x),X(r.x+r.dx))}" y="${Math.min(Y(0),Y(r.y))}" width="${Math.abs(X(r.x+r.dx)-X(r.x))}" height="${Math.abs(Y(r.y)-Y(0))}" fill="${r.y>=0?'#79a8ef55':'#dfa47555'}"/>`;
+    let points=[];const flush=()=>{if(points.length>1)shapes+=`<polyline points="${points.join(' ')}" stroke="#367ee1" stroke-width="3" fill="none"/>`;points=[];};let previous=null;for(const [x,y] of data.samples){if(y===null||Math.abs(y)>ymax*1.5||previous!==null&&Math.abs(y-previous)>ymax*.8){flush();previous=null;continue;}points.push(`${X(x)},${Y(y)}`);previous=y;}flush();
+    if(mode==='derivative'){const x=number('labX'),h=number('labH');for(const [slope,color,dash] of [[data.secant,'#c17c52','6 5'],[data.tangent,'#529a97','']])if(slope!==null)shapes+=`<line x1="${X(data.x_min)}" y1="${Y(data.y+slope*(data.x_min-x))}" x2="${X(data.x_max)}" y2="${Y(data.y+slope*(data.x_max-x))}" stroke="${color}" stroke-width="2" stroke-dasharray="${dash}"/>`;shapes+=`<circle cx="${X(x)}" cy="${Y(data.y)}" r="5" fill="#367ee1"/><circle cx="${X(x+h)}" cy="${Y(data.end)}" r="5" fill="#c17c52"/>`;}
+    $('labPlot').innerHTML=`<title>${mode==='derivative'?'函数、割线与切线':'带符号积分与矩形和'}</title><defs><clipPath id="labClip"><rect x="30" y="20" width="580" height="395"/></clipPath></defs><g clip-path="url(#labClip)">${shapes}</g>`;
   }
-  function choose(next){mode=next;document.querySelectorAll('[data-lab-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.labMode===mode)));$('labFunctionControl').hidden=mode==='linear';['derivative','integral','linear'].forEach(k=>$( `lab-${k}`).hidden=k!==mode);draw();}
+  function matrixPlot(data){let shapes='';if(data.size===2){const m=data.matrix.flat().map(v=>v.includes('/')?v.split('/').map(Number).reduce((a,b)=>a/b):Number(v)),v=[number('labV1'),number('labV2')],T=p=>[m[0]*p[0]+m[1]*p[1],m[2]*p[0]+m[3]*p[1]],w=T(v),extent=Math.max(4,3*(Math.abs(m[0])+Math.abs(m[1])),3*(Math.abs(m[2])+Math.abs(m[3])),...w.map(Math.abs))*1.15;const {X,Y,markup}=axes(-extent,extent,extent);shapes=markup;
+      const line=(a,b,c,width=1,dash='')=>`<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" stroke="${c}" stroke-width="${width}" stroke-dasharray="${dash}"/>`;
+      for(let i=-3;i<=3;i++)shapes+=line(T([i,-3]),T([i,3]),'#7fbcc6')+line(T([-3,i]),T([3,i]),'#7fbcc6');
+      shapes+=`<polygon points="${[[0,0],[1,0],[1,1],[0,1]].map(p=>T(p)).map(p=>`${X(p[0])},${Y(p[1])}`).join(' ')}" fill="#75aee747" stroke="#367ee1"/>`+line([0,0],v,'#367ee1',3)+line([0,0],w,'#c17c52',3);
+      for(const e of data.directions){const norm=Math.hypot(...e.vector),u=e.vector.map(x=>x/norm);shapes+=line(u.map(x=>-x*extent),u.map(x=>x*extent),'#9164ce',2,'5 5');}
+      $('labResult').textContent=`Av = (${w.map(fmt).join(', ')}) · 单位正方形面积变为 |det A| = ${data.determinant.startsWith('-')?data.determinant.slice(1):data.determinant}。紫色虚线为实特征方向。${data.directions.length?'':'该矩阵没有实特征方向，复特征值见下方。'}`;
+    }else{const eig=data.eigenvalues,extent=Math.max(2,...eig.flatMap(e=>[Math.abs(e.real),Math.abs(e.imag)]))*1.3,{X,Y,markup}=axes(-extent,extent,extent);shapes=markup;for(const e of eig){shapes+=`<circle cx="${X(e.real)}" cy="${Y(e.imag)}" r="7" fill="#705fce"/><text x="${X(e.real)+11}" y="${Y(e.imag)-12}">λ · 重数 ${e.algebraic_multiplicity}</text>`;}$('labResult').textContent='特征值在复平面的位置：横轴为实部，纵轴为虚部。高阶矩阵不投影成二维线性变换。';}
+    $('labPlot').innerHTML=`<title>${data.size===2?'矩阵变换与实特征方向':'特征值复平面'}</title><defs><clipPath id="labClip"><rect x="30" y="20" width="580" height="400"/></clipPath></defs><g clip-path="url(#labClip)">${shapes}</g>`;
+  }
+  function matrixResults(data){const result=$('labMatrixResults');result.innerHTML=`<div class="lab-stat-grid">${[['行列式',data.determinant],['迹',data.trace],['秩',data.rank],['零空间维数',data.nullity]].map(([k,v])=>`<div><small>${k}</small><strong>${escape(v)}</strong></div>`).join('')}</div><div class="lab-formula">${formula('特征多项式 det(λI − A)',data.characteristic)}${formula('最小多项式',data.minimal)}</div><h3>特征值与特征空间</h3><div class="lab-scroll"><table><thead><tr><th>精确特征值</th><th>数值近似</th><th>代数 / 几何重数</th><th>特征空间基</th></tr></thead><tbody>${data.eigenvalues.map(e=>`<tr><td>\\(${escape(e.latex)}\\)</td><td>${fmt(e.real)}${Math.abs(e.imag)>1e-12?` ${e.imag<0?'−':'+'} ${fmt(Math.abs(e.imag))}i`:''}</td><td>${e.algebraic_multiplicity} / ${e.geometric_multiplicity}</td><td>${e.vectors.map(v=>`(${v.map(escape).join(', ')})ᵀ`).join('<br>')}</td></tr>`).join('')}</tbody></table></div><p>实数域可对角化：${data.diagonalizable_real?'是':'否'} · 复数域可对角化：${data.diagonalizable_complex?'是':'否'}${data.symmetric?` · 对称矩阵 · 正定：${data.positive_definite?'是':'否'} · 半正定：${data.positive_semidefinite?'是':'否'}`:' · 非对称矩阵，不应用对称矩阵的正定判据'}</p><details open><summary>各阶主子式与顺序主子式</summary><p>主子式选取相同的行、列索引；顺序主子式选前 k 行与前 k 列。</p><div class="lab-scroll"><table><thead><tr><th>阶数</th><th>行列索引</th><th>主子式值</th><th>顺序主子式</th></tr></thead><tbody>${data.principal_minors.map(p=>`<tr><td>${p.order}</td><td>${p.indices.join(', ')}</td><td>${escape(p.value)}</td><td>${p.indices.every((v,i)=>v===i+1)?'是':'—'}</td></tr>`).join('')}</tbody></table></div></details><details><summary>行最简形、逆矩阵与零空间</summary><h4>行最简形</h4>${matrixTable(data.rref)}<h4>逆矩阵</h4>${data.inverse?matrixTable(data.inverse):'<p>矩阵奇异，无逆矩阵。</p>'}<h4>零空间基</h4><p>${data.nullspace.map(v=>`(${v.map(escape).join(', ')})ᵀ`).join('；')||'零空间只有零向量，基为空。'}</p></details><p class="lab-checks">一致性检查：迹 = 特征值之和 ${data.checks.trace_equals_eigen_sum?'✓':'未通过'} · 行列式 = 特征值之积 ${data.checks.det_equals_eigen_product?'✓':'未通过'} · Cayley–Hamilton ${data.checks.cayley_hamilton?'✓':'未通过'}</p>`;typeset();}
+  async function compute(){clearTimeout(timer);controller?.abort();const version=++requestVersion;controller=new AbortController();$('labStatus').textContent='正在计算…';$('labCompute').disabled=true;$('labPlot').innerHTML='';$('labResult').textContent='';$('labFormula').innerHTML='';$('labMatrixResults').innerHTML='';lastMatrix=null;
+    const payload=mode==='linear'?{matrix:$('labMatrixInput').value.trim().split(/\n|;/).filter(Boolean).map(r=>r.trim().split(/[\s,，]+/))}:{expression:$('labExpression').value,mode,x:number('labX'),h:number('labH'),a:number('labA'),b:number('labB'),n:number('labN')};
+    try{const response=await fetch(`${API}/math-lab/${mode==='linear'?'matrix':'calculus'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'请检查输入参数');if(version!==requestVersion)return;
+      if(mode==='linear'){lastMatrix=data;['labV1','labV2'].forEach(id=>$(id).parentElement.hidden=data.size!==2);matrixPlot(data);matrixResults(data);$('labCondition').textContent='有理数输入采用精确符号计算；特征值近似和图形坐标使用浮点数。对角化结论分别在实数域和复数域判断；正定/半正定判据仅用于实对称矩阵。';}
+      else{plot(data);$('labFormula').innerHTML=formula('函数',data.function)+formula('导函数',data.derivative)+(data.primitive?formula('一个原函数（加任意常数 C）',data.primitive):'<p>未求出显式原函数，可继续查看定积分结果。</p>')+formula('实数连续定义域',data.domain);typeset();if(mode==='derivative'){$('labResult').textContent=`x₀ = ${payload.x} · h = ${payload.h} · 割线斜率 = ${fmt(data.secant)} · 双侧导数 = ${fmt(data.tangent)}`;$('labCondition').textContent='蓝色为函数，棕色虚线为割线，青色为切线。只有定义域内点且左右差商极限相等并有限时显示双侧导数；定义域端点不能据单侧结果称双侧可导。';}else{$('labResult').textContent=`定积分 = ${fmt(data.exact_value)} · 中点矩形和（${payload.n} 份）= ${fmt(data.sum)}${data.exact_value!==null?` · 误差 = ${fmt(Math.abs(data.sum-data.exact_value))}`:''}`;if(data.exact)$('labFormula').innerHTML+=formula('定积分精确表达式',data.exact);typeset();$('labCondition').textContent='定积分为带符号面积；反向上下限改变符号。区间须包含在实数连续定义域中，跨奇点的反常积分不在此实验范围内。矩形和及图形为数值近似。';}}
+      $('labStatus').textContent='计算完成 · '+data.engine;
+    }catch(e){if(e.name==='AbortError')return;if(version!==requestVersion)return;$('labPlot').innerHTML='';$('labResult').textContent='';$('labFormula').innerHTML='';$('labMatrixResults').innerHTML='';$('labStatus').textContent=e.message;$('labCondition').textContent='请调整输入或定义域后重新计算，未显示上一轮结果。';}finally{if(version===requestVersion){$('labCompute').disabled=false;controller=null;}}
+  }
+  function dirty(){controller?.abort();++requestVersion;clearTimeout(timer);$('labCompute').disabled=false;$('labStatus').textContent='参数已改变，正在更新…';for(const id of ['labX','labA','labB','labN'])document.querySelector(`[data-lab-value="${id}"]`).textContent=$(id).value;timer=setTimeout(compute,700);}
+  function choose(next){mode=next;lastMatrix=null;$('labFunctionControl').hidden=mode==='linear';$('labFormula').hidden=mode==='linear';$('labMatrixResults').hidden=mode!=='linear';['derivative','integral','linear'].forEach(k=>$(`lab-${k}`).hidden=k!==mode);document.querySelectorAll('[data-lab-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.labMode===mode)));compute();}
   document.querySelectorAll('[data-lab-mode]').forEach(b=>b.onclick=()=>choose(b.dataset.labMode));
-  document.querySelectorAll('#math-lab input,#math-lab select').forEach(input=>input.addEventListener('input',draw));
-  $('labReset').onclick=()=>{document.querySelectorAll('#math-lab input').forEach(i=>i.value=i.defaultValue);$('labFunction').value='square';draw();};
-  $('labToStudy').onclick=()=>{if(askController){showMessage('请等待当前回答结束或取消。');return;}MathWorkspace.setMode('explain');$('question').value=`请解释这个数学实验，并说明适用条件：\n${$('labResult').textContent}\n${$('labCondition').textContent}`;$('question').dispatchEvent(new Event('input',{bubbles:true}));$('question').focus();};
-  choose(mode);
+  $('labFunction').onchange=()=>{const e=examples.find(e=>e[0]===$('labFunction').value);if(e){$('labExpression').value=e[2];$('labX').value=e[3];$('labA').value=e[4];$('labB').value=e[5];dirty();}else $('labExpression').focus();};
+  $('labMatrixPreset').onchange=()=>{$('labMatrixInput').value=presets[$('labMatrixPreset').value];compute();};
+  document.querySelectorAll('#math-lab input,#math-lab textarea,#labH').forEach(input=>input.addEventListener('input',()=>{if(input.id==='labExpression')$('labFunction').value='custom';if(['labV1','labV2'].includes(input.id)&&lastMatrix&&mode==='linear'){matrixPlot(lastMatrix);return;}dirty();}));
+  $('labCompute').onclick=compute;$('labReset').onclick=()=>{document.querySelectorAll('#math-lab input').forEach(i=>i.value=i.defaultValue);$('labFunction').value='square';$('labMatrixPreset').value='symmetric';$('labMatrixInput').value=presets.symmetric;$('labH').value='0.1';for(const id of ['labX','labA','labB','labN'])document.querySelector(`[data-lab-value="${id}"]`).textContent=$(id).value;compute();};
+  $('labToStudy').onclick=()=>{MathWorkspace.setMode('explain');MathWorkspace.showView('ask');$('question').value=`请解释这个数学实验，并说明适用条件：\n${mode==='linear'?'矩阵 A：'+$('labMatrixInput').value:'f(x) = '+$('labExpression').value}\n${$('labResult').textContent}\n${$('labCondition').textContent}`;$('question').focus();};
+  // Calculate only after entering the lab; textbook reading does not spawn math workers.
+  let entered=false;const enter=()=>{if(location.hash==='#math-lab'&&!entered){entered=true;choose(mode);}};window.addEventListener('hashchange',enter);document.addEventListener('workspacechange',enter);enter();
 })();

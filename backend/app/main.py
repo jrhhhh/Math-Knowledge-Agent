@@ -58,6 +58,7 @@ from app.api.notes import router as notes_router
 from app.api.textbooks import router as textbooks_router
 from app.api.learning_metrics import router as learning_metrics_router
 from app.api.course_reader import router as course_reader_router
+from app.api.math_lab import router as math_lab_router
 
 
 Base.metadata.create_all(
@@ -97,6 +98,7 @@ app.include_router(notes_router)
 app.include_router(textbooks_router)
 app.include_router(learning_metrics_router)
 app.include_router(course_reader_router)
+app.include_router(math_lab_router)
 
 
 @app.get("/")

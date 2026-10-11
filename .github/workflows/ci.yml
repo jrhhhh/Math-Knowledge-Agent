@@ -39,7 +39,10 @@ jobs:
           test "$code" -ne 0
           grep -q '"status":"failed"' /tmp/math-agent-backup-failure.json
       - name: Check frontend JavaScript
-        run: node --check frontend/app.js
+        run: |
+          node --check frontend/app.js
+          node --check frontend/math-lab.js
+          node --check frontend/course-reader.js
       - name: Start services
         run: |
           MATH_AGENT_DB_PATH=/tmp/math-agent-ci.db uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/math-agent-api.log 2>&1 &

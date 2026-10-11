@@ -1,0 +1,24 @@
+.lab-layout { grid-template-columns:260px minmax(0,1fr); gap:24px; align-items:start; }
+.lab-controls input:not([type=range]),.lab-controls textarea { width:100%; padding:11px; border:1px solid #cbdcf2; border-radius:10px; background:#fff9; color:#214b7a; box-sizing:border-box; }
+.lab-controls textarea { font:15px/1.8 ui-monospace,monospace; resize:vertical; }
+.lab-primary { width:100%; padding:12px; border:0; border-radius:11px; background:#367dea; color:white; font-weight:600; cursor:pointer; }
+#labStatus { min-height:24px; margin-bottom:0; }
+.lab-formula { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.lab-formula > div { padding:14px; border:1px solid #d2e2f4; border-radius:14px; background:#ffffff70; min-width:0; overflow:auto; font-size:14px; }
+.lab-formula span { display:block; font-size:11px; color:#6a84a5; }
+.lab-formula mjx-container { max-width:100%; font-size:110% !important; }
+.lab-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:18px 0; }
+.lab-stat-grid > div { padding:16px; background:#fff8; border:1px solid #d4e3f6; border-radius:14px; }
+.lab-stat-grid small { display:block; color:#6a84a5; }.lab-stat-grid strong { display:block; margin-top:8px; font-size:21px; color:#2c5c98; overflow-wrap:anywhere; }
+#labMatrixResults { font-size:13px; line-height:1.8; }
+#labMatrixResults details { margin:18px 0; padding:15px; background:#ffffff65; border:1px solid #d2e2f4; border-radius:14px; }
+#labMatrixResults summary { cursor:pointer; font-weight:600; color:#3e669b; }
+.lab-scroll { overflow:auto; max-height:370px; }
+#labMatrixResults table { border-collapse:collapse; width:100%; margin:10px 0; white-space:nowrap; font-size:13px; }
+#labMatrixResults td,#labMatrixResults th { border-bottom:1px solid #d6e3f3; padding:10px 14px; text-align:left; }
+#labMatrixResults th { color:#56759d; font-weight:500; background:#f0f6fe; }
+#labMatrixResults .lab-matrix-table { width:auto; font-family:ui-monospace,monospace; }
+.lab-checks { color:#51816e; }.lab-controls details { font-size:12px; color:#6882a3; margin:12px 0; }
+#labResult { display:block; line-height:1.9; margin-top:16px; overflow-wrap:anywhere; }
+@media(max-width:800px) { .lab-layout { grid-template-columns:1fr; }.lab-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 18px; }.lab-controls > div { min-width:0; }.lab-primary,#labStatus { grid-column:1/-1; } }
+@media(max-width:480px) { .lab-formula { grid-template-columns:1fr; }.lab-stat-grid { grid-template-columns:repeat(2,1fr); }.lab-controls { display:block; } }

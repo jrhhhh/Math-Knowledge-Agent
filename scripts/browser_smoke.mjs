@@ -48,6 +48,26 @@ try {
   if (!(await page.locator('#graphConceptCard').textContent()).includes('推荐学习')) throw new Error('learning path missing from graph concept card');
   if (await page.locator('[data-learning-concept]').count()) throw new Error('learning path still exposes manual mastery controls');
   if (!(await page.locator('#graphConceptCard').textContent()).includes('掌握状态只由审核后的作答证据更新')) throw new Error('evidence-driven mastery notice missing');
+  await page.getByRole('link', { name: '实验', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#labStatus')?.textContent.includes('计算完成'), null, { timeout: 20000 });
+  if (!(await page.locator('#labResult').textContent()).includes('双侧导数 = 2')) throw new Error('symbolic derivative missing');
+  if (await page.locator('#labFunction option').count() !== 31) throw new Error('common function catalog incomplete');
+  await page.getByRole('button', { name: '高等代数', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#labMatrixResults')?.textContent.includes('Cayley'), null, { timeout: 20000 });
+  if (!(await page.locator('#labMatrixResults').textContent()).includes('实数域可对角化：是')) throw new Error('symmetric matrix results missing');
+  if (await page.locator('#labMatrixResults details[open] tbody tr').count() !== 3) throw new Error('principal minors incomplete');
+  await page.locator('#labMatrixPreset').selectOption('rotation');
+  await page.waitForFunction(() => document.querySelector('#labMatrixResults')?.textContent.includes('实数域可对角化：否'), null, { timeout: 20000 });
+  if (!(await page.locator('#labResult').textContent()).includes('没有实特征方向')) throw new Error('complex eigenvalue example incorrectly plots real eigenvectors');
+  await page.locator('#labMatrixPreset').selectOption('four');
+  await page.waitForFunction(() => document.querySelector('#labMatrixResults details[open] tbody')?.children.length === 15, null, { timeout: 20000 });
+  await page.getByRole('button', { name: '积分', exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#labResult')?.textContent.includes('定积分 = 0.3333333'), null, { timeout: 20000 });
+  await page.locator('#labFunction').selectOption('reciprocal');
+  await page.locator('#labExpression').fill('1/(x-1.5)');
+  await page.getByRole('button', { name: '计算并绘图' }).click();
+  await page.waitForFunction(() => document.querySelector('#labStatus')?.textContent.includes('跨越'), null, { timeout: 20000 });
+  if (await page.locator('#labPlot polyline').count()) throw new Error('invalid integral retained stale plot');
   console.log(`Browser smoke passed: ${formulaCount} MathJax formulas rendered.`);
 } finally {
   await browser.close();

@@ -29,6 +29,8 @@
     };
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <link rel="stylesheet" href="./product-polish.css?v=1" />
+  <link rel="stylesheet" href="./math-lab-expanded.css?v=1" />
 </head>
 <body>
   <div class="math-flow" aria-hidden="true">
@@ -42,7 +44,7 @@
   <div class="scroll-coordinate" aria-hidden="true"><i></i><span>0.000</span></div>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">∑</span><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
+      <div class="brand"><svg class="brand-symbol" viewBox="0 0 32 32" aria-label="知识路径" role="img"><path d="M7 24V8l9 11 9-11v16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="8" r="3"/><circle cx="16" cy="19" r="3"/><circle cx="25" cy="8" r="3"/></svg><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
       <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#course-reader" data-ui-icon="book">教材伴读</a><a href="#knowledge-library">知识库</a><a href="#study-notes">笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
       <div class="side-note"><span class="status-dot"></span><div><b id="workspaceConnection">连接中</b><small>本地学习空间</small></div></div>
     </aside>
@@ -70,7 +72,19 @@
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
       <div id="message" class="message hidden"></div>
-      <section id="math-lab" class="math-lab workspace-hidden" aria-label="数学交互实验"><div class="panel-heading"><div><span class="section-label">MATH EXPLORATION</span><h2>改变参数，看见数学。</h2></div><button id="labReset" type="button">恢复默认参数</button></div><div class="lab-tabs"><button data-lab-mode="derivative" type="button">导数</button><button data-lab-mode="integral" type="button">积分</button><button data-lab-mode="linear" type="button">线性变换</button></div><div class="lab-layout"><div class="lab-controls"><label id="labFunctionControl">函数<select id="labFunction"><option value="square">x²</option><option value="cube">x³</option><option value="sine">sin x</option><option value="absolute">|x|</option></select></label><div id="lab-derivative"><label>切点 x₀ <output data-lab-value="labX"></output><input id="labX" type="range" min="-2" max="2" step="0.1" value="1"></label><label>增量 h<select id="labH"><option value="1">1</option><option value="0.1">0.1</option><option value="0.01">0.01</option><option value="-1">−1</option><option value="-0.1">−0.1</option><option value="-0.01">−0.01</option></select></label><p>比较不同增量的割线与切线。试试 |x| 在原点的左右差商。</p></div><div id="lab-integral" hidden><label>下限 a <output data-lab-value="labA"></output><input id="labA" type="range" min="-3" max="3" step="0.1" value="0"></label><label>上限 b <output data-lab-value="labB"></output><input id="labB" type="range" min="-3" max="3" step="0.1" value="1"></label><label>矩形数 n <output data-lab-value="labN"></output><input id="labN" type="range" min="1" max="100" step="1" value="10"></label><p>蓝色为非负函数值，棕色为负函数值。比较细分前后的误差。</p></div><div id="lab-linear" hidden><p>A = [a b; c d]</p><div class="lab-matrix"><label>a<input id="labM11" type="range" min="-3" max="3" step="0.5" value="1"></label><label>b<input id="labM12" type="range" min="-3" max="3" step="0.5" value="0"></label><label>c<input id="labM21" type="range" min="-3" max="3" step="0.5" value="0"></label><label>d<input id="labM22" type="range" min="-3" max="3" step="0.5" value="1"></label></div><label>向量横坐标<input id="labV1" type="range" min="-3" max="3" step="0.5" value="1"></label><label>向量纵坐标<input id="labV2" type="range" min="-3" max="3" step="0.5" value="1"></label><p>变换网格和单位正方形，观察面积与方向。</p></div></div><div class="lab-canvas"><svg id="labPlot" viewBox="0 0 640 440" role="img" aria-label="数学参数实验图"></svg><output id="labResult" aria-live="polite"></output></div></div><p id="labCondition" class="lab-condition"></p><button type="button" id="labToStudy">带着实验继续提问 ↗</button></section>
+      <section id="math-lab" class="math-lab workspace-hidden" aria-label="数学交互实验">
+        <div class="panel-heading"><div><span class="section-label">MATH EXPLORATION</span><h2>改变参数，看见数学。</h2></div><button id="labReset" type="button">恢复默认参数</button></div>
+        <div class="lab-tabs" role="group" aria-label="数学实验类型"><button data-lab-mode="derivative" type="button">导数</button><button data-lab-mode="integral" type="button">积分</button><button data-lab-mode="linear" type="button">高等代数</button></div>
+        <div class="lab-layout"><div class="lab-controls">
+          <div id="labFunctionControl"><label>常用函数<select id="labFunction" aria-label="实验常用函数"></select></label><label>函数表达式<input id="labExpression" value="x^2" maxlength="180" aria-label="实验函数表达式"></label><details><summary>表达式写法</summary><p>变量 x，常数 pi、e；乘法写 *，幂写 ^。支持 sin、cos、tan、cot、sec、csc、asin、acos、atan、sinh、cosh、tanh、exp、log、sqrt、abs。角度用弧度；log 是自然对数。</p></details></div>
+          <div id="lab-derivative"><label>切点 x₀ <output data-lab-value="labX">1</output><input id="labX" type="range" min="-6" max="6" step="0.1" value="1"></label><label>增量 h<select id="labH"><option value="1">1</option><option value="0.1" selected>0.1</option><option value="0.01">0.01</option><option value="-1">−1</option><option value="-0.1">−0.1</option><option value="-0.01">−0.01</option></select></label></div>
+          <div id="lab-integral" hidden><label>下限 a <output data-lab-value="labA">0</output><input id="labA" type="range" min="-6" max="6" step="0.1" value="0"></label><label>上限 b <output data-lab-value="labB">1</output><input id="labB" type="range" min="-6" max="6" step="0.1" value="1"></label><label>矩形数 n <output data-lab-value="labN">30</output><input id="labN" type="range" min="1" max="100" step="1" value="30"></label></div>
+          <div id="lab-linear" hidden><label>矩阵示例<select id="labMatrixPreset" aria-label="矩阵示例"><option value="symmetric">对称矩阵 · 正定</option><option value="rotation">旋转 · 复特征值</option><option value="jordan">Jordan 块 · 不可对角化</option><option value="singular">奇异矩阵 · 降维</option><option value="three">三阶对称矩阵</option><option value="four">四阶矩阵</option></select></label><label>方阵 A<textarea id="labMatrixInput" rows="5" spellcheck="false" aria-label="矩阵元素">2 1
+1 2</textarea></label><p>支持 1–4 阶方阵；每行一行，空格或逗号分隔。元素可写整数、小数、分数（1/3）。</p><label>二维向量 v₁<input id="labV1" type="range" min="-3" max="3" step="0.5" value="1"></label><label>二维向量 v₂<input id="labV2" type="range" min="-3" max="3" step="0.5" value="1"></label></div>
+          <button id="labCompute" class="lab-primary" type="button">计算并绘图</button><p id="labStatus" role="status"></p>
+        </div><div class="lab-canvas"><svg id="labPlot" viewBox="0 0 640 440" role="img" aria-label="数学参数实验图"></svg><output id="labResult" aria-live="polite"></output><div id="labFormula" class="lab-formula"></div><div id="labMatrixResults" hidden></div></div></div>
+        <p id="labCondition" class="lab-condition"></p><button type="button" id="labToStudy">带着实验继续提问 ↗</button>
+      </section>
       <section class="knowledge-library" id="knowledge-library" aria-label="知识库检索"><div class="library-tabs"><button type="button" data-library-view="concepts" aria-pressed="true">概念与定理</button><button type="button" data-library-view="textbooks" aria-pressed="false">教材与阅读</button></div>
         <div class="library-intro"><span class="pill">LOCAL KNOWLEDGE LIBRARY</span><h2>从已有知识出发。</h2><p>检索本地已保存的概念、定理、性质和方法，查看关系网络，再把知识点带回当前对话。</p></div>
         <div class="library-workbench">
@@ -129,9 +143,9 @@
               <div class="cr-scope"><label>提问范围<select id="crScope" aria-label="伴读提问范围"><option value="page">当前页</option><option value="selection">选中文字</option><option value="range">指定页码</option></select></label><div id="crRange" hidden><input id="crRangeStart" type="number" min="1" aria-label="范围起始 PDF 页"><span>至</span><input id="crRangeEnd" type="number" min="1" aria-label="范围结束 PDF 页"></div></div>
               <div id="crSelection" class="cr-selection" hidden><span></span><button id="crClearSelection" type="button" aria-label="取消教材选段">×</button></div>
               <p id="crScopeLabel" class="cr-scope-label"></p>
-              <div class="cr-actions"><button type="button" data-cr-action="explain">解释这一段</button><button type="button" data-cr-action="reason">补全推理</button><button type="button" data-cr-action="example">举例或反例</button><button type="button" data-cr-action="hint">只给提示</button></div>
-              <textarea id="crQuestion" aria-label="教材伴读问题" placeholder="这一步为什么成立？这个定义有哪些必要条件？" rows="2"></textarea>
-              <div class="cr-send-row"><button type="button" id="crGraph" data-ui-icon="graph" disabled>生成知识图谱</button><button type="button" id="crQuiz" data-ui-icon="pen">生成练习草稿</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend" data-ui-icon="send">提问</button></div>
+              <details class="cr-quick"><summary>伴读快捷动作</summary><div class="cr-actions"><button type="button" data-cr-action="explain">解释这一段</button><button type="button" data-cr-action="reason">补全推理</button><button type="button" data-cr-action="example">举例或反例</button><button type="button" data-cr-action="hint">只给提示</button></div></details>
+              <textarea id="crQuestion" aria-label="教材伴读问题" placeholder="写下你想追问的地方…" rows="2"></textarea>
+              <div class="cr-send-row"><button type="button" id="crGraph" disabled>生成图谱</button><button type="button" id="crQuiz">生成练习</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend">提问</button></div>
               <p id="crChatStatus" role="status">原文与补充解释分别标注，模型讲解仍需核对。</p>
             </form>
             <details id="crDraftPanel" class="cr-drafts"><summary>教材练习草稿 <span id="crDraftCount">0</span></summary><div id="crDraftList"></div></details>
@@ -150,11 +164,11 @@
   <script src="./review.js?v=final-1"></script>
   <script src="./notes.js?v=reader-1"></script>
   <script src="./math-lab-core.js?v=final-1"></script>
-  <script src="./math-lab.js?v=final-1"></script>
+  <script src="./math-lab.js?v=expanded-1"></script>
   <script src="./textbooks.js?v=final-1"></script>
   <script src="./learning-metrics.js?v=final-1"></script>
   <script src="./graph-explorer.js?v=orbit-2"></script>
-  <script type="module" src="./course-reader.js?v=reader-8"></script>
+  <script type="module" src="./course-reader.js?v=reader-9"></script>
   <script src="./ui-interactions.js?v=graph-3"></script>
   <script src="./motion.js?v=final-1"></script>
 </body>
