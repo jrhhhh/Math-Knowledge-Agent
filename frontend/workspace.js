@@ -2,6 +2,7 @@
 (() => {
   const views = {
     ask: { title: '把难题，变成清晰的思路。', sections: ['ask', 'studyModeBar', 'learningPulse', 'responseWorkspace'] },
+    'course-reader': { title: '与教材一起，走通每一步。', sections: ['course-reader'] },
     practice: { title: '把理解，变成独立解答。', sections: ['practice', 'learningPulse'] },
     'knowledge-library': { title: '从准确的定义开始。', sections: ['knowledge-library'] },
     'study-notes': { title: '把思路，留成自己的知识。', sections: ['study-notes'] },
@@ -28,6 +29,7 @@
     if (key === 'proof') { mode = 'check'; key = 'ask'; }
     if (!views[key]) key = 'ask';
     view = key;
+    document.body.dataset.workspace = key;
     const visible = new Set(views[key].sections);
     if (key === 'ask' && mode === 'check') { visible.delete('ask'); visible.delete('responseWorkspace'); visible.add('proof'); }
     panelIds.forEach(id => $(id)?.classList.toggle('workspace-hidden', !visible.has(id)));

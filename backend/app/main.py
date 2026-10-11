@@ -36,6 +36,7 @@ from app.models.problem_attempt import ProblemAttempt
 from app.models.study_note import StudyNote
 from app.models.chunk_revision import ChunkRevision
 from app.models.learning_visit import LearningVisit
+from app.models.course_reading import CourseReadingState, CourseConversation, CourseMessage, CourseExerciseDraft
 from app.models.problem_hint import ProblemHint
 from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.problem_source import ProblemSource
@@ -56,6 +57,7 @@ from app.api.learning import router as learning_router
 from app.api.notes import router as notes_router
 from app.api.textbooks import router as textbooks_router
 from app.api.learning_metrics import router as learning_metrics_router
+from app.api.course_reader import router as course_reader_router
 
 
 Base.metadata.create_all(
@@ -94,6 +96,7 @@ app.include_router(learning_router)
 app.include_router(notes_router)
 app.include_router(textbooks_router)
 app.include_router(learning_metrics_router)
+app.include_router(course_reader_router)
 
 
 @app.get("/")

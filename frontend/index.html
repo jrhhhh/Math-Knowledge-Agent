@@ -15,7 +15,9 @@
   <link rel="stylesheet" href="./glass-refinements.css" />
   <link rel="stylesheet" href="./workspace.css?v=spacing-3" />
   <link rel="stylesheet" href="./graph-explorer.css?v=orbit-2" />
-  <link rel="stylesheet" href="./ui-interactions.css?v=icons-3" />
+  <link rel="stylesheet" href="./pdf-reader-vendor.css?v=scope-1" />
+  <link rel="stylesheet" href="./course-reader.css?v=reader-3" />
+  <link rel="stylesheet" href="./ui-interactions.css?v=icons-4" />
   <script>
     window.MathJax = {
       tex: {
@@ -41,7 +43,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">∑</span><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
-      <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#knowledge-library">知识库</a><a href="#study-notes">笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
+      <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#course-reader" data-ui-icon="book">教材伴读</a><a href="#knowledge-library">知识库</a><a href="#study-notes">笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
       <div class="side-note"><span class="status-dot"></span><div><b id="workspaceConnection">连接中</b><small>本地学习空间</small></div></div>
     </aside>
     <main class="main-content">
@@ -108,20 +110,51 @@
       </section>
       <section class="panel graph-panel" id="graph"><div class="panel-heading"><div><span class="section-label">03 / KNOWLEDGE GRAPH</span><h3>知识关系网络</h3></div><div class="graph-tools"><span id="graphStatus" class="muted">正在加载</span><button type="button" id="saveGraphButton" class="graph-save hidden">校验并保存</button></div></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state">加载知识图谱中…</div></div><div id="legend" class="legend"></div><details id="graphHistory" class="graph-history"><summary>候选图谱历史</summary><div class="candidate-filter"><label for="candidateStatusFilter">状态</label><select id="candidateStatusFilter"><option value="">全部</option><option value="pending">待审核</option><option value="needs_review">需复核</option><option value="validated">已校验</option><option value="saved">已保存</option><option value="rejected">已拒绝</option></select></div><div id="candidateList" class="candidate-list"><span class="muted">正在加载候选记录…</span></div></details><details id="graphEditorPanel" class="graph-editor"><summary>审核并编辑候选图谱</summary><p>可修改节点或关系；应用后需要重新进行 AI 校验。</p><textarea id="graphEditor" spellcheck="false" aria-label="候选图谱 JSON"></textarea><button type="button" id="applyGraphEdit" class="graph-edit-button">应用修改</button></details></section>
       <section class="management-workbench panel" id="management" aria-label="管理工作区"><div class="panel-heading"><div><span class="section-label">WORKSPACE MANAGEMENT</span><h2>管理与审核</h2></div><p>运行状态、后台任务和资料维护。</p></div><details id="learningMetrics" class="learning-metrics"><summary>学习闭环与使用记录</summary><div class="metrics-toolbar"><label>统计范围<select id="metricsDays"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="0">全部记录</option></select></label><button type="button" id="refreshLearningMetrics">刷新</button><button type="button" id="exportLearningMetrics" disabled>导出明细 JSON</button></div><p id="metricsStatus" role="status"></p><div id="metricsCards" class="metrics-cards"></div><p id="metricsVisits"></p><details><summary>统计口径与限制</summary><p>同一时间范围内有作答的题目为统一分母。每一步按题目去重，反馈后再练要求新作答晚于前次人工审核；延迟独立完成还要求至少相隔 24 小时、审核正确、独立、无提示且非修订。未审核作答不计正确。</p><p>审核等待为提交至当前审核时间的中位数；重复审核会覆盖该时间。回答帮助度按每份回答最新评分去重。访问按上海日期每日去重，仅本地记录，刷新不会增加活跃天数。历史未采集的回访无法恢复；这些统计不证明学习效果提升。</p></details><details><summary>查看原始记录编号与时间</summary><div id="metricsEvidence"></div></details></details><div id="managementTools"></div></section>
+      <section id="course-reader" class="course-reader workspace-hidden" aria-label="教材伴读工作台">
+        <div class="cr-heading"><div><span class="section-label">TEXTBOOK COMPANION</span><h2>读到哪里，理解到哪里。</h2></div><div class="cr-book-tools"><select id="crBook" aria-label="选择伴读教材"><option value="">选择一本教材</option></select><button id="crImport" type="button" data-ui-icon="upload">导入 PDF</button><button id="crRefresh" type="button" data-ui-icon="refresh" aria-label="刷新伴读教材">刷新</button></div></div>
+        <p id="crNotice" class="cr-notice" role="status">打开教材，在原页选取文字或指定页码，开始伴读。</p>
+        <div class="cr-mobile-tabs"><button type="button" data-cr-tab="reader" aria-pressed="true">阅读教材</button><button type="button" data-cr-tab="chat" aria-pressed="false">伴读对话</button></div>
+        <div id="crWorkspace" class="cr-workspace" hidden>
+          <div class="cr-reading">
+            <div class="cr-reader-toolbar"><button type="button" id="crOutlineToggle" aria-expanded="false" data-ui-icon="book">目录</button><button type="button" id="crPrev" aria-label="教材上一页">‹</button><label>PDF <input id="crPage" type="number" min="1" value="1" aria-label="伴读 PDF 页码"></label><span id="crTotal">/ —</span><button type="button" id="crNext" aria-label="教材下一页">›</button><select id="crZoom" aria-label="教材缩放"><option value="1">适合宽度</option><option value=".75">75%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select><button id="crBookmark" type="button" data-ui-icon="star" aria-pressed="false">书签</button></div>
+            <div class="cr-reader-body"><aside id="crOutline" hidden><h3>原 PDF 目录</h3><p class="cr-outline-hint">沿用 PDF 内嵌目录；若定位有偏差，可用页码或书签阅读。</p><div id="crChapters"></div><h3>我的书签</h3><div id="crBookmarks"></div><details><summary>校准印刷页码</summary><label>印刷页 = PDF 页 + 偏移<input id="crPrintOffset" type="number" min="-1000" max="1000" value="0"></label><p id="crPrinted"></p></details></aside><div class="cr-pdf-wrap"><div id="crPdfContainer" tabindex="0" aria-label="教材原页，支持选择文字"><div id="crPdfViewer" class="pdfViewer"></div></div><p id="crPdfFallback" hidden></p></div></div>
+            <details class="cr-text-tools"><summary>本页文字与校对</summary><p>提取文字可能含公式识别错误。原页无法选字时，可在下方选取一段。</p><textarea id="crPageText" readonly aria-label="伴读本页提取文字"></textarea><button id="crUseText" type="button" data-ui-icon="chat">引用所选文字</button><button id="crEditSource" type="button" data-ui-icon="pen">打开教材校对</button></details>
+          </div>
+          <div id="crDivider" class="cr-divider" role="separator" tabindex="0" aria-label="调整阅读与对话宽度" aria-orientation="vertical" aria-valuemin="35" aria-valuemax="75" aria-valuenow="58"></div>
+          <div class="cr-chat">
+            <div class="cr-chat-head"><div><span class="section-label">READ · ASK · UNDERSTAND</span><h3>与这本教材对话</h3></div><button id="crNewChat" type="button" data-ui-icon="plus">新讨论</button></div>
+            <select id="crConversation" aria-label="教材讨论记录"></select>
+            <div id="crMessages" class="cr-messages" aria-live="polite"><p class="cr-empty">选取一段、提出一个问题。解释与原页放在一起，方便核对。</p></div>
+            <form id="crAskForm" class="cr-composer">
+              <div class="cr-scope"><label>提问范围<select id="crScope" aria-label="伴读提问范围"><option value="page">当前页</option><option value="selection">选中文字</option><option value="range">指定页码</option></select></label><div id="crRange" hidden><input id="crRangeStart" type="number" min="1" aria-label="范围起始 PDF 页"><span>至</span><input id="crRangeEnd" type="number" min="1" aria-label="范围结束 PDF 页"></div></div>
+              <div id="crSelection" class="cr-selection" hidden><span></span><button id="crClearSelection" type="button" aria-label="取消教材选段">×</button></div>
+              <p id="crScopeLabel" class="cr-scope-label"></p>
+              <div class="cr-actions"><button type="button" data-cr-action="explain">解释这一段</button><button type="button" data-cr-action="reason">补全推理</button><button type="button" data-cr-action="example">举例或反例</button><button type="button" data-cr-action="hint">只给提示</button></div>
+              <textarea id="crQuestion" aria-label="教材伴读问题" placeholder="这一步为什么成立？这个定义有哪些必要条件？" rows="2"></textarea>
+              <div class="cr-send-row"><button type="button" id="crQuiz" data-ui-icon="pen">生成练习草稿</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend" data-ui-icon="send">提问</button></div>
+              <p id="crChatStatus" role="status">原文与补充解释分别标注，模型讲解仍需核对。</p>
+            </form>
+            <details id="crDraftPanel" class="cr-drafts"><summary>教材练习草稿 <span id="crDraftCount">0</span></summary><div id="crDraftList"></div></details>
+          </div>
+        </div>
+        <div id="crEmpty" class="cr-empty-book"><span aria-hidden="true">∫</span><h3>让教材成为可以追问的学习空间。</h3><p>导入你的 PDF，保留原页、阅读位置与每次讨论的依据。</p><button type="button" id="crEmptyImport" data-ui-icon="upload">导入一本教材</button></div>
+      </section>
+      <dialog id="crImportDialog" class="cr-import-dialog"><form id="crUploadForm"><div class="cr-chat-head"><h2>导入伴读教材</h2><button type="button" id="crCloseImport" aria-label="关闭伴读导入">×</button></div><label>教材名称<input id="crImportTitle" required maxlength="240" placeholder="例如：最优化导论 第四版"></label><label>课程<input id="crImportCourse" required maxlength="160" placeholder="例如：最优化导论"></label><label>PDF 文件<input id="crImportFile" type="file" accept="application/pdf,.pdf" required></label><p>支持 50 MB 内的 PDF。导入文字需要与原页核对，扫描页可在教材校对中补录。</p><progress id="crUploadProgress" max="100" value="0" hidden></progress><p id="crUploadStatus" role="status"></p><button id="crUploadSubmit" type="submit" data-ui-icon="upload">导入并打开</button></form></dialog>
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=orbit-2"></script>
-  <script src="./workspace.js?v=final-1"></script>
+  <script src="./app.js?v=reader-1"></script>
+  <script src="./workspace.js?v=reader-1"></script>
   <script src="./evidence.js?v=final-1"></script>
   <script src="./practice.js?v=final-1"></script>
   <script src="./review.js?v=final-1"></script>
-  <script src="./notes.js?v=final-1"></script>
+  <script src="./notes.js?v=reader-1"></script>
   <script src="./math-lab-core.js?v=final-1"></script>
   <script src="./math-lab.js?v=final-1"></script>
   <script src="./textbooks.js?v=final-1"></script>
   <script src="./learning-metrics.js?v=final-1"></script>
   <script src="./graph-explorer.js?v=orbit-2"></script>
+  <script type="module" src="./course-reader.js?v=reader-7"></script>
   <script src="./ui-interactions.js?v=icons-3"></script>
   <script src="./motion.js?v=final-1"></script>
 </body>

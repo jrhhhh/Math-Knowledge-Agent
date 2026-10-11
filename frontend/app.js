@@ -1013,6 +1013,7 @@ async function loadPracticeProblem() {
     if ($('practiceHints')) $('practiceHints').innerHTML = '';
     if ($('practiceHint')) { $('practiceHint').disabled = false; $('practiceHint').textContent = '获取一级提示'; }
     $('practicePrompt').innerHTML = problem ? `<b>${escapeHtml(problem.title)}</b>：${escapeHtml(problem.content)}${(problem.sources || []).length ? `<small class="practice-source">教材来源：${problem.sources.map(source => `${escapeHtml(source.document_title || '课程文档')} · ${escapeHtml(source.chapter || '未分章')} · 第 ${escapeHtml(String(source.page_start || '?'))} 页`).join('；')}</small>` : '<small class="practice-source">暂无已审核教材出处</small>'}` : '题目不存在';
+    typesetMath($('practicePrompt'));
     const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
     const history = await historyResponse.json();
     window.MathPractice?.render(history.items || []);

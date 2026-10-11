@@ -63,6 +63,6 @@ def export_note(note_id:int,db:Session=Depends(get_db)):
     if not note:raise HTTPException(404,detail='笔记不存在')
     origin=json.loads(note.origin_json)
     text=f'# {note.title}\n\n课程：{note.course}\n\n{note.content}\n\n---\n\n## 来源与验证范围\n\n笔记可经个人编辑，以下保留原始回答与证据；引用或模型审查不等于完整证明。\n\n'
-    if origin:text+=f'原回答 #{note.answer_id}；问题：{origin["question"]}\n\n原回答：\n\n{origin["answer"]}\n\n证据快照：\n\n```json\n{json.dumps(origin["evidence"],ensure_ascii=False,indent=2)}\n```\n'
+    if origin:text+=f'{"伴读回答 #"+str(origin["course_message_id"]) if origin.get("course_message_id") else "原回答 #"+str(note.answer_id)}；问题：{origin["question"]}\n\n原回答：\n\n{origin["answer"]}\n\n证据快照：\n\n```json\n{json.dumps(origin["evidence"],ensure_ascii=False,indent=2)}\n```\n'
     else:text+='个人手工笔记，暂无原回答证据。\n'
     return Response(text,media_type='text/markdown; charset=utf-8',headers={'Content-Disposition':f'attachment; filename="math-note-{note_id}.md"'})

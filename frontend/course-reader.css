@@ -1,0 +1,98 @@
+/* A focused reading room within the blue-white glass workspace. */
+body[data-workspace="course-reader"] .topbar { display:none; }
+#course-reader { order:2; color:#294967; --cr-ratio:58%; }
+#course-reader[hidden],#course-reader [hidden],#crImportDialog [hidden] { display:none !important; }
+.cr-heading,.cr-book-tools,.cr-chat-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.cr-heading h2 { margin:8px 0 0; font-size:27px; letter-spacing:-.03em; }
+.cr-book-tools { flex-wrap:wrap; }
+.cr-book-tools select { max-width:330px; }
+#course-reader button,#crImportDialog button { border:1px solid #bcd3ec; border-radius:11px; background:#eef5ffcc; color:#3568a0; padding:9px 12px; cursor:pointer; font:600 12px var(--sans); }
+#course-reader button:hover { background:#dfeeff; border-color:#91b6e4; }
+#course-reader button:disabled { opacity:.5; cursor:wait; }
+#course-reader input,#course-reader select,#course-reader textarea,#crImportDialog input { border:1px solid #c4d8ed; border-radius:10px; background:#fff9; color:#294e78; padding:9px 12px; font:13px var(--sans); box-sizing:border-box; min-width:0; }
+#course-reader select { appearance:none; padding-right:38px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23496b90' stroke-width='1.5'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-size:16px; background-repeat:no-repeat; background-position:right 14px center; }
+#course-reader :is(button,input,select,textarea):focus-visible,#crDivider:focus-visible { outline:2px solid #4b8be4; outline-offset:3px; }
+.cr-notice { color:#6782a0; font-size:12px; min-height:18px; margin:14px 0; line-height:1.65; }
+.cr-workspace { display:grid; grid-template-columns:minmax(0,var(--cr-ratio)) 12px minmax(0,1fr); height:calc(100dvh - 220px); min-height:550px; gap:0; }
+.cr-reading,.cr-chat { min-width:0; min-height:0; border:1px solid #ffffffe0; border-radius:22px; background:#f5f9ffb8; box-shadow:0 12px 35px #4a77a617; overflow:hidden; }
+.cr-reading { display:flex; flex-direction:column; }
+.cr-reader-toolbar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:12px; border-bottom:1px solid #dce7f5; }
+.cr-reader-toolbar label { display:flex; align-items:center; gap:5px; font-size:12px; }
+#crPage { width:62px; padding:8px; }
+#crTotal { color:#7790aa; font-size:12px; }
+#crZoom { max-width:130px; }
+.cr-reader-body { position:relative; flex:1; display:flex; min-height:220px; overflow:hidden; }
+.cr-pdf-wrap { position:relative; flex:1; min-width:0; background:#dbe5f2; }
+#crPdfContainer { position:absolute; inset:0; overflow:auto; overscroll-behavior:contain; }
+#crPdfContainer .pdfViewer { padding:12px 0; }
+#crPdfContainer .pdfViewer .page { border:0; margin:0 auto 14px; box-shadow:0 5px 20px #405a7a24; }
+#crPdfContainer .textLayer { color:transparent; }
+#crPdfFallback { padding:24px; color:#58799c; line-height:1.8; }
+#crOutline { width:170px; max-width:42%; padding:12px; flex:0 0 auto; overflow:auto; background:#f8fbff; border-right:1px solid #dce7f5; }
+#crOutline h3 { font-size:12px; margin:12px 0; }
+#crOutline button { display:block; width:100%; text-align:left; padding:8px; margin-bottom:6px; font-size:11px; line-height:1.5; }
+#crOutline input { width:100%; }
+#crOutline details { font-size:11px; line-height:1.7; }
+.cr-text-tools { padding:12px 16px; border-top:1px solid #dce7f5; background:#f8fbff; font-size:12px; }
+.cr-text-tools summary { cursor:pointer; color:#4b73a0; }
+.cr-text-tools p { color:#738ba5; font-size:11px; }
+#crPageText { display:block; width:100%; height:140px; resize:vertical; margin:10px 0; line-height:1.8; }
+.cr-divider { position:relative; cursor:col-resize; touch-action:none; }
+.cr-divider::after { content:''; position:absolute; width:3px; height:42px; border-radius:6px; background:#afc7e5; top:45%; left:5px; }
+.cr-chat { display:flex; flex-direction:column; padding:16px; }
+.cr-chat-head h3 { margin:7px 0; font-size:17px; }
+.cr-chat-head .section-label { font-size:9px; }
+#crConversation { width:100%; margin:10px 0; }
+.cr-messages { flex:1; min-height:120px; overflow:auto; overscroll-behavior:contain; padding:2px 2px 14px; }
+.cr-empty { color:#7990aa; font-size:13px; line-height:1.9; padding:20px 10px; }
+.cr-message { margin:10px 0 18px; overflow-wrap:anywhere; }
+.cr-message.user { margin-left:20px; padding:12px; background:#e5efff; border:1px solid #d1e1f7; border-radius:14px 14px 4px 14px; }
+.cr-message small { font-size:10px; color:#6e8aaa; display:block; margin-bottom:7px; }
+.cr-message-body { font-size:13px; line-height:1.85; }
+.cr-message-body p { margin:6px 0; }
+.cr-message-body h3 { font-size:14px; margin:12px 0 7px; }
+.cr-message-body pre { white-space:pre-wrap; }
+.cr-message-body .mjx-container { max-width:100%; overflow-x:auto; overflow-y:hidden; }
+.cr-message-foot { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.cr-message-foot button { font-size:11px !important; padding:7px 9px !important; }
+.cr-composer { padding:12px; border:1px solid #cfdef0; border-radius:16px; background:#fff9; }
+.cr-scope { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.cr-scope label { display:flex; align-items:center; gap:8px; font-size:11px; }
+#crRange { display:flex; align-items:center; gap:5px; font-size:11px; }
+#crRange input { width:57px; padding:7px; }
+.cr-scope-label { font-size:10px; color:#7490ac; margin:8px 0; }
+.cr-selection { display:flex; align-items:center; gap:7px; border-left:3px solid #6b9de0; padding:8px; margin-top:8px; background:#eff5ff; }
+.cr-selection span { font-size:11px; color:#4e6b8d; max-height:48px; overflow:auto; flex:1; }
+.cr-actions { display:flex; flex-wrap:wrap; gap:5px; margin:8px 0; }
+.cr-actions button { padding:6px 8px !important; font-size:10px !important; background:transparent !important; }
+#crQuestion { width:100%; resize:vertical; min-height:60px; line-height:1.7; }
+.cr-send-row { display:flex; gap:6px; margin-top:8px; }
+#crSend { margin-left:auto; background:#397de0; color:white; border-color:#397de0; }
+#crChatStatus { font-size:10px; color:#7b90aa; margin:8px 0 0; line-height:1.6; }
+.cr-drafts { font-size:12px; margin-top:10px; }
+.cr-drafts summary { cursor:pointer; color:#5d7a9c; }
+#crDraftList { max-height:300px; overflow:auto; }
+.cr-draft { border-top:1px solid #d5e2f1; padding:12px 0; }
+.cr-draft label { display:block; font-size:11px; margin:8px 0; }
+.cr-draft textarea,.cr-draft input[type=text] { width:100%; display:block; margin-top:6px; }
+.cr-draft textarea { min-height:70px; }
+.cr-empty-book { padding:65px 24px; border:1px solid #fff; border-radius:24px; background:#f9fcff9c; text-align:center; }
+.cr-empty-book > span { display:block; font:50px Georgia; color:#4c8bdf; }
+.cr-empty-book h3 { font-size:24px; }
+.cr-empty-book p { color:#7189a2; font-size:13px; line-height:1.8; }
+.cr-import-dialog { border:1px solid #d1e3f5; border-radius:24px; width:min(500px,calc(100vw - 32px)); background:#f8fbff; color:#315981; padding:24px; box-sizing:border-box; }
+.cr-import-dialog::backdrop { background:#18304f55; backdrop-filter:blur(12px); }
+.cr-import-dialog label { display:block; font-size:13px; margin:18px 0; }
+.cr-import-dialog input { display:block; width:100%; margin-top:8px; }
+.cr-import-dialog p { font-size:12px; color:#718ba8; line-height:1.8; }
+.cr-import-dialog progress { width:100%; }
+.cr-mobile-tabs { display:none; }
+@media(max-width:900px) { .cr-heading { align-items:flex-start; flex-direction:column; } .cr-heading h2 { font-size:23px; } .cr-book-tools { width:100%; } .cr-book-tools select { flex:1; max-width:none; width:120px; } .cr-workspace { height:calc(100dvh - 240px); grid-template-columns:minmax(0,1fr); min-height:600px; } .cr-divider { display:none; } .cr-mobile-tabs { display:flex; gap:8px; margin:14px 0; } .cr-mobile-tabs [aria-pressed=true] { background:#dceaff !important; border-color:#98b9e6 !important; } #course-reader[data-tab="reader"] .cr-chat,#course-reader[data-tab="chat"] .cr-reading { display:none; } .cr-reader-toolbar { gap:5px; padding:10px; } .cr-chat { padding:12px; } }
+@media(forced-colors:active) { #course-reader select { appearance:auto; background-image:none; } }
+
+.cr-table { max-width:100%; overflow-x:auto; margin:10px 0; }
+.cr-table table { width:100%; border-collapse:collapse; font-size:12px; }
+.cr-table th,.cr-table td { border:1px solid #d2e1f1; padding:7px 9px; text-align:center; }
+.cr-table th { background:#e8f1fd; }
+
+.cr-outline-hint { font-size:10px; color:#748ca7; line-height:1.6; }

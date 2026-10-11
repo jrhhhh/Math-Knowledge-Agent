@@ -1,6 +1,6 @@
 from sqlalchemy import inspect, text
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 def run_schema_migrations(connection):
     attempt_columns = {column["name"] for column in inspect(connection).get_columns("problem_attempts")}
