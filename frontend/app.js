@@ -133,6 +133,7 @@ function collectConversationGraphContext() {
 }
 
 async function generateRelatedGraph() {
+  if (askController || conversationSwitchBusy) { showMessage('请等待当前回答或对话切换完成，再生成图谱。'); return; }
   const context = collectConversationGraphContext();
   if (!context) {
     showMessage('请先输入一个数学问题或知识点，再生成相关图谱。');
@@ -140,7 +141,9 @@ async function generateRelatedGraph() {
     return;
   }
   const draft = $('question').value.trim();
-  const question = activeConversationId ? (draft || '根据本次对话生成图谱') : context;
+  const hasMessages = Boolean(document.querySelector('#chatTimeline .chat-message:not(.pending)'));
+  const graphConversationId = hasMessages ? activeConversationId : null;
+  const question = graphConversationId ? '根据本次对话生成图谱' : (draft || context);
   clearMessage();
   const button = $('generateGraphButton');
   button.disabled = true;
@@ -152,7 +155,7 @@ async function generateRelatedGraph() {
     const response = await fetch(`${API}/ai/related-graph`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, conversation_id: activeConversationId || null }),
+      body: JSON.stringify({ question, conversation_id: graphConversationId }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || '图谱请求失败');
@@ -169,14 +172,14 @@ async function generateRelatedGraph() {
     $('graphStatus').textContent = '生成失败';
     $('graphCanvas').innerHTML = '<div class="empty-state">AI 图谱暂时不可用，已转入后台重试。</div>';
     showMessage(`无法立即生成相关知识图谱：${error.message}`);
-    enqueueGraphRetry(question, activeConversationId || null);
+    enqueueGraphRetry(question, graphConversationId);
   } finally {
     button.disabled = false;
-    button.innerHTML = '根据本次对话生成图谱 <span>◎</span>';
+    button.textContent = '生成本次对话图谱';
   }
 }
 async function applyGraphEdit() { if (!activeCandidateId) return; let graph; try { graph = JSON.parse($('graphEditor').value); } catch (error) { showMessage('编辑内容不是合法 JSON，请检查后再应用。'); return; } const button = $('applyGraphEdit'); button.disabled = true; button.textContent = '保存修改中…'; try { const response = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ graph }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '修改失败'); renderGraph(data.knowledge_graph); $('saveGraphButton').classList.remove('hidden'); $('graphStatus').textContent = '已修改 · 待重新校验'; showMessage('图谱修改已保存，请点击“校验并保存”完成 AI 复核。'); } catch (error) { showMessage(`无法应用图谱修改：${error.message}`); } finally { button.disabled = false; button.textContent = '应用修改'; } }
-async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; activeGraphEvidence = data.evidence || []; $('question').value = data.question; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
+async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; activeGraphEvidence = data.evidence || []; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
 async function loadCandidateEvents(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '事件读取失败'); let timeline = $('candidateTimeline'); if (!timeline) { timeline = document.createElement('div'); timeline.id = 'candidateTimeline'; timeline.className = 'candidate-timeline'; $('graphEditorPanel').appendChild(timeline); } const names = { generated: 'AI 生成', edited: '人工编辑', validated: '校验通过', rejected: '校验拒绝', validation_failed: '校验异常', relation_conflict: '关系冲突处理', saved: '写入知识库' }; const detailText = event => event.action === 'relation_conflict' ? `${event.detail.action === 'replaced' ? '已替换' : '已跳过'}：${event.detail.old_relations?.join(', ')} → ${event.detail.new_relation}（优先级 ${event.detail.old_priority} / ${event.detail.new_priority}）` : ''; timeline.innerHTML = `<b>审核记录</b>${(data.events || []).map(event => `<div><span>${escapeHtml(names[event.action] || event.action)}${detailText(event) ? ` · ${escapeHtml(detailText(event))}` : ''}</span><small>${escapeHtml(event.created_at || '')}</small></div>`).join('') || '<span class="muted">暂无记录</span>'}`; } catch (error) {} }
 async function loadCandidateHistory() { try { const status = $('candidateStatusFilter').value; const query = status ? `?status=${encodeURIComponent(status)}&limit=12` : '?limit=12'; const response = await fetch(`${API}/ai/graph-candidates${query}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选记录读取失败'); const statusNames = { pending: '待审核', needs_review: '需复核', validated: '已校验', saved: '已保存', rejected: '已拒绝' }; $('candidateList').innerHTML = data.items.length ? data.items.map(item => `<button type="button" class="candidate-item" data-candidate-id="${item.id}"><span class="candidate-question">${escapeHtml(item.question)}</span><span class="candidate-meta"><b class="candidate-status status-${escapeHtml(item.status)}">${escapeHtml(statusNames[item.status] || item.status)}</b><span>${item.node_count} 节点 · ${item.edge_count} 关系</span></span></button>`).join('') : '<span class="muted">暂无符合条件的候选图谱</span>'; document.querySelectorAll('.candidate-item').forEach(item => item.addEventListener('click', () => loadCandidate(item.dataset.candidateId))); } catch (error) { $('candidateList').innerHTML = '<span class="muted">候选记录暂不可用</span>'; } }
 async function validateAndSaveGraph() {
@@ -499,14 +502,15 @@ async function openGraphConceptCard(concept) {
       const relation = edge.relation || edge.type || 'related';
       const subjectKey = `${edge.source}->${edge.target}:${relation}`;
       const evidence = activeGraphEvidence.find(item => item.subject_type === 'edge' && item.subject_key === subjectKey);
-      const relationSources = evidence?.source_message_id ? `消息 ${evidence.source_message_id}` : (conversationMatches(`${concept.name} ${other?.name || ''}`).length ? '当前对话直接提及' : '模型推断');
+      const relationSources = evidence?.context ? `教材 PDF ${evidence.context.reading_context.start}–${evidence.context.reading_context.end} 页 · ${evidence.context.direct_mention ? '讨论提及，关系待核对' : '模型推断'}` : evidence?.source_message_id ? `消息 ${evidence.source_message_id}` : (conversationMatches(`${concept.name} ${other?.name || ''}`).length ? '当前对话直接提及' : '模型推断');
       return `<span class="graph-source-relation"><b>${escapeHtml(relation)}</b> → ${escapeHtml(other?.name || String(otherId))}<small>${escapeHtml(relationSources)}</small>${evidence?.excerpt ? `<em>${escapeHtml(evidence.excerpt.slice(0, 120))}</em>` : ''}</span>`;
     }).join('')
     : '<span>暂无当前图谱关系</span>';
   card.classList.remove('hidden');
   card.dataset.conceptId = String(concept.id);
-  const evidenceMarkup = nodeEvidence.length ? nodeEvidence.map(item => `<blockquote><small>消息 ${escapeHtml(String(item.source_message_id || ''))} · ${escapeHtml(item.review_status || '未审核')}</small>${escapeHtml(item.excerpt || '')}</blockquote>`).join('') : '';
+  const evidenceMarkup = nodeEvidence.length ? nodeEvidence.map(item => `<blockquote><small>${item.context ? `教材 PDF ${escapeHtml(String(item.context.reading_context.start))}–${escapeHtml(String(item.context.reading_context.end))} 页 · 伴读消息 ${item.context.course_message_id}` : `消息 ${escapeHtml(String(item.source_message_id || ''))}`} · ${escapeHtml(item.review_status || '未审核')}</small>${escapeHtml(item.excerpt || '')}${item.context ? `<button type="button" data-course-source="${item.id}">回到教材与讨论</button>` : ''}</blockquote>`).join('') : '';
   card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.querySelectorAll('[data-course-source]').forEach(button=>button.onclick=()=>{const origin=nodeEvidence.find(e=>String(e.id)===button.dataset.courseSource)?.context;if(origin){card.classList.add('hidden');MathWorkspace.showView('course-reader');window.MathCourseReader.openSource(origin.reading_context.document_id,origin.reading_context.start,origin.course_conversation_id);}});
   card.setAttribute('aria-labelledby', 'graphCardTitle');
   const closeCard = () => { card.classList.add('hidden'); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   card.querySelector('.graph-card-close').onclick = closeCard;
@@ -1193,3 +1197,5 @@ $('newConversation').addEventListener('click', createConversation);
 $('renameConversation').addEventListener('click', renameActiveConversation);
 $('deleteConversation').addEventListener('click', deleteActiveConversation);
 ensureConversation().finally(restorePendingAgent);
+
+window.MathGraphs={async openCandidate(id){MathWorkspace.showView("graph");await loadCandidate(id);}};

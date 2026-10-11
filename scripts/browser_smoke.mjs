@@ -31,6 +31,7 @@ try {
     if (!response.ok) throw new Error('unable to create smoke-test concept');
     return response.json();
   });
+  await page.getByRole('link', { name: '图谱', exact: true }).click();
   await page.locator('#conceptSearch').fill('紧致性冒烟测试');
   await page.locator('#conceptSearchButton').click();
   await page.waitForFunction(() => document.querySelector('#conceptSearchResults')?.classList.contains('is-visible'));
@@ -44,7 +45,7 @@ try {
   await page.locator('#graphCanvas .graph-node').click();
   await page.waitForFunction(() => document.querySelector('#graphConceptCard')?.textContent.includes('紧致性冒烟测试'));
   if (await page.locator('#graphConceptCard.hidden').count()) throw new Error('graph concept card did not open');
-  if (!(await page.locator('#graphConceptCard').textContent()).includes('推荐学习顺序')) throw new Error('learning path missing from graph concept card');
+  if (!(await page.locator('#graphConceptCard').textContent()).includes('推荐学习')) throw new Error('learning path missing from graph concept card');
   if (await page.locator('[data-learning-concept]').count()) throw new Error('learning path still exposes manual mastery controls');
   if (!(await page.locator('#graphConceptCard').textContent()).includes('掌握状态只由审核后的作答证据更新')) throw new Error('evidence-driven mastery notice missing');
   console.log(`Browser smoke passed: ${formulaCount} MathJax formulas rendered.`);

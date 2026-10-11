@@ -16,8 +16,8 @@
   <link rel="stylesheet" href="./workspace.css?v=spacing-3" />
   <link rel="stylesheet" href="./graph-explorer.css?v=orbit-2" />
   <link rel="stylesheet" href="./pdf-reader-vendor.css?v=scope-1" />
-  <link rel="stylesheet" href="./course-reader.css?v=reader-3" />
-  <link rel="stylesheet" href="./ui-interactions.css?v=icons-4" />
+  <link rel="stylesheet" href="./course-reader.css?v=reader-4" />
+  <link rel="stylesheet" href="./ui-interactions.css?v=graph-4" />
   <script>
     window.MathJax = {
       tex: {
@@ -65,7 +65,7 @@
         <div class="chat-stage">
           <div class="chat-stage-head"><div><span class="pill">CONTEXTUAL MATH ASSISTANT</span><h2 id="conversationTitle">新的数学对话</h2></div><div class="chat-stage-actions"><button type="button" id="renameConversation">重命名</button><button type="button" id="deleteConversation" aria-label="删除当前对话">⌫</button></div></div>
           <div id="chatTimeline" class="chat-timeline" aria-live="polite"><div class="chat-welcome"><span>∫</span><div class="chat-welcome-content"><b>从一个数学问题开始。</b><p>我会记住本次对话中的定义、条件与推导步骤；你可以继续追问“第二步为什么成立”。</p><div class="prompt-gallery" aria-label="示例数学问题"><button type="button" data-example-prompt="证明连续映射把紧集映为紧集。"><small>01 / 拓扑</small><strong>连续映射如何保紧？</strong><em>展开证明 →</em></button><button type="button" data-example-prompt="为什么一致收敛的连续函数列，其极限函数仍连续？"><small>02 / 分析</small><strong>一致收敛为何保连续？</strong><em>梳理条件 →</em></button><button type="button" data-example-prompt="特征值相同的两个矩阵一定相似吗？请给出证明或反例。"><small>03 / 代数</small><strong>同特征值矩阵一定相似吗？</strong><em>寻找反例 →</em></button></div></div></div></div>
-          <form id="askForm" class="chat-composer"><textarea aria-label="数学问题" id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="submit" id="askButton">发送 <span>↑</span></button></div></div><details class="composer-tools"><summary>学习工具</summary><div><label class="agent-mode-toggle"><input type="checkbox" id="agentMode" checked> 自动使用适用的计算工具</label><button type="button" class="graph-trigger" id="runAgentButton">查看计算步骤</button><button type="button" class="graph-trigger" id="generateGraphButton">生成本次对话图谱</button></div></details></form>
+          <form id="askForm" class="chat-composer"><textarea aria-label="数学问题" id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton" data-ui-icon="graph">生成本次对话图谱</button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div><details class="composer-tools"><summary>学习工具</summary><div><label class="agent-mode-toggle"><input type="checkbox" id="agentMode" checked> 自动使用适用的计算工具</label><button type="button" class="graph-trigger" id="runAgentButton">查看计算步骤</button></div></details></form>
         </div>
       </section>
       <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
@@ -131,7 +131,7 @@
               <p id="crScopeLabel" class="cr-scope-label"></p>
               <div class="cr-actions"><button type="button" data-cr-action="explain">解释这一段</button><button type="button" data-cr-action="reason">补全推理</button><button type="button" data-cr-action="example">举例或反例</button><button type="button" data-cr-action="hint">只给提示</button></div>
               <textarea id="crQuestion" aria-label="教材伴读问题" placeholder="这一步为什么成立？这个定义有哪些必要条件？" rows="2"></textarea>
-              <div class="cr-send-row"><button type="button" id="crQuiz" data-ui-icon="pen">生成练习草稿</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend" data-ui-icon="send">提问</button></div>
+              <div class="cr-send-row"><button type="button" id="crGraph" data-ui-icon="graph" disabled>生成知识图谱</button><button type="button" id="crQuiz" data-ui-icon="pen">生成练习草稿</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend" data-ui-icon="send">提问</button></div>
               <p id="crChatStatus" role="status">原文与补充解释分别标注，模型讲解仍需核对。</p>
             </form>
             <details id="crDraftPanel" class="cr-drafts"><summary>教材练习草稿 <span id="crDraftCount">0</span></summary><div id="crDraftList"></div></details>
@@ -143,7 +143,7 @@
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=reader-1"></script>
+  <script src="./app.js?v=reader-2"></script>
   <script src="./workspace.js?v=reader-1"></script>
   <script src="./evidence.js?v=final-1"></script>
   <script src="./practice.js?v=final-1"></script>
@@ -154,8 +154,8 @@
   <script src="./textbooks.js?v=final-1"></script>
   <script src="./learning-metrics.js?v=final-1"></script>
   <script src="./graph-explorer.js?v=orbit-2"></script>
-  <script type="module" src="./course-reader.js?v=reader-7"></script>
-  <script src="./ui-interactions.js?v=icons-3"></script>
+  <script type="module" src="./course-reader.js?v=reader-8"></script>
+  <script src="./ui-interactions.js?v=graph-3"></script>
   <script src="./motion.js?v=final-1"></script>
 </body>
 </html>

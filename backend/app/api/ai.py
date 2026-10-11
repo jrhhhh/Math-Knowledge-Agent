@@ -1981,7 +1981,7 @@ def get_related_graph(
     request: RelatedGraphRequest,
     db: Session = Depends(get_db),
 ):
-    """快速筛选并展开已有知识库中的一层相关图谱，不调用答案生成模型。"""
+    """从当前对话原始消息生成候选图谱，并保留消息出处。"""
     question = request.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="问题不能为空。")
@@ -1991,6 +1991,7 @@ def get_related_graph(
         messages = db.query(ConversationMessage).filter(
             ConversationMessage.conversation_id == request.conversation_id,
             ConversationMessage.role.in_(["user", "assistant"]),
+            ConversationMessage.status == "completed",
         ).order_by(ConversationMessage.id.asc()).all()
         if not messages:
             raise HTTPException(status_code=404, detail="对话不存在或没有可用于生成图谱的消息。")
@@ -2039,6 +2040,7 @@ def graph_candidate_response(candidate: GraphCandidate, graph: dict, message: st
                 "subject_type": item.subject_type,
                 "subject_key": item.subject_key,
                 "source_kind": item.source_kind,
+                "context": json.loads(item.context_json or "null"),
                 "source_message_id": item.source_message_id,
                 "excerpt": item.excerpt,
                 "review_status": item.review_status,
@@ -2428,6 +2430,7 @@ def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
                 "subject_type": item.subject_type,
                 "subject_key": item.subject_key,
                 "source_kind": item.source_kind,
+                "context": json.loads(item.context_json or "null"),
                 "source_message_id": item.source_message_id,
                 "excerpt": item.excerpt,
                 "review_status": item.review_status,

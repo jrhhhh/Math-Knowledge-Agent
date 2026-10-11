@@ -1,7 +1,7 @@
 /* Decorative CSS icons: never replace labels, IDs, handlers, or inner content. */
 (() => {
   const rules = {
-    '.sidebar a[href="#ask"]':'chat','.sidebar a[href="#practice"]':'pen','.sidebar a[href="#knowledge-library"]':'book','.sidebar a[href="#study-notes"]':'file','.sidebar a[href="#graph"]':'graph','.sidebar a[href="#math-lab"]':'flask','.sidebar a[href="#management"]':'settings',
+    '.sidebar a[href="#ask"]':'chat','.sidebar a[href="#practice"]':'pen','.sidebar a[href="#knowledge-library"]':'library','.sidebar a[href="#study-notes"]':'file','.sidebar a[href="#graph"]':'graph','.sidebar a[href="#math-lab"]':'flask','.sidebar a[href="#management"]':'settings',
     '[data-study-mode="explain"]':'book','[data-study-mode="hint"]':'bulb','[data-study-mode="check"]':'check',
     '#askButton':'send','#renameConversation':'pen','#saveAnswerNote':'save','#saveGraphButton':'check','#refreshGraph':'refresh',
     '#openTextbookImport':'upload','#previewReaderMath':'eye','#saveChunkReview':'save','#saveDocumentReview':'check','#askReadingSelection':'chat','#originalPdfLink':'file',

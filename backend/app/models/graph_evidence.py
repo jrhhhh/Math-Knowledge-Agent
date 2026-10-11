@@ -16,6 +16,7 @@ class GraphEvidence(Base):
     subject_key = Column(String(240), nullable=False)
     source_kind = Column(String(24), nullable=False)  # conversation / ai_inferred
     source_message_id = Column(Integer, ForeignKey("conversation_messages.id"), nullable=True, index=True)
+    context_json = Column(Text, nullable=True)
     excerpt = Column(Text, nullable=False, default="")
     review_status = Column(String(20), nullable=False, default="unreviewed")
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

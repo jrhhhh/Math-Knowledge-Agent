@@ -1,6 +1,6 @@
 from sqlalchemy import inspect, text
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 def run_schema_migrations(connection):
     attempt_columns = {column["name"] for column in inspect(connection).get_columns("problem_attempts")}
@@ -32,6 +32,9 @@ def run_schema_migrations(connection):
         connection.execute(text("ALTER TABLE graph_candidates ADD COLUMN conversation_id INTEGER"))
     if "source_message_ids" not in graph_columns:
         connection.execute(text("ALTER TABLE graph_candidates ADD COLUMN source_message_ids TEXT DEFAULT '[]'"))
+    evidence_columns = {column["name"] for column in inspect(connection).get_columns("graph_evidence")}
+    if "context_json" not in evidence_columns:
+        connection.execute(text("ALTER TABLE graph_evidence ADD COLUMN context_json TEXT"))
     retry_columns = {column["name"] for column in inspect(connection).get_columns("ai_retry_jobs")}
     if "conversation_id" not in retry_columns:
         connection.execute(text("ALTER TABLE ai_retry_jobs ADD COLUMN conversation_id INTEGER"))

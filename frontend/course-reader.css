@@ -96,3 +96,5 @@ body[data-workspace="course-reader"] .topbar { display:none; }
 .cr-table th { background:#e8f1fd; }
 
 .cr-outline-hint { font-size:10px; color:#748ca7; line-height:1.6; }
+
+.cr-send-row { flex-wrap:wrap; }

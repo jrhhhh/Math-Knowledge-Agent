@@ -97,3 +97,34 @@ class CourseReaderTests(unittest.TestCase):
         self.assertIn('第一行\n第二行',solution)
         self.assertIn(r'\neg A',solution)
         self.assertIn(r'\nabla f',solution)
+
+    def test_graph_book_bound_snapshot_cache_and_candidate(self):
+        from app.api.course_reader import generate_reading_graph
+        from app.api.ai import get_graph_candidate
+        result,snapshot=self.generate()
+        graph={'nodes':[{'id':'a','name':'连续函数','type':'concept'},{'id':'b','name':'紧集','type':'concept'}], 'edges':[{'source':'a','target':'b','relation':'related'}]}
+        with patch('app.api.ai.call_deepseek',return_value=json.dumps(graph,ensure_ascii=False)) as model:
+            generated=generate_reading_graph(self.a.id,self.chat,self.db)
+            self.assertEqual(generate_reading_graph(self.a.id,self.chat,self.db)['candidate_id'],generated['candidate_id'])
+            self.assertEqual(model.call_count,1)
+        saved=get_graph_candidate(generated['candidate_id'],self.db)
+        self.assertEqual(saved['status'],'pending')
+        self.assertIsNone(saved['conversation_id'])
+        self.assertEqual(saved['source_message_ids'],[])
+        self.assertTrue(saved['evidence'])
+        for item in saved['evidence']:
+            self.assertIsNone(item['source_message_id'])
+            self.assertEqual(item['context']['reading_context']['source_hash'],snapshot['source_hash'])
+            self.assertEqual(item['context']['reading_context']['document_id'],self.a.id)
+        edit_chunk(self.chunks[0].id,{'content':'改动原文','review_status':'unreviewed'},self.db)
+        self.assertEqual(get_graph_candidate(saved['id'],self.db)['evidence'],saved['evidence'])
+        with self.assertRaises(HTTPException):generate_reading_graph(self.b.id,self.chat,self.db)
+
+    def test_graph_requires_completed_answer(self):
+        from app.api.course_reader import generate_reading_graph
+        with patch('app.api.ai.call_deepseek') as model:
+            with self.assertRaises(HTTPException):generate_reading_graph(self.a.id,self.chat,self.db)
+            self.db.add(CourseMessage(conversation_id=self.chat,role='assistant',content='失败',status='failed',context_json='{}',request_id='failed'))
+            self.db.commit()
+            with self.assertRaises(HTTPException):generate_reading_graph(self.a.id,self.chat,self.db)
+            model.assert_not_called()
