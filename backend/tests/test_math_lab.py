@@ -37,6 +37,13 @@ class MathLabTests(unittest.TestCase):
         self.assertAlmostEqual(self.calc('tan(x)')['tangent'],1/math.cos(1)**2)
         for expr in ['log(-1)','sec(pi/2)','sqrt(-1)*x']:
             with self.assertRaises(ValueError):self.calc(expr)
+    def test_simplification_preserves_original_domain(self):
+        for expr,x in [('x/x',0),('(x^2-1)/(x-1)',1),('log(x)-log(x)',-1),('sqrt(x)^2',-1),('tan(x)-tan(x)',1.5707963267948966)]:
+            with self.assertRaises(ValueError):calculus(dict(expression=expr,mode='derivative',x=x,h=.1,a=0,b=1,n=20))
+        data=self.calc('x/x')
+        self.assertEqual(data['tangent'],0)
+        self.assertIsNone(next(y for x,y in data['samples'] if x==0))
+        with self.assertRaises(ValueError):calculus(dict(expression='x/x',mode='integral',x=1,h=.1,a=-1,b=1,n=20))
     def test_matrix_principal_minors_and_exact_fraction(self):
         data=matrix_analysis({'matrix':[['2','1'],['1','2']]})
         self.assertEqual(data['determinant'],'3');self.assertEqual(data['rank'],2)

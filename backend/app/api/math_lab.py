@@ -15,12 +15,15 @@ FUNCTIONS = {name: getattr(s, name) for name in ('sin','cos','tan','cot','sec','
 FUNCTIONS['abs'] = s.Abs
 
 
-def expression(text):
+def expression(text, domain_terms=None):
     if not text or len(text) > 180:
         raise ValueError('表达式长度须为 1–180 个字符')
     tree = ast.parse(text.replace('^', '**'), mode='eval')
     if len(list(ast.walk(tree))) > 64:
         raise ValueError('表达式过于复杂，请拆成小实验')
+    def record(value):
+        if domain_terms is not None:domain_terms.append(value)
+        return value
     def visit(n):
         if isinstance(n, ast.Constant) and type(n.value) in (int,float) and math.isfinite(n.value) and abs(n.value) <= 10000:
             return s.Rational(str(n.value))
@@ -34,15 +37,19 @@ def expression(text):
                 if b.is_Rational:
                     if abs(b)>12 or b.q>12:raise ValueError('常数幂指数须为绝对值不超过 12 的有理数')
                 elif not (a.is_number and a.is_positive and a<=100):raise ValueError('变量指数只用于不超过 100 的正数底数')
+                record(s.Pow(a,b,evaluate=False))
                 return a**b
             if isinstance(n.op,ast.Add):return a+b
             if isinstance(n.op,ast.Sub):return a-b
             if isinstance(n.op,ast.Mult):return a*b
             if isinstance(n.op,ast.Div):
                 if b==0:raise ValueError('不能除以零')
+                if b.has(s.sin,s.cos,s.tan,s.cot,s.sec,s.csc):
+                    raise ValueError('三角函数倒数请用 sec、csc、cot 等独立函数表示')
+                record(s.Pow(b,-1,evaluate=False))
                 return a/b
         if isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id in FUNCTIONS and len(n.args)==1 and not n.keywords:
-            return FUNCTIONS[n.func.id](visit(n.args[0]))
+            return record(FUNCTIONS[n.func.id](visit(n.args[0])))
         raise ValueError('仅支持 x、pi、e、四则运算及列出的数学函数；乘法请写 *')
     return visit(tree.body)
 
@@ -65,26 +72,30 @@ class CalculusInput(BaseModel):
 
 
 def calculus(payload):
-    f=expression(payload['expression']);mode=payload['mode']
-    if f.has(s.zoo,s.oo,-s.oo,s.nan,s.I):raise ValueError('请使用有实数定义域的有限值函数')
+    domain_terms=[]
+    f=expression(payload['expression'],domain_terms);mode=payload['mode']
+    domain_terms=list(dict.fromkeys([f,*domain_terms]))
+    if any(term.has(s.zoo,s.oo,-s.oo,s.nan,s.I) for term in domain_terms):raise ValueError('请使用有实数定义域的有限值函数')
     if mode not in ('derivative','integral'):raise ValueError('实验类型无效')
     # Periodic ImageSet complements are often undecidable via Set.contains.
     # For affine trig arguments enumerate poles numerically on bounded intervals,
     # retaining an exact symbolic domain for display. Other expressions use SymPy.
     periodic=[]
-    for atom in f.atoms(s.tan,s.cot,s.sec,s.csc):
+    for atom in set().union(*(term.atoms(s.tan,s.cot,s.sec,s.csc) for term in domain_terms)):
         argument=atom.args[0];slope=s.diff(argument,X);offset=argument.subs(X,0)
         if slope.has(X) or not slope.is_number or slope==0 or not offset.is_number:
             raise ValueError('含奇点的三角函数目前支持 a*x+b 形式的参数')
         periodic.append((atom,float(slope),float(offset),.5 if atom.func in (s.tan,s.sec) else 0))
     base_domain=s.S.Reals
-    if periodic:
-        placeholders={atom:s.Dummy(real=True) for atom,_,_,_ in periodic}
-        regular=f.xreplace(placeholders)
-        if not regular.is_polynomial(*placeholders.values()):
-            raise ValueError('周期三角函数支持多项式组合；嵌套对数、根式或倒数请拆成独立实验')
-        coefficients=s.Poly(regular,*placeholders.values()).coeffs()
-    else:coefficients=[f]
+    coefficients=[]
+    placeholders={atom:s.Dummy(real=True) for atom,_,_,_ in periodic}
+    for term in domain_terms:
+        if periodic:
+            regular=term.xreplace(placeholders)
+            if not regular.is_polynomial(*placeholders.values()):
+                raise ValueError('周期三角函数支持多项式组合；嵌套对数、根式或倒数请拆成独立实验')
+            coefficients.extend(s.Poly(regular,*placeholders.values()).coeffs())
+        else:coefficients.append(term)
     for coefficient in coefficients:
         base_domain=s.Intersection(base_domain,s.calculus.util.continuous_domain(coefficient,X,s.S.Reals))
     domain=base_domain
