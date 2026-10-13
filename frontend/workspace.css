@@ -114,11 +114,17 @@
 .notes-workspace { padding:30px; }
 .notes-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 24px; }
 .notes-toolbar input { flex:1; min-width:150px; }
+.notes-count { align-self:center; color:#6f88a4; font-size:12px; white-space:nowrap; }
 .notes-toolbar input,.notes-toolbar select,#noteForm input,#noteForm textarea { border:1px solid #d8e5f5; border-radius:12px; padding:12px; background:white; color:#35577f; box-sizing:border-box; }
 .note-card { padding:24px 0; border-top:1px solid #e1eaf5; }
 .note-card-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+.note-title-group { display:flex; align-items:center; flex-wrap:wrap; gap:9px; min-width:0; }
 .note-card-heading h3 { margin:0; font-size:18px; color:#335d8b; }
 .note-card-heading span { color:#7891ad; font-size:12px; }
+.note-badges { display:flex; gap:6px; }
+.note-badge { padding:4px 8px; border-radius:999px; font-size:10px; line-height:1; }
+.note-badge.is-favorite { color:#8a6a17; background:#fff4d2; }
+.note-badge.is-archived { color:#687c94; background:#eaf0f7; }
 .note-excerpt { line-height:1.8; color:#647b96; }
 .note-actions { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
 .note-actions button,.note-actions a,.notes-workspace button,.save-answer-note { border:1px solid #d7e4f4; background:#edf4fe; border-radius:11px; padding:9px 14px; color:#426b9e; cursor:pointer; text-decoration:none; font-size:13px; }
@@ -132,7 +138,7 @@
 #noteForm input,#noteForm textarea { display:block; width:100%; margin-top:6px; }
 #noteForm textarea { min-height:230px; resize:vertical; line-height:1.7; }
 .save-answer-note { margin-top:18px; }
-@media(max-width:480px) { .notes-workspace { padding:18px; } .sidebar nav { flex-wrap:wrap; } }
+@media(max-width:560px) { .notes-workspace { padding:18px; } .sidebar nav { flex-wrap:wrap; } .notes-count { flex:1 0 100%; } }
 .library-tabs { display:flex; gap:10px; margin-bottom:22px; }
 .library-tabs button,.textbook-workspace button { border:1px solid #d7e4f4; background:#edf4fe; border-radius:11px; padding:9px 14px; color:#426b9e; cursor:pointer; }
 .library-tabs [aria-pressed=true] { background:#dfeaff; border-color:#b7cceb; }
@@ -160,7 +166,19 @@
 #textbookImportDialog { border:1px solid #dbe6f6; border-radius:24px; width:min(520px,calc(100vw - 38px)); max-height:85vh; padding:26px; box-sizing:border-box; color:#45678c; background:#f8fbff; }
 #textbookImportDialog::backdrop { background:rgba(19,46,79,.3); backdrop-filter:blur(7px); }
 #textbookImportStatus { display:block; line-height:1.7; margin-bottom:12px; }
-@media(max-width:800px) { .reader-columns { grid-template-columns:1fr; } .reader-original iframe { height:550px; } }
+/* Keep the source page as the primary reading surface while preserving the OCR editor. */
+#knowledge-library .reader-columns { grid-template-columns:minmax(250px,.82fr) minmax(0,1.78fr); gap:18px; align-items:start; }
+#knowledge-library .reader-text { min-width:0; }
+#knowledge-library .reader-original { min-width:0; }
+#knowledge-library .reader-original iframe { display:block; height:clamp(640px,82vh,1040px); min-height:640px; }
+@media(max-width:1000px) {
+  #knowledge-library .reader-columns { grid-template-columns:minmax(0,1fr); }
+  #knowledge-library .reader-original { order:-1; }
+  #knowledge-library .reader-original iframe { height:min(78vh,900px); min-height:580px; }
+}
+@media(max-width:560px) {
+  #knowledge-library .reader-original iframe { height:72vh; min-height:500px; }
+}
 
 /* Override the legacy library grid: tabs and each workbench occupy the full panel. */
 #knowledge-library { display:block; background:rgba(249,252,255,.82); color:#294969; border:1px solid #ffffffd9; border-radius:24px; box-shadow:0 16px 48px #4575a514; }

@@ -29,7 +29,7 @@
     $('readerText').value=draft?.content ?? chunk.content;$('readerHeading').value=draft?.heading ?? chunk.heading ?? '';$('readerChunkStatus').value=draft?.status ?? (chunk.review_status==='draft'?'unreviewed':chunk.review_status);
     $('readerMathPreview').textContent='';$('readerStatus').textContent=draft?'已恢复当前页面中尚未保存的校对草稿。请核对后保存。':chunk.content?'请对照原页核对文字、公式与必要条件。':'未提取到文字层，可能是扫描页。请对照原页补录文字与公式；不会自动判为已审核。';
     $('originalPdf').hidden=!book.has_original;$('originalPdfUnavailable').hidden=book.has_original;$('originalPdfLink').hidden=!book.has_original;
-    if(book.has_original){const url=`${API}/textbooks/${book.id}/file?reader_page=${chunk.page_start}#page=${chunk.page_start}&view=FitH`;$('originalPdf').src=url;$('originalPdfLink').href=url;}
+    if(book.has_original){const url=`${API}/textbooks/${book.id}/file?reader_page=${chunk.page_start}#page=${chunk.page_start}&view=FitH&navpanes=0`;$('originalPdf').src=url;$('originalPdfLink').href=url;}
     try {await revisions();}catch(error){$('chunkRevisionList').textContent=error.message;}
   }
   async function open(id) {
