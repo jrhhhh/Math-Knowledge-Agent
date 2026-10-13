@@ -45,6 +45,10 @@ Current Version: v0.6
 - [x] 历史对话恢复回答、证据、Agent 过程与反馈上下文
 - [ ] 个性化学习路径
 
+### Hardy 数学分析教材伴读进度
+
+正在使用 Hardy 的 *A Course of Pure Mathematics*（第三版）逐小节验证教材伴读与知识图谱工作流。截至 2026-10-13，§1–§12 已完成阅读、候选修订和图谱入库；§8 的跨页来源范围仍需补齐，已保存图谱的证据条目也仍待逐条人工审核。当前记录不代表全书已完成或所有数学结论均已验证。小节边界、候选编号、校验方式和待办见[逐节实测记录](docs/hardy-product-audit.md)及[小节进度清单](docs/hardy-section-inventory.json)。伴读对话和知识库数据保存在本地 SQLite 数据库，不随本次代码提交上传。
+
 
 ## Architecture
 

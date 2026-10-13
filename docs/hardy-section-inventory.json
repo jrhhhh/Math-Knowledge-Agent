@@ -121,10 +121,10 @@
       "group": "I §10–11 实数的代数运算",
       "pdf_page": 36,
       "heading": "Algebraical operations with real numbers ( continued).",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 21,
+      "math_verification": "source_checked_reader_pdf_36_37_printed_20_21; candidate_21_manually_reviewed_5_nodes_6_relations; Examples_VI_kept_as_unproved_exercises; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_11_records_all_unreviewed"
     },
     {
       "section": 12,
@@ -132,10 +132,10 @@
       "group": "I §12 √2",
       "pdf_page": 37,
       "heading": "The number",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 22,
+      "math_verification": "source_checked_reader_pdf_37_printed_21_section_12_only_excludes_Examples_VI; candidate_22_manually_reviewed_10_nodes_10_relations; unique_missing_positive_rational_2_recorded_as_source_assertion_without_expanded_proof; other_irrational_equations_recorded_as_prompt_only; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_20_records_all_unreviewed"
     },
     {
       "section": 13,
