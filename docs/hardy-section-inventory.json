@@ -111,9 +111,9 @@
       "pdf_page": 34,
       "heading": "Algebraical operations with real numbers. We now proceed",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 20,
+      "math_verification": "source_checked_reader_pdf_34_36_printed_18_20; begins after §10 heading on p34 and stops before §11 heading on p36; covers addition by cuts, unique omitted rational, completion, rational compatibility, subtraction, and all Examples V exercise themes; manually reviewed 10 nodes and 12 relations; validator_fallback_local_due_empty_response; evidence index rebuilt for current graph with 22 records, all remain unreviewed"
     },
     {
       "section": 11,
