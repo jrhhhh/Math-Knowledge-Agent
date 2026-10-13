@@ -165,10 +165,10 @@
       "group": "I §15 连续统",
       "pdf_page": 42,
       "heading": "The continuum. The aggregate of all real numbers, rational",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 27,
+      "math_verification": "source_checked_reader_pdf_42_45_printed_26_29_stop_before_section_16; candidate_27_manually_edited_11_nodes_11_relations_saved; confirmed_no_Examples_IX_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_math_need_itemized_manual_audit"
     },
     {
       "section": 16,
@@ -176,10 +176,10 @@
       "group": "I §16 连续实变量",
       "pdf_page": 45,
       "heading": "The continuous real variable. The ‘real numbers’ may be re-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 28,
+      "math_verification": "source_checked_reader_pdf_45_46_printed_29_30_stop_before_section_17; candidate_28_manually_edited_8_nodes_8_relations_saved; confirmed_no_Examples_XVII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_needs_itemized_manual_audit"
     },
     {
       "section": 17,
@@ -187,10 +187,10 @@
       "group": "I §17 实数分割与戴德金定理",
       "pdf_page": 46,
       "heading": "Sections of the real numbers. In §§ 4–7 we considered ‘sec-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 29,
+      "math_verification": "source_checked_reader_pdf_46_48_printed_30_32_stop_before_section_18; candidate_29_manually_edited_9_nodes_9_relations_saved; confirmed_no_Examples_XVIII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_proof_details_need_itemized_manual_audit"
     },
     {
       "section": 18,

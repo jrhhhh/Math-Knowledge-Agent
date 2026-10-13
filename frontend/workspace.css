@@ -166,16 +166,15 @@
 #textbookImportDialog { border:1px solid #dbe6f6; border-radius:24px; width:min(520px,calc(100vw - 38px)); max-height:85vh; padding:26px; box-sizing:border-box; color:#45678c; background:#f8fbff; }
 #textbookImportDialog::backdrop { background:rgba(19,46,79,.3); backdrop-filter:blur(7px); }
 #textbookImportStatus { display:block; line-height:1.7; margin-bottom:12px; }
-/* Give the original textbook page the full reading width; keep OCR review directly below it. */
-#knowledge-library .reader-columns { grid-template-columns:minmax(0,1fr); gap:18px; align-items:start; }
-#knowledge-library .reader-text { min-width:0; }
-#knowledge-library .reader-original { min-width:0; }
-#knowledge-library .reader-original iframe { display:block; height:clamp(760px,88vh,1180px); min-height:680px; }
+/* Put the source page first and give the embedded PDF the full reading canvas. */
+#knowledge-library .reader-columns { display:flex; flex-direction:column; gap:18px; align-items:stretch; }
+#knowledge-library .reader-original { order:-1; min-width:0; width:100%; }
+#knowledge-library .reader-original iframe { display:block; width:100%; height:clamp(760px,90vh,1280px); min-height:680px; }
 #knowledge-library .reader-text { padding:18px 20px; border:1px solid #d9e6f5; border-radius:18px; background:#f7faff; }
 #knowledge-library .reader-text > label:nth-of-type(2) { margin-top:18px; }
 #knowledge-library #readerText { min-height:260px; }
 @media(max-width:560px) {
-  #knowledge-library .reader-original iframe { height:76vh; min-height:560px; }
+  #knowledge-library .reader-original iframe { height:78vh; min-height:560px; }
   #knowledge-library .reader-text { padding:14px; }
 }
 
