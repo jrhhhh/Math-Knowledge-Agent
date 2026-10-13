@@ -101,8 +101,8 @@
       "heading": "Relations of magnitude between real numbers. It is plain",
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review",
-      "candidate_id": 18,
-      "math_verification": "needs_section_review"
+      "candidate_id": 19,
+      "math_verification": "source_checked_reader_pdf_32_34_printed_16_18; corrected prior scope to include real-number sign classification, infinity-cut footnote, opposite and modulus, and Examples IV; manually reviewed 10 nodes and 12 relations; supersedes incomplete candidate 18; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed"
     },
     {
       "section": 10,

@@ -166,18 +166,17 @@
 #textbookImportDialog { border:1px solid #dbe6f6; border-radius:24px; width:min(520px,calc(100vw - 38px)); max-height:85vh; padding:26px; box-sizing:border-box; color:#45678c; background:#f8fbff; }
 #textbookImportDialog::backdrop { background:rgba(19,46,79,.3); backdrop-filter:blur(7px); }
 #textbookImportStatus { display:block; line-height:1.7; margin-bottom:12px; }
-/* Keep the source page as the primary reading surface while preserving the OCR editor. */
-#knowledge-library .reader-columns { grid-template-columns:minmax(250px,.82fr) minmax(0,1.78fr); gap:18px; align-items:start; }
+/* Give the original textbook page the full reading width; keep OCR review directly below it. */
+#knowledge-library .reader-columns { grid-template-columns:minmax(0,1fr); gap:18px; align-items:start; }
 #knowledge-library .reader-text { min-width:0; }
 #knowledge-library .reader-original { min-width:0; }
-#knowledge-library .reader-original iframe { display:block; height:clamp(640px,82vh,1040px); min-height:640px; }
-@media(max-width:1000px) {
-  #knowledge-library .reader-columns { grid-template-columns:minmax(0,1fr); }
-  #knowledge-library .reader-original { order:-1; }
-  #knowledge-library .reader-original iframe { height:min(78vh,900px); min-height:580px; }
-}
+#knowledge-library .reader-original iframe { display:block; height:clamp(760px,88vh,1180px); min-height:680px; }
+#knowledge-library .reader-text { padding:18px 20px; border:1px solid #d9e6f5; border-radius:18px; background:#f7faff; }
+#knowledge-library .reader-text > label:nth-of-type(2) { margin-top:18px; }
+#knowledge-library #readerText { min-height:260px; }
 @media(max-width:560px) {
-  #knowledge-library .reader-original iframe { height:72vh; min-height:500px; }
+  #knowledge-library .reader-original iframe { height:76vh; min-height:560px; }
+  #knowledge-library .reader-text { padding:14px; }
 }
 
 /* Override the legacy library grid: tabs and each workbench occupy the full panel. */
