@@ -143,10 +143,10 @@
       "group": "I §13–14 二次根式",
       "pdf_page": 38,
       "heading": "Quadratic surds. A number of the form ±√a, where a is a",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 23,
+      "math_verification": "source_checked_reader_pdf_38_39_printed_22_23_section_13_only; candidate_23_saved_11_nodes_12_relations; exercise_vs_body_distinction_and_exact_boundary_checked; source_evidence_and_ocr_formulas_pending_manual_audit"
     },
     {
       "section": 14,
@@ -154,10 +154,10 @@
       "group": "I §13–14 二次根式",
       "pdf_page": 40,
       "heading": "Some theorems concerning quadratic surds. Two pure",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 24,
+      "math_verification": "source_checked_reader_pdf_40_42_printed_24_26_stop_before_section_15; candidate_24_manually_edited_12_nodes_13_relations_AI_validated_saved; Examples_VIII_1_12_included_and_tagged_as_exercises; OCR_formulas_and_source_evidence_pending_manual_audit"
     },
     {
       "section": 15,
