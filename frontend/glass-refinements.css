@@ -38,6 +38,15 @@
 }
 .chat-message, .chat-message .chat-bubble { min-width: 0; }
 .chat-message .chat-bubble { max-width: 100%; overflow-wrap: anywhere; }
+.chat-bubble p { margin: 0 0 .7em; }
+.chat-bubble p:last-child { margin-bottom: 0; }
+.chat-bubble h4 { margin: .9em 0 .45em; font-size: 1.04em; line-height: 1.45; }
+.chat-bubble ul, .chat-bubble ol { margin: .35em 0 .75em; padding-left: 1.5em; }
+.chat-bubble li { padding-left: .2em; margin: .18em 0; }
+.chat-bubble code { border-radius: 4px; padding: .08em .3em; background: rgba(92,132,183,.12); font: .92em var(--mono); }
+.chat-bubble pre { max-width: 100%; overflow: auto; padding: 10px 12px; border-radius: 8px; background: rgba(30,54,84,.08); white-space: pre; }
+.chat-bubble pre code { padding: 0; background: transparent; }
+.chat-bubble .math-render-error { border-top: 1px solid rgba(80,112,150,.2); padding-top: 7px; }
 .chat-bubble mjx-container[display="true"],
 .proof-result mjx-container[display="true"] {
   display: block; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: .25em 0;

@@ -26,14 +26,82 @@ const typeColor = { concept: '#55d8ff', theorem: '#ffcb68', property: '#bc8cff',
 
 function showMessage(text) { const hints = { timeout: '模型响应超时，请稍后重新提交。', rate_limit: '请求较频繁，请等待片刻后重试。', network: '请检查网络或后端服务是否在线。', server_error: '模型服务暂时异常，后台会继续重试。', invalid_response: '模型返回格式异常，请重新生成。' }; const inferred = text.includes('超时') ? 'timeout' : text.includes('频繁') || text.includes('限流') ? 'rate_limit' : text.includes('连接') || text.includes('网络') ? 'network' : text.includes('格式') ? 'invalid_response' : /失败|错误|异常/.test(text) ? lastAiErrorCode : ''; const hint = Object.prototype.hasOwnProperty.call(hints, inferred) ? ` ${hints[inferred]}` : ''; $('message').textContent = `${text}${hint}`; $('message').classList.remove('hidden'); }
 function clearMessage() { $('message').classList.add('hidden'); }
-function typesetMath(element) { if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([element]).then(() => { if (element.id === 'answer' && /\\\(|\\\[|\$/.test(element.textContent) && !element.querySelector('mjx-container, .mjx-container')) showMathRenderError(element); }).catch(() => { showMathRenderError(element); }); }
-function showMathRenderError(element) { if (element.id !== 'answer' || $('mathRenderError')) return; const panel = document.createElement('details'); panel.id = 'mathRenderError'; panel.className = 'formula-fixes'; panel.innerHTML = '<summary>公式渲染失败，查看原始文本</summary><pre></pre>'; panel.querySelector('pre').textContent = element.textContent || ''; element.appendChild(panel); }
+function typesetMath(element) {
+  if (!element) return;
+  const source = element.textContent || '';
+  const hasMath = /\\\(|\\\[|\$\$|\$[^\n$]+\$/.test(source);
+  const render = () => {
+    if (!window.MathJax?.typesetPromise) return false;
+    window.MathJax.typesetPromise([element]).then(() => {
+      if (hasMath && !element.querySelector('mjx-container, .mjx-container')) showMathRenderError(element);
+    }).catch(() => showMathRenderError(element));
+    return true;
+  };
+  if (render() || !hasMath || element.dataset.mathRenderWaiting) return;
+  element.dataset.mathRenderWaiting = 'true';
+  const started = Date.now();
+  const retry = () => {
+    if (render()) { delete element.dataset.mathRenderWaiting; return; }
+    if (Date.now() - started >= 8000) { delete element.dataset.mathRenderWaiting; showMathRenderError(element); return; }
+    window.setTimeout(retry, 120);
+  };
+  retry();
+}
+function showMathRenderError(element) {
+  if (!element || element.querySelector('.math-render-error')) return;
+  const panel = document.createElement('details');
+  if (element.id === 'answer') panel.id = 'mathRenderError';
+  panel.className = 'formula-fixes math-render-error';
+  panel.innerHTML = '<summary>公式暂未编译，展开查看原始内容</summary><pre></pre>';
+  panel.querySelector('pre').textContent = element.textContent || '';
+  element.appendChild(panel);
+}
 function escapeHtml(s = '') { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function formatAgentPolynomial(expression = '') { return String(expression).replace(/\*\*(\d+)/g, (_, power) => [...power].map(digit => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(digit)]).join('')).replace(/\*/g, '·'); }
 function formatMissingAgentParameters(parameters = []) { const labels = { expression: '计算表达式', lower: '积分下限', upper: '积分上限', variable: '变量', left: '等式左侧', right: '等式右侧', theorem: '登记的定理模板', proof: '证明草稿' }; return parameters.map(name => labels[name] || name).join('、'); }
 function renderConcepts(items = []) { $('conceptCount').textContent = items.length; $('concepts').innerHTML = items.length ? items.map(x => `<div class="concept"><div><div class="concept-name">${escapeHtml(x.name)}</div><div class="concept-type">${escapeHtml(x.type || 'concept')}</div></div><span class="similarity">${Math.round((x.similarity || 0) * 100)}%</span></div>`).join('') : '<div class="empty-state">未检索到相关知识点</div>'; }
 function normalizeMathText(text) { return String(text || '').replace(/```(?:latex|tex|math)\s*\n?([\s\S]*?)```/gi, (_, formula) => `\\[${formula.trim()}\\]`); }
-function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').textContent = normalizeMathText(text || '暂无回答'); typesetMath($('answer')); syncAnswerFeedback(); window.MathEvidence?.render(lastAskResult?.answer === text ? lastAskResult : { answer: text }); window.MathNotes?.sync(); }
+function renderChatMarkdown(text) {
+  const protectedParts = [];
+  const protect = (html) => { const marker = `\uE000${protectedParts.length}\uE001`; protectedParts.push(html); return marker; };
+  let source = normalizeMathText(text || '');
+  source = source.replace(/```([^\n`]*)\n?([\s\S]*?)```/g, (_, _language, code) => protect(`<pre><code>${escapeHtml(code.replace(/\n$/, ''))}</code></pre>`));
+  source = source.replace(/(\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\\\([\s\S]*?\\\)|\$(?!\$)[^\n$]+\$)/g, (math) => protect(escapeHtml(math)));
+  source = source.replace(/`([^`\n]+)`/g, (_, code) => {
+    const value = code.trim();
+    const looksMathematical = /[\\_^{}=<>≤≥∈∉∪∩±≈≠×÷√∞∑∫∂]/.test(value) || /^[A-Za-z]$/.test(value) || /^[0-9]+(?:\s*[-+*/=<>≤≥]\s*[A-Za-z0-9(){}_^.]+)+$/.test(value);
+    return protect(looksMathematical ? `\\(${escapeHtml(value)}\\)` : `<code>${escapeHtml(code)}</code>`);
+  });
+
+  const escaped = escapeHtml(source)
+    .replace(/\*\*([^\n*][\s\S]*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*([^\n*]+)\*(?!\*)/g, '<em>$1</em>');
+  const output = [];
+  const lines = escaped.split('\n');
+  let paragraph = [];
+  let listType = '';
+  const closeList = () => { if (listType) { output.push(`</${listType}>`); listType = ''; } };
+  const flushParagraph = () => { if (paragraph.length) { output.push(`<p>${paragraph.join('<br>')}</p>`); paragraph = []; } };
+  for (const line of lines) {
+    const heading = line.match(/^\s{0,3}#{1,6}\s+(.+)$/);
+    const listItem = line.match(/^\s*(?:[-*]|\d+[.)])\s+(.+)$/);
+    if (!line.trim()) { flushParagraph(); closeList(); continue; }
+    if (heading) { flushParagraph(); closeList(); output.push(`<h4>${heading[1]}</h4>`); continue; }
+    if (listItem) {
+      flushParagraph();
+      const nextListType = /^\s*\d+[.)]/.test(line) ? 'ol' : 'ul';
+      if (listType !== nextListType) { closeList(); output.push(`<${nextListType}>`); listType = nextListType; }
+      output.push(`<li>${listItem[1]}</li>`);
+      continue;
+    }
+    closeList();
+    paragraph.push(line);
+  }
+  flushParagraph();
+  closeList();
+  return output.join('').replace(/\uE000(\d+)\uE001/g, (_, index) => protectedParts[Number(index)] || '');
+}
+function renderAnswer(text) { $('answer').classList.remove('empty-state'); $('answer').innerHTML = renderChatMarkdown(text || '暂无回答'); typesetMath($('answer')); syncAnswerFeedback(); window.MathEvidence?.render(lastAskResult?.answer === text ? lastAskResult : { answer: text }); window.MathNotes?.sync(); }
 function renderKnowledgeSources(sources = []) { let panel = $('answerSources'); if (!panel) { panel = document.createElement('details'); panel.id = 'answerSources'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } panel.innerHTML = `<summary>教材出处 ${sources.length ? `· ${sources.length} 条` : '· 暂无已审核片段'}</summary>${sources.length ? sources.map(item => `<article><b>${escapeHtml(item.document_title || '课程文档')}</b><small>${escapeHtml(item.chapter || '未分章')} · 第 ${escapeHtml(String(item.page_start || '?'))} 页 · ${escapeHtml(item.chunk_type || '片段')}</small><p>${escapeHtml(item.content || '')}</p></article>`).join('') : '<span class="muted">本次回答没有使用已审核教材片段，不能据此声称有教材出处。</span>'}`; }
 function renderAgentEvidence(items = []) { let panel = $('agentEvidence'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentEvidence'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } const detail = (item) => { if (item.evidence_type === 'symbolic_derivative') return `d/d${item.variable || 'x'} (${formatAgentPolynomial(item.expression)}) = ${formatAgentPolynomial(item.derivative)}`; if (item.evidence_type === 'exact_definite_integral') return `∫[${item.lower}, ${item.upper}] (${formatAgentPolynomial(item.expression)}) d${item.variable || 'x'} = ${item.value}；原函数：${formatAgentPolynomial(item.antiderivative)}`; if (item.status === 'computed') return `${item.expression} = ${item.value}`; if (item.status === 'counterexample_found') return `反例：${JSON.stringify(item.counterexample)}`; if (item.status === 'formally_verified') return `定理 ${item.theorem || ''} 已通过 Lean 检查`; if (item.status === 'needs_clarification') return `缺少参数：${(item.missing_parameters || item.missing || []).join('、')}`; return item.detail || item.assumptions || JSON.stringify(item); }; panel.innerHTML = `<summary>受控验证证据 ${items.length ? `· ${items.length} 条` : '· 未启用'}</summary>${items.length ? items.map(item => `<article><b>${escapeHtml(item.evidence_type || item.status || '证据')}</b><small>${escapeHtml(item.status || '')} · ${escapeHtml(item.method || item.planned_action || '受控动作')}</small><p>${escapeHtml(detail(item))}</p>${item.assumptions ? `<p class="muted">范围：${escapeHtml(item.assumptions)}</p>` : ''}</article>`).join('') : '<span class="muted">本轮未启用受控验证，回答数学正确性仍未验证。</span>'}`; }
 async function renderAgentTaskEvents(requestId) { let panel = $('agentTaskEvents'); if (!panel) { panel = document.createElement('details'); panel.id = 'agentTaskEvents'; panel.className = 'answer-sources'; $('answer').parentElement?.appendChild(panel); } if (!requestId) { panel.innerHTML = '<summary>Agent 过程 · 未记录</summary>'; return; } try { const response = await fetch(`${API}/ai/tasks/${encodeURIComponent(requestId)}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '任务事件读取失败'); panel.innerHTML = `<summary>Agent 过程 · ${data.total || 0} 个阶段</summary>${(data.items || []).map(item => `<article><b>${escapeHtml(item.stage)}</b><small>${escapeHtml(item.status)} · ${escapeHtml(item.created_at || '')}</small>${item.detail ? `<p>${escapeHtml(item.detail)}</p>` : ''}</article>`).join('') || '<span class="muted">暂无任务事件。</span>'}`; } catch (error) { panel.innerHTML = `<summary>Agent 过程 · 暂不可用</summary><span class="muted">${escapeHtml(error.message)}</span>`; } }
@@ -162,6 +230,7 @@ async function generateRelatedGraph() {
     activeCandidateId = data.candidate_id;
     activeGraphEvidence = data.evidence || [];
     $('saveGraphButton').classList.remove('hidden');
+    $('saveGraphButton').textContent = '校验并保存';
     $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2);
     $('graphEditorPanel').open = false;
     renderConcepts(data.concepts);
@@ -178,8 +247,8 @@ async function generateRelatedGraph() {
     button.textContent = '生成本次对话图谱';
   }
 }
-async function applyGraphEdit() { if (!activeCandidateId) return; let graph; try { graph = JSON.parse($('graphEditor').value); } catch (error) { showMessage('编辑内容不是合法 JSON，请检查后再应用。'); return; } const button = $('applyGraphEdit'); button.disabled = true; button.textContent = '保存修改中…'; try { const response = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ graph }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '修改失败'); renderGraph(data.knowledge_graph); $('saveGraphButton').classList.remove('hidden'); $('graphStatus').textContent = '已修改 · 待重新校验'; showMessage('图谱修改已保存，请点击“校验并保存”完成 AI 复核。'); } catch (error) { showMessage(`无法应用图谱修改：${error.message}`); } finally { button.disabled = false; button.textContent = '应用修改'; } }
-async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; activeGraphEvidence = data.evidence || []; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
+async function applyGraphEdit() { if (!activeCandidateId) return; let graph; try { graph = JSON.parse($('graphEditor').value); } catch (error) { showMessage('编辑内容不是合法 JSON，请检查后再应用。'); return; } const button = $('applyGraphEdit'); button.disabled = true; button.textContent = '保存修改中…'; try { const response = await fetch(`${API}/ai/graph-candidates/${activeCandidateId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ graph }) }); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '修改失败'); renderGraph(data.knowledge_graph); $('saveGraphButton').classList.remove('hidden'); $('saveGraphButton').textContent = '校验并保存'; $('graphStatus').textContent = '已修改 · 待重新校验'; showMessage('图谱修改已保存，请点击“校验并保存”完成 AI 复核。'); } catch (error) { showMessage(`无法应用图谱修改：${error.message}`); } finally { button.disabled = false; button.textContent = '应用修改'; } }
+async function loadCandidate(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选图谱读取失败'); activeCandidateId = data.id; activeGraphEvidence = data.evidence || []; $('graphEditor').value = JSON.stringify(data.knowledge_graph, null, 2); $('graphEditorPanel').open = false; $('saveGraphButton').classList.toggle('hidden', data.status === 'saved'); $('saveGraphButton').textContent = '校验并保存'; renderGraph(data.knowledge_graph); loadCandidateEvents(candidateId); showMessage(`已载入候选图谱：${data.status}`); } catch (error) { showMessage(`无法载入候选图谱：${error.message}`); } }
 async function loadCandidateEvents(candidateId) { try { const response = await fetch(`${API}/ai/graph-candidates/${candidateId}/events`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '事件读取失败'); let timeline = $('candidateTimeline'); if (!timeline) { timeline = document.createElement('div'); timeline.id = 'candidateTimeline'; timeline.className = 'candidate-timeline'; $('graphEditorPanel').appendChild(timeline); } const names = { generated: 'AI 生成', edited: '人工编辑', validated: '校验通过', rejected: '校验拒绝', validation_failed: '校验异常', relation_conflict: '关系冲突处理', saved: '写入知识库' }; const detailText = event => event.action === 'relation_conflict' ? `${event.detail.action === 'replaced' ? '已替换' : '已跳过'}：${event.detail.old_relations?.join(', ')} → ${event.detail.new_relation}（优先级 ${event.detail.old_priority} / ${event.detail.new_priority}）` : ''; timeline.innerHTML = `<b>审核记录</b>${(data.events || []).map(event => `<div><span>${escapeHtml(names[event.action] || event.action)}${detailText(event) ? ` · ${escapeHtml(detailText(event))}` : ''}</span><small>${escapeHtml(event.created_at || '')}</small></div>`).join('') || '<span class="muted">暂无记录</span>'}`; } catch (error) {} }
 async function loadCandidateHistory() { try { const status = $('candidateStatusFilter').value; const query = status ? `?status=${encodeURIComponent(status)}&limit=12` : '?limit=12'; const response = await fetch(`${API}/ai/graph-candidates${query}`); const data = await response.json(); if (!response.ok) throw new Error(data.detail || '候选记录读取失败'); const statusNames = { pending: '待审核', needs_review: '需复核', validated: '已校验', saved: '已保存', rejected: '已拒绝' }; $('candidateList').innerHTML = data.items.length ? data.items.map(item => `<button type="button" class="candidate-item" data-candidate-id="${item.id}"><span class="candidate-question">${escapeHtml(item.question)}</span><span class="candidate-meta"><b class="candidate-status status-${escapeHtml(item.status)}">${escapeHtml(statusNames[item.status] || item.status)}</b><span>${item.node_count} 节点 · ${item.edge_count} 关系</span></span></button>`).join('') : '<span class="muted">暂无符合条件的候选图谱</span>'; document.querySelectorAll('.candidate-item').forEach(item => item.addEventListener('click', () => loadCandidate(item.dataset.candidateId))); } catch (error) { $('candidateList').innerHTML = '<span class="muted">候选记录暂不可用</span>'; } }
 async function validateAndSaveGraph() {
@@ -759,7 +828,7 @@ function appendChatMessage(message, pending = false) {
   label.textContent = message.role === 'user' ? 'YOU' : 'MATH AGENT';
   const bubble = document.createElement('div');
   bubble.className = 'chat-bubble';
-  bubble.textContent = normalizeMathText(message.content || '');
+  bubble.innerHTML = renderChatMarkdown(message.content || '');
   item.append(label, bubble);
   if (message.created_at) {
     const meta = document.createElement('small');
@@ -793,6 +862,7 @@ function clearRestoredAnswer() {
   $('answer').textContent = '你的数学解答会显示在这里。';
   $('answerStatus').textContent = '等待提问';
   ['answerSources', 'agentEvidence', 'agentTaskEvents', 'formulaFixes', 'mathRenderError', 'answerStepEvidence'].forEach(id => $(id)?.remove());
+  document.querySelectorAll('.math-render-error').forEach(panel => panel.remove());
   renderConcepts([]);
 }
 
