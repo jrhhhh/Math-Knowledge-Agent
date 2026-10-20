@@ -14,7 +14,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 10,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 2,
@@ -25,7 +27,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 11,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 3,
@@ -36,7 +40,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 12,
-      "math_verification": "source_checked_pdf_19_23; graph_relations_manually_corrected; page_23_contains_next_section_examples"
+      "math_verification": "source_checked_pdf_19_23; graph_relations_manually_corrected; page_23_contains_next_section_examples",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 4,
@@ -47,7 +53,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 13,
-      "math_verification": "source_checked_pdf_24_26; graph_relations_manually_corrected; section_ends_before_section_5_on_page_26"
+      "math_verification": "source_checked_pdf_24_26; graph_relations_manually_corrected; section_ends_before_section_5_on_page_26",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 5,
@@ -58,7 +66,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 14,
-      "math_verification": "source_checked_pdf_26_27; removed_unsupported_general_definition_and_curriculum_edges; reused_existing_sqrt2_concept"
+      "math_verification": "source_checked_pdf_26_27; removed_unsupported_general_definition_and_curriculum_edges; reused_existing_sqrt2_concept",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 6,
@@ -69,7 +79,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 15,
-      "math_verification": "source_checked_pdf_28_29_printed_12_13; corrected scope and examples; manually reviewed 8 nodes and 11 relations; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed"
+      "math_verification": "source_checked_pdf_28_29_printed_12_13; corrected scope and examples; manually reviewed 8 nodes and 11 relations; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 7,
@@ -80,7 +92,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 16,
-      "math_verification": "source_checked_reader_pdf_29_30_printed_13_14; manually reviewed 6 nodes and 7 relations; removed_section_8_explanation_from_graph; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed"
+      "math_verification": "source_checked_reader_pdf_29_30_printed_13_14; manually reviewed 6 nodes and 7 relations; removed_section_8_explanation_from_graph; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 8,
@@ -91,7 +105,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review_with_source_gap",
       "candidate_id": 17,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 9,
@@ -102,7 +118,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 19,
-      "math_verification": "source_checked_reader_pdf_32_34_printed_16_18; corrected prior scope to include real-number sign classification, infinity-cut footnote, opposite and modulus, and Examples IV; manually reviewed 10 nodes and 12 relations; supersedes incomplete candidate 18; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed"
+      "math_verification": "source_checked_reader_pdf_32_34_printed_16_18; corrected prior scope to include real-number sign classification, infinity-cut footnote, opposite and modulus, and Examples IV; manually reviewed 10 nodes and 12 relations; supersedes incomplete candidate 18; validator_fallback_local_due_empty_response; graph_evidence_records_remain_unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 10,
@@ -113,7 +131,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 20,
-      "math_verification": "source_checked_reader_pdf_34_36_printed_18_20; begins after §10 heading on p34 and stops before §11 heading on p36; covers addition by cuts, unique omitted rational, completion, rational compatibility, subtraction, and all Examples V exercise themes; manually reviewed 10 nodes and 12 relations; validator_fallback_local_due_empty_response; evidence index rebuilt for current graph with 22 records, all remain unreviewed"
+      "math_verification": "source_checked_reader_pdf_34_36_printed_18_20; begins after §10 heading on p34 and stops before §11 heading on p36; covers addition by cuts, unique omitted rational, completion, rational compatibility, subtraction, and all Examples V exercise themes; manually reviewed 10 nodes and 12 relations; validator_fallback_local_due_empty_response; evidence index rebuilt for current graph with 22 records, all remain unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 11,
@@ -124,7 +144,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 21,
-      "math_verification": "source_checked_reader_pdf_36_37_printed_20_21; candidate_21_manually_reviewed_5_nodes_6_relations; Examples_VI_kept_as_unproved_exercises; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_11_records_all_unreviewed"
+      "math_verification": "source_checked_reader_pdf_36_37_printed_20_21; candidate_21_manually_reviewed_5_nodes_6_relations; Examples_VI_kept_as_unproved_exercises; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_11_records_all_unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 12,
@@ -135,7 +157,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 22,
-      "math_verification": "source_checked_reader_pdf_37_printed_21_section_12_only_excludes_Examples_VI; candidate_22_manually_reviewed_10_nodes_10_relations; unique_missing_positive_rational_2_recorded_as_source_assertion_without_expanded_proof; other_irrational_equations_recorded_as_prompt_only; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_20_records_all_unreviewed"
+      "math_verification": "source_checked_reader_pdf_37_printed_21_section_12_only_excludes_Examples_VI; candidate_22_manually_reviewed_10_nodes_10_relations; unique_missing_positive_rational_2_recorded_as_source_assertion_without_expanded_proof; other_irrational_equations_recorded_as_prompt_only; validator_fallback_local_due_empty_response; evidence_index_rebuilt_for_current_graph_with_20_records_all_unreviewed",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 13,
@@ -146,7 +170,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 23,
-      "math_verification": "source_checked_reader_pdf_38_39_printed_22_23_section_13_only; candidate_23_saved_11_nodes_12_relations; exercise_vs_body_distinction_and_exact_boundary_checked; source_evidence_and_ocr_formulas_pending_manual_audit"
+      "math_verification": "source_checked_reader_pdf_38_39_printed_22_23_section_13_only; candidate_23_saved_11_nodes_12_relations; exercise_vs_body_distinction_and_exact_boundary_checked; source_evidence_and_ocr_formulas_pending_manual_audit",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 14,
@@ -157,7 +183,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 24,
-      "math_verification": "source_checked_reader_pdf_40_42_printed_24_26_stop_before_section_15; candidate_24_manually_edited_12_nodes_13_relations_AI_validated_saved; Examples_VIII_1_12_included_and_tagged_as_exercises; OCR_formulas_and_source_evidence_pending_manual_audit"
+      "math_verification": "source_checked_reader_pdf_40_42_printed_24_26_stop_before_section_15; candidate_24_manually_edited_12_nodes_13_relations_AI_validated_saved; Examples_VIII_1_12_included_and_tagged_as_exercises; OCR_formulas_and_source_evidence_pending_manual_audit",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 15,
@@ -168,7 +196,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 27,
-      "math_verification": "source_checked_reader_pdf_42_45_printed_26_29_stop_before_section_16; candidate_27_manually_edited_11_nodes_11_relations_saved; confirmed_no_Examples_IX_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_math_need_itemized_manual_audit"
+      "math_verification": "source_checked_reader_pdf_42_45_printed_26_29_stop_before_section_16; candidate_27_manually_edited_11_nodes_11_relations_saved; confirmed_no_Examples_IX_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_math_need_itemized_manual_audit",
+      "scope_status": "supporting_real_number_foundation_not_core_calculus",
+      "scope_note": "实数构造与代数基础，已保留既有图谱记录，但不作为本次“一元微积分全部内容”完成判据。"
     },
     {
       "section": 16,
@@ -179,7 +209,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 28,
-      "math_verification": "source_checked_reader_pdf_45_46_printed_29_30_stop_before_section_17; candidate_28_manually_edited_8_nodes_8_relations_saved; confirmed_no_Examples_XVII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_needs_itemized_manual_audit"
+      "math_verification": "source_checked_reader_pdf_45_46_printed_29_30_stop_before_section_17; candidate_28_manually_edited_8_nodes_8_relations_saved; confirmed_no_Examples_XVII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_needs_itemized_manual_audit; reader_rechecked_pdf_45_46_on_2026-10-18; all_8_nodes_8_edges_have_verified_textbook_page_evidence",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 17,
@@ -190,7 +222,9 @@
       "source_heading_status": "pdf_text_verified",
       "workflow_status": "saved_after_manual_review",
       "candidate_id": 29,
-      "math_verification": "source_checked_reader_pdf_46_48_printed_30_32_stop_before_section_18; candidate_29_manually_edited_9_nodes_9_relations_saved; confirmed_no_Examples_XVIII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_proof_details_need_itemized_manual_audit"
+      "math_verification": "source_checked_reader_pdf_46_48_printed_30_32_stop_before_section_18; candidate_29_manually_edited_9_nodes_9_relations_saved; confirmed_no_Examples_XVIII_in_scope; semantic_validation_fallback_local_AI_empty_response; source_evidence_and_proof_details_need_itemized_manual_audit; reader_rechecked_pdf_46_48_on_2026-10-18; all_9_nodes_9_edges_have_verified_textbook_page_evidence; stopped_before_section_18",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 18,
@@ -198,10 +232,12 @@
       "group": "I §18 凝聚点",
       "pdf_page": 48,
       "heading": "Points of accumulation. A system of real numbers, or of the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 30,
+      "math_verification": "source_checked_pdf_48_50_printed_32_34_stop_before_section_19; conversation_26_messages_69_72_covers_Examples_IX_1_4; candidate_30_manually_corrected_and_saved_10_nodes_8_relations; Examples_IX_1_4_all_marked_as_exercises_not_proved_results; all_10_node_and_8_edge_evidence_reconciled_to_pdf_48_50_after_manual_edit; semantic_validation_fallback_local_AI_empty_response",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 19,
@@ -209,10 +245,12 @@
       "group": "I §19 魏尔斯特拉斯定理",
       "pdf_page": 50,
       "heading": "Weierstrass’s Theorem. The general theory of sets of points is",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "core_theorem_saved_chapter_exercises_pending",
+      "candidate_id": 31,
+      "math_verification": "core_theorem_source_checked_pdf_50_printed_34_from_section_19_heading_to_Miscellaneous_Examples_heading; AI_course_discussion_failed_twice; candidate_31_manually_drafted_from_original_page_with_textbook_verified_evidence_and_saved_5_nodes_5_relations_after_UI_validation; semantic_validation_fallback_local_AI_empty_response; chapter_I_Miscellaneous_Examples_1_38_pdf_50_58_not_yet_reviewed; section_20_starts_pdf_59",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 20,
@@ -220,10 +258,12 @@
       "group": "II §20 函数概念",
       "pdf_page": 59,
       "heading": "The idea of a function. Suppose that x and y are two contin-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 33,
+      "math_verification": "source_checked_pdf_59_62_printed_43_46_in_browser; Examples_X_1_8_checked; boundary_before_section_21_confirmed; 11_nodes_15_edges_and_all_26_node_edge_evidence_records_reconciled_to_UI_source_pages",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 21,
@@ -231,10 +271,12 @@
       "group": "II §21 函数图像与坐标",
       "pdf_page": 62,
       "heading": "The graphical representation of functions. Suppose that",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 34,
+      "math_verification": "source_checked_pdf_62_64_printed_46_48_in_browser; figure_6_coordinates_and_graph_definition_checked; straight_line_circle_conic_examples_checked; boundary_before_section_22_confirmed; 8_nodes_10_edges_and_all_18_node_edge_evidence_records_reconciled_to_UI_source_pages",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 22,
@@ -242,10 +284,12 @@
       "group": "II §22 极坐标",
       "pdf_page": 64,
       "heading": "Polar coordinates. In what precedes we have determined the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 35,
+      "math_verification": "source_checked_pdf_64_65_printed_48_49_in_reader_ui; polar_conversion_equations_and_circle_line_hyperbola_examples_checked; boundary_before_section_23_on_pdf_65_confirmed; 8_nodes_9_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 23,
@@ -253,10 +297,12 @@
       "group": "II §23 多项式",
       "pdf_page": 66,
       "heading": "Further examples of functions and their graphical rep-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 36,
+      "math_verification": "source_checked_pdf_66_69_printed_50_53_in_reader_ui; polynomial_definition_power_graphs_convexity_graph_construction_and_Examples_XI_1_4_checked; chapter_exercises_kept_distinct_from_theorems; boundary_before_section_24_confirmed; 9_nodes_7_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 24,
@@ -264,10 +310,12 @@
       "group": "II §24–25 有理函数",
       "pdf_page": 69,
       "heading": "B. Rational Functions. The class of functions which ranks",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 37,
+      "math_verification": "source_checked_pdf_69_71_printed_53_55_in_reader_ui; rational_function_definition_domain_preservation_cancellation_and_coefficient_caveat_checked; boundary_before_section_25_confirmed; 10_nodes_8_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 25,
@@ -275,10 +323,12 @@
       "group": "II §24–25 有理函数",
       "pdf_page": 71,
       "heading": "The drawing of graphs of rational functions, even more than that",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 38,
+      "math_verification": "source_checked_pdf_71_72_printed_55_56_in_reader_ui; Examples_XII_1_5_formulas_and_domain_note_checked; exercises_marked_as_tasks; section_boundary_before_26_on_pdf_72_confirmed; 8_nodes_8_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 26,
@@ -286,10 +336,12 @@
       "group": "II §26–27 代数函数",
       "pdf_page": 72,
       "heading": "C. Explicit Algebraical Functions. The next important",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_and_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 39,
+      "math_verification": "source_checked_pdf_72_73_printed_56_57_in_reader_ui; explicit_algebraic_definition_square_root_single_double_value_and_cube_root_cases_checked; Examples_XIII_1_4_examined_and_classified; boundary_before_section_27_confirmed; 8_nodes_9_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 27,
@@ -297,10 +349,12 @@
       "group": "II §26–27 代数函数",
       "pdf_page": 73,
       "heading": "D. Implicit Algebraical Functions. It is easy to verify that",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_and_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 40,
+      "math_verification": "source_checked_pdf_73_76_printed_57_60_in_reader_ui; implicit_algebraic_definition_elimination_examples_quadratic_branch_cases_and_Examples_XIV_checked; exercise_status_and_formula_caveats_preserved; boundary_before_section_28_confirmed; 13_nodes_12_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 28,
@@ -308,10 +362,12 @@
       "group": "II §28–29 超越函数",
       "pdf_page": 76,
       "heading": "Transcendental functions. All functions of x which are not",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_and_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 41,
+      "math_verification": "source_checked_pdf_76_79_printed_60_63_in_reader_ui; transcendental_and_circular_function_scope_multivalued_inverse_domains_sin1overx_oscillation_and_periodic_function_arguments_checked; corrected_extremum_parameter_formula; boundary_before_section_29_confirmed; 12_nodes_14_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 29,
@@ -319,10 +375,12 @@
       "group": "II §28–29 超越函数",
       "pdf_page": 79,
       "heading": "F. Other classes of transcendental functions. Next in",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_and_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 42,
+      "math_verification": "source_checked_pdf_79_83_printed_63_67_in_reader_ui; floor_fractional_part_sparse_domain_piecewise_rational_irrational_graphs_and_examples_XVI_1_11_checked; radicals_in_example_11_retained_as_ocr_caveat; boundary_before_section_30_confirmed; 12_nodes_14_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 30,
@@ -330,10 +388,12 @@
       "group": "II §30 方程的图像解法",
       "pdf_page": 83,
       "heading": "Graphical solution of equations containing a single un-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_and_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 43,
+      "math_verification": "source_checked_pdf_83_84_printed_67_68_in_reader_ui_and_pdf_page_text; equation_intersection_method_quadratic_graphical_methods_root_count_table_and_trigonometric_examples_checked; circle_radius_source_sign_caveat_documented; boundary_before_multivariable_section_31_confirmed; 8_nodes_13_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 31,
@@ -344,7 +404,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 32,
@@ -355,7 +417,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 33,
@@ -366,7 +430,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 34,
@@ -377,7 +443,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 35,
@@ -388,7 +456,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 36,
@@ -399,7 +469,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 37,
@@ -410,7 +482,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 38,
@@ -421,7 +495,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 39,
@@ -432,7 +508,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 40,
@@ -443,7 +521,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 41,
@@ -454,7 +534,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 42,
@@ -465,7 +547,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 43,
@@ -476,7 +560,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 44,
@@ -487,7 +573,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 45,
@@ -498,7 +586,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 46,
@@ -509,7 +599,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 47,
@@ -520,7 +612,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 48,
@@ -531,7 +625,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 49,
@@ -542,7 +638,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_geometry_or_complex_foundations",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 50,
@@ -550,10 +648,12 @@
       "group": "IV §50 正整数变量函数",
       "pdf_page": 144,
       "heading": "Functions of a positive integral variable. In Chapter II",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 44,
+      "math_verification": "source_checked_pdf_144_145_printed_128_129_in_reader_ui; positive_integer_domain_examples_sequence_notation_and_restriction_extension_checked; boundary_before_section_51_confirmed; 8_nodes_11_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 51,
@@ -561,10 +661,12 @@
       "group": "IV §51 插值",
       "pdf_page": 145,
       "heading": "Interpolation. The problem of determining a function of x which",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 45,
+      "math_verification": "source_checked_pdf_145_146_printed_129_130_in_reader_ui; interpolation_definition_nonuniqueness_cosine_extension_x_power_x_domain_caveat_and_factorial_gamma_context_checked; boundary_before_section_52_confirmed; 8_nodes_8_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 52,
@@ -572,10 +674,12 @@
       "group": "IV §52 有限集与无限集",
       "pdf_page": 146,
       "heading": "Finite and infinite classes. Before we proceed further it is",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 46,
+      "math_verification": "source_checked_pdf_146_147_printed_130_131_in_reader_ui; finite_and_infinite_class_definitions_and_integer_rational_real_examples_checked; boundary_before_section_53_confirmed; 7_nodes_6_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 53,
@@ -583,10 +687,12 @@
       "group": "IV §53–57 数列在充分大n时的性质",
       "pdf_page": 147,
       "heading": "Properties possessed by a function of n for large values",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 47,
+      "math_verification": "source_checked_pdf_147_149_printed_131_133_in_reader_ui; pages_148_149 visually checked including cases_a_b_c_examples_and_exercises_i_xi; exact_boundary_before_section_54_on_pdf149; corrected_exercise_xi_strict_threshold_n_ge_20000; 13_nodes_15_edges_evidence_reconciled_with_human_reader_provenance",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 54,
@@ -594,10 +700,12 @@
       "group": "IV §53–57 数列在充分大n时的性质",
       "pdf_page": 149,
       "heading": "54. Let us now suppose that φ(n) and P ...",
-      "source_heading_status": "untitled_section_opening",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_image_text_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 48,
+      "math_verification": "source_checked_pdf_149_150_printed_133_134_in_reader_ui; p149_definition_of_exceptional_values_and_nonunique_threshold_n0_checked; p150_relative_meaning_of_large_checked; strict_thresholds_for_1_over_n_and_alternating_example_checked; boundary_at_section_55_heading_on_pdf150_confirmed; original_prime_index_sentence_retained_as_printed_convention_conflict; 13_nodes_10_edges_evidence_reconciled_with_human_reader_provenance",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 55,
@@ -605,10 +713,12 @@
       "group": "IV §53–57 数列在充分大n时的性质",
       "pdf_page": 150,
       "heading": "The phrase ‘ n tends to infinity’. There is a somewhat dif-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 49,
+      "math_verification": "source_checked_pdf_150_151_printed_134_135_in_reader_ui; n_to_infinity_as_unbounded_successive_positive_integer_values_and_logical_variable_non_temporal_checked; infinity_not_a_number_and_other_phrases_require_specific_definitions_checked; link_to_sufficiently_large_behavior_preserved_without_claiming_limit_definition; boundary_before_section_56_on_pdf151_confirmed; 7_nodes_5_edges_evidence_reconciled_with_human_reader_provenance",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 56,
@@ -616,10 +726,12 @@
       "group": "IV §53–57 数列在充分大n时的性质",
       "pdf_page": 151,
       "heading": "The behaviour of a function of n as n tends to infinity.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 51,
+      "math_verification": "source_checked_pdf_151_153_printed_135_137_in_reader_ui; smallness_for_large_n_translated_to_arbitrary_positive_epsilon_checked; strict_bound_n_gt_1_over_epsilon_and_integer_n0_floor_plus_1_checked; n0_as_function_of_epsilon_and_opponent_argument_checked; equivalence_with_limit_notation_for_1_over_n_to_0_and_1_minus_1_over_n_to_1_checked; boundary_before_section_57_with_same_page_start_on_pdf153_confirmed; 8_nodes_10_edges_evidence_reconciled_with_human_reader_provenance; candidate_50_superseded_by_51",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 57,
@@ -627,10 +739,12 @@
       "group": "IV §53–57 数列在充分大n时的性质",
       "pdf_page": 153,
       "heading": "Now let us consider a different example: let ϕ(n) = n2. Then",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 52,
+      "math_verification": "source_checked_pdf_153_154_printed_137_138_in_reader_ui; n_squared_exceeds_arbitrary_positive_delta_with_threshold_n0_delta_and_tends_to_plus_infinity_checked; minus_n_squared_tends_to_minus_infinity_checked; plus_minus_infinity_symbols_only_interpreted_in_defined_context_checked; exact_boundary_before_section_58_heading_on_pdf154_confirmed; 6_nodes_5_edges_evidence_reconciled_with_human_reader_provenance",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 58,
@@ -638,10 +752,12 @@
       "group": "IV §58–61 极限定义及相关概念",
       "pdf_page": 154,
       "heading": "Definition of a limit. After the discussion which precedes the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 53,
+      "math_verification": "source_checked_pdf_154_155_printed_138_139_in_reader_ui; intuitive_nearly_equal_statement_and_precise_epsilon_n0_definition_checked; absolute_difference_notation_and_limit_shorthand_checked; reciprocal_example_n0=1+floor(1/epsilon)_verified; eventual_constant_same_threshold_characterization_checked; section_59_heading_confirmed_at_pdf156_despite_running_header_IV59_on_pdf155; 7_nodes_7_edges_evidence_reconciled_with_human_reader_provenance",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 59,
@@ -649,10 +765,12 @@
       "group": "IV §58–61 极限定义及相关概念",
       "pdf_page": 156,
       "heading": "The definition of a limit may be illustrated geometrically as fol-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_and_figure_visually_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 54,
+      "math_verification": "source_checked_pdf_156_printed_140_in_reader_ui; Fig27_discrete_graph_horizontal_epsilon_band_and_vertical_n0_line_checked; geometric_statement_matches_epsilon_n0_definition; boundary_before_section_60_heading_on_same_pdf_page_confirmed; 6_nodes_7_edges_human_page_evidence_verified",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 60,
@@ -660,10 +778,12 @@
       "group": "IV §58–61 极限定义及相关概念",
       "pdf_page": 156,
       "heading": "So much for functions of n which tend to a limit as n tends to ∞.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 55,
+      "math_verification": "source_checked_pdf_156_157_printed_140_141_in_reader_ui; Definition_II_for_positive_infinity_quantifier_every_n_ge_n0_and_delta_dependent_threshold_checked; informal_arbitrarily_large_wording_caveat_checked; negative_infinity_definition_left_to_reader_as_source_does; boundary_before_section_61_on_pdf157_confirmed; 5_nodes_4_edges_human_page_evidence_verified",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 61,
@@ -671,10 +791,12 @@
       "group": "IV §58–61 极限定义及相关概念",
       "pdf_page": 157,
       "heading": "Some points concerning the definitions. The reader should",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 57,
+      "math_verification": "source_checked_pdf_157_160_printed_141_144_in_reader_ui; six_definition_notes_and_Examples_XXIII_1_9_checked; finite_modification_invariance_and_infinite_modification_counterexample; all_n_ge_n0_quantifier_and_absolute_difference_sign_change; limit_not_required_to_be_attained; sign_condition_for_infinite_limits; Euclid_product_plus_one_proof_gap_and_prime_index_convention_flagged; source_sine_bound_corrected_from_strict_to_nonstrict; supplementary_bounds_and_rational_theta_period_extension_labeled; irrational_theta_deferred; boundary_before_section_62_on_pdf160_confirmed; 15_nodes_16_edges_human_reader_evidence",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 62,
@@ -682,10 +804,12 @@
       "group": "IV §62 振荡函数",
       "pdf_page": 161,
       "heading": "Oscillating Functions. Definition. When ϕ(n) does not tend",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 58,
+      "math_verification": "source_checked_pdf_161_165_printed_145_149_in_reader_ui; oscillation_definition_finite_infinite_distinction_and_examples_XXIV_1_20_checked; XXV_comparison_and_translation_principles_checked; exercises_kept_as_problems; XXV_12b_threshold_recomputed_from_printed_0.00001_to_least_n0_100001_and_source_solution_discrepancy_flagged; boundary_before_section_63_on_pdf165_confirmed; 16_nodes_16_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 63,
@@ -693,10 +817,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 165,
       "heading": "Some general theorems with regard to limits. A. The",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 59,
+      "math_verification": "source_checked_pdf_165_167_printed_149_151_in_reader_ui; theorem_I_sum_of_convergent_sequences_proved_using_triangle_inequality_epsilon_over_2_and_common_n0=max_n1_n2; exact_boundary_before_section_64_on_pdf167_confirmed; 6_nodes_9_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 64,
@@ -704,10 +830,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 167,
       "heading": "Results subsidiary to Theorem I. The reader should have no",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 60,
+      "math_verification": "source_checked_pdf_167_168_printed_151_152_in_reader_ui; seven_sum_behavior_cases_and_illustrative_examples_1_to_7_checked; finite_vs_infinite_oscillation_definitions_applied; difference_argument_used_for_impossibility_cases; exact_boundary_before_section_65_on_pdf168_confirmed; 14_nodes_23_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 65,
@@ -715,10 +843,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 168,
       "heading": "B. The behaviour of the product of two functions whose",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 61,
+      "math_verification": "source_checked_pdf_168_170_printed_152_154_in_reader_ui; product_limit_theorem_and_error_expansion_checked; nonzero_limit_epsilon_proof_small_epsilon_constraint_made_explicit_for_arbitrary_epsilon; zero_limit_case_reduced_to_eventual_boundedness_and_left_to_reader_in_source; finite_oscillation_product_cases_and_constant_factor_corollaries_checked; boundary_before_section_66_on_pdf170_confirmed; 12_nodes_15_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 66,
@@ -726,10 +856,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 170,
       "heading": "C. The behaviour of the difference or quotient of two",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 62,
+      "math_verification": "source_checked_pdf_170_171_printed_154_155_in_reader_ui; difference_limit_derived_from_sum_and_constant_multiple_results; reciprocal_limit_theorem_with_denominator_separation_and_epsilon_bound_checked; quotient_limit_requires_nonzero_denominator_limit; supplementary_zero_over_zero_examples_labeled_as_our_addition; boundary_before_section_67_heading_on_pdf171_confirmed; 9_nodes_12_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 67,
@@ -737,10 +869,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 171,
       "heading": "Theorem V.If R{ϕ(n), ψ(n), χ(n), . . .} is any rational function",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 63,
+      "math_verification": "source_checked_pdf_171_printed_155_in_reader_ui; Theorem_V_for_rational_functions_of_convergent_inputs_proved_by_finite_polynomial_expansion_sum_product_and_quotient_limit_theorems; denominator_limit_nonzero_condition_preserved; exact_boundary_before_section_68_on_pdf172_confirmed; 7_nodes_9_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 68,
@@ -748,10 +882,12 @@
       "group": "IV §63–68 极限定理",
       "pdf_page": 172,
       "heading": "The preceding general theorem may be applied to the following",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 64,
+      "math_verification": "source_checked_pdf_172_173_printed_156_157_in_reader_ui; general_rational_function_degree_comparison_and_leading_coefficient_sign_cases_checked; Examples_XXVI_1_3_outcomes_recalculated_and_exercises_preserved_as_problems; exact_boundary_before_section_69_on_pdf173_confirmed; 8_nodes_10_edges_evidence_reconciled",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 69,
@@ -759,10 +895,12 @@
       "group": "IV §69–70 单调函数",
       "pdf_page": 173,
       "heading": "Functions of n which increase steadily with n. A special",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 65,
+      "math_verification": "human_checked_pdf_173_175_printed_157_159; exact_boundary_before_section_70_on_pdf175; 9_nodes_10_edges_all_19_evidence_items_verified; weak_monotonicity_dedekind_cut_two_cases_corollaries_and_limit_attainment_checked; decreasing_case_explicitly_marked_as_reader_exercise_and_derived_via_minus_phi",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 70,
@@ -770,10 +908,12 @@
       "group": "IV §69–70 单调函数",
       "pdf_page": 175,
       "heading": "The great importance of these theorems lies in the fact that they",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 66,
+      "math_verification": "human_checked_pdf_175_printed_159; exact_boundary_before_section_71; 6_nodes_7_edges_all_13_evidence_items_verified; distinction_between_unknown_limit_test_known_limit_epsilon_test_and_oscillation_contradiction_checked; subsequence_explanation_marked_supplement",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 71,
@@ -781,10 +921,12 @@
       "group": "IV §71 魏尔斯特拉斯定理的另一证明",
       "pdf_page": 175,
       "heading": "Alternative proof of Weierstrass’s Theorem of § 19. The",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 67,
+      "math_verification": "human_checked_pdf_175_176_printed_159_160; exact_boundary_before_section_72_on_pdf176; 8_nodes_10_edges_all_18_evidence_items_verified; bisection_nested_infinite_point_sets_monotone_bounded_endpoints_common_limit_and_accumulation_point_checked",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 72,
@@ -792,10 +934,12 @@
       "group": "IV §72 xⁿ的极限",
       "pdf_page": 176,
       "heading": "The limit of xn as n tends to ∞. Let us apply the results of",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 68,
+      "math_verification": "human_checked_pdf_176_179_printed_160_163; exact_stop_before_section_73_on_pdf180; 15_nodes_16_edges_all_31_evidence_items_verified; real_power_limit_cases_and_examples_XXVII_1_to_13_checked; positive_integer_k_and_generalized_binomial_term_conditions_preserved",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 73,
@@ -803,10 +947,12 @@
       "group": "IV §73 (1+1/n)ⁿ的极限",
       "pdf_page": 180,
       "heading": "The limit of",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_and_page_boundary_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 69,
+      "math_verification": "human_checked_pdf_180_printed_164; exact_boundary_before_section_74_on_pdf181; 8_nodes_8_edges_all_16_evidence_items_verified; binomial_expansion_monotonicity_geometric_upper_bound_and_e_definition_checked; stronger_e_ge_9_over_4_is_explicitly_marked_as_supplement",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 74,
@@ -814,10 +960,12 @@
       "group": "IV §74 代数引理",
       "pdf_page": 181,
       "heading": "Some algebraical lemmas. It will be convenient to prove at this",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified_page_boundary",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 71,
+      "math_verification": "human_checked_pdf_181_183_printed_165_167; exact_boundary_before_section_75_heading_on_pdf183; 10_nodes_12_edges_all_22_evidence_items_verified; inequalities_1_to_10_and_examples_XXVIII_1_to_5_checked; exercises_kept_distinct_from_proved_results; positive_rational_exponent_and_base_conditions_preserved",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 75,
@@ -825,10 +973,12 @@
       "group": "IV §75 n(ⁿ√x−1)的极限",
       "pdf_page": 183,
       "heading": "The limit of n( n√x − 1). If in the first inequality (3) of § 74 we put",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified_page_boundary",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 72,
+      "math_verification": "human_checked_pdf_183_184_printed_167_168; exact_boundary_before_section_76_on_pdf184; 8_nodes_9_edges_all_17_evidence_items_verified; monotonicity_lower_bound_reciprocal_relation_and_product_identity_checked; logarithm_identification_not_imported_from_later_sections; exercise_proof_completion_marked_as_supplement",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 76,
@@ -836,10 +986,12 @@
       "group": "IV §76–77 无穷级数",
       "pdf_page": 184,
       "heading": "Infinite Series. Suppose that u(n) is any function of n defined",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 73,
+      "math_verification": "human_checked_pdf_184_185_printed_168_169; exact_boundary_before_section_77_on_pdf186; 7_nodes_6_edges_all_13_evidence_items_verified; partial_sum_limit_epsilon_definition_divergence_oscillation_and_author_terminology_checked",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 77,
@@ -847,10 +999,12 @@
       "group": "IV §76–77 无穷级数",
       "pdf_page": 186,
       "heading": "General theorems concerning infinite series. When we are",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 74,
+      "math_verification": "human_checked_pdf_186_188_printed_170_172; exact_boundary_before_section_78_on_pdf188; 10_nodes_10_edges_all_20_evidence_items_verified; operations_term_test_harmonic_counterexample_grouping_nonnegative_partial_sum_and_comparison_tests_checked",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 78,
@@ -858,10 +1012,12 @@
       "group": "IV §78 无穷等比级数",
       "pdf_page": 188,
       "heading": "The infinite geometrical series. We shall now consider the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_verified",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 75,
+      "math_verification": "human_checked_pdf_188_193_printed_172_177; exact_boundary_before_section_79_on_pdf193; corrected_r1_bound_in_examples_XXX_11_12; added_examples_XXX_16_to_18_missing_from_previous_graph; removed_four_unjustified_edges; 14_nodes_12_edges_all_26_evidence_items_verified; geometric_series_decimal_representations_irrational_examples_and_series_tests_reviewed",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 79,
@@ -870,9 +1026,11 @@
       "pdf_page": 193,
       "heading": "The representation of functions of a continuous real vari-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 76,
+      "math_verification": "human_checked_pdf_193_195_printed_177_179; exact_boundary_before_section_80_on_pdf195; 14_nodes_16_edges_all_30_evidence_items_verified; examples_XXXI_pointwise_domains_endpoints_nonconvergence_and_leap_year_limit_checked; unanswered_exercises_not_promoted_to_book_results",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 80,
@@ -881,9 +1039,12 @@
       "pdf_page": 195,
       "heading": "The bounds of a bounded aggregate. Let S be any system or",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 77,
+      "math_verification": "human_checked_pdf_195_196_printed_179_180; exact_boundary_before_section_81_on_pdf196; 7_nodes_8_edges_all_15_evidence_items_verified; upper_lower_bounds_dedekind_cut_existence_minimality_and_footnote_distinction_checked",
+      "pdf_page_end": 196,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 81,
@@ -892,9 +1053,12 @@
       "pdf_page": 196,
       "heading": "The bounds of a bounded function. Suppose that ϕ(n) is a",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 78,
+      "math_verification": "human_checked_pdf_196_printed_180; exact_boundary_before_section_82_on_pdf196; 7_nodes_9_edges_all_16_evidence_items_verified; upper_lower_bound_epsilon_characterizations_and_order_relations_checked; original_lower_bound_assumption_printed_phi_n_le_k_conflicts_with_subsequent_phi_n_ge_m_and_is_flagged_as_source_typo",
+      "pdf_page_end": 196,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 82,
@@ -903,9 +1067,12 @@
       "pdf_page": 196,
       "heading": "The limits of indetermination of a bounded function. Sup-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 79,
+      "math_verification": "human_checked_pdf_196_199_printed_180_183; exact_boundary_before_section_83_on_pdf199; 11_nodes_8_edges_all_19_evidence_items_verified; superior_inferior_intermediate_definitions_upper_lower_limits_epsilon_properties_convergence_criterion_and_examples_XXXII_1_7_checked; four_unsupported_relations_removed; rational_irrational_sine_example_scope_distinguished",
+      "pdf_page_end": 199,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 83,
@@ -914,9 +1081,12 @@
       "pdf_page": 199,
       "heading": "The general principle of convergence for a bounded func-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 80,
+      "math_verification": "human_checked_pdf_199_printed_183; exact_boundary_before_section_84_heading_on_pdf200; 5_nodes_6_edges_all_11_evidence_items_verified; cauchy_criterion_necessity_sufficiency_using_section82_upper_lower_limits_checked",
+      "pdf_page_end": 199,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 84,
@@ -925,9 +1095,12 @@
       "pdf_page": 200,
       "heading": "Unbounded functions. So far we have restricted ourselves to",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 81,
+      "math_verification": "human_checked_pdf_200_printed_184; exact_boundary_before_section_85_heading_on_pdf201; 7_nodes_7_edges_all_14_evidence_items_verified; general_real_sequence_cauchy_criterion_without_boundedness_proofs_of_boundedness_and_series_cauchy_criterion_checked",
+      "pdf_page_end": 200,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 85,
@@ -936,9 +1109,12 @@
       "pdf_page": 201,
       "heading": "Limits of complex functions and series of complex terms.",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "out_of_scope_user_confirmed",
+      "candidate_id": 82,
+      "math_verification": "source_checked_manual_graph",
+      "pdf_page_end": 201,
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_complex_variable"
     },
     {
       "section": 86,
@@ -947,9 +1123,12 @@
       "pdf_page": 202,
       "heading": "The reader will find no difficulty in proving such theorems as the",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "out_of_scope_user_confirmed",
+      "candidate_id": 83,
+      "math_verification": "source_checked_manual_graph",
+      "pdf_page_end": 203,
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_complex_variable"
     },
     {
       "section": 87,
@@ -958,9 +1137,11 @@
       "pdf_page": 204,
       "heading": "The limit of zn as n → ∞, z being any complex number.",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
+      "workflow_status": "out_of_scope_user_confirmed",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_complex_variable"
     },
     {
       "section": 88,
@@ -969,9 +1150,11 @@
       "pdf_page": 204,
       "heading": "The geometric series 1 + z + z2 + . . .when z is complex.",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
+      "workflow_status": "out_of_scope_user_confirmed",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_complex_variable"
     },
     {
       "section": 89,
@@ -980,9 +1163,12 @@
       "pdf_page": 213,
       "heading": "Limits as x tends to ∞. We shall now return to functions of a",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 84,
+      "math_verification": "human_checked_pdf_213_215_printed_197_199; exact_boundary_before_section_90_heading_on_pdf215_after_examples_XXXIV_1_5; 9_nodes_9_edges_all_18_evidence_items_verified; finite_infinite_limits_oscillation_and_examples_XXXIV_1_5_checked_with_exercises_distinguished",
+      "pdf_page_end": 215,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 90,
@@ -991,9 +1177,12 @@
       "pdf_page": 215,
       "heading": "Limits as x tends to −∞. The reader will have no difficulty",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 85,
+      "math_verification": "human_checked_pdf_215_216_printed_199_200; exact_boundary_before_section_91_on_pdf216; 3_nodes_3_edges_all_6_evidence_items_verified; definitions_left_to_reader_and_substitution_x_equals_minus_y_for_finite_and_infinite_limits_checked",
+      "pdf_page_end": 216,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 91,
@@ -1002,9 +1191,12 @@
       "pdf_page": 216,
       "heading": "Theorems corresponding to those of Ch. IV, §§ 63–67. The",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 86,
+      "math_verification": "human_checked_pdf_216_printed_200; exact_boundary_before_section_92_on_pdf216; 3_nodes_2_edges_all_5_evidence_items_verified; sum_product_quotient_limit_laws_and_proof_transfer_from_discrete_to_continuous_variable_checked",
+      "pdf_page_end": 216,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 92,
@@ -1013,9 +1205,12 @@
       "pdf_page": 216,
       "heading": "Steadily increasing or decreasing functions. The definition",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 87,
+      "math_verification": "human_checked_pdf_216_printed_200; exact_boundary_before_section_93_heading_on_pdf217; 6_nodes_4_edges_all_10_evidence_items_verified; steady_eventual_and_strict_increase_definitions_monotone_limit_theorem_and_seven_function_list_checked; decreasing_case_labeled_as_minus_phi_inference; rechecked_pdf_216_on_2026-10-18; decreasing_case_minus_phi_inference_node_and_edge_verified",
+      "pdf_page_end": 216,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 93,
@@ -1024,9 +1219,12 @@
       "pdf_page": 216,
       "heading": "Limits as x tends to 0. Let ϕ(x) be such a function of x that",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 88,
+      "math_verification": "human_checked_pdf_216_217_printed_200_201; exact_boundary_before_section_94_on_pdf218; 6_nodes_6_edges_all_12_evidence_items_verified; reciprocal_substitution_one_sided_finite_and_infinite_limits_bilateral_limits_and_oscillation_checked",
+      "pdf_page_end": 217,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 94,
@@ -1035,9 +1233,12 @@
       "pdf_page": 218,
       "heading": "Limits as x tends to a. Suppose that ϕ(y) → l as y → 0, and",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 89,
+      "math_verification": "human_checked_pdf_218_219_printed_202_203; exact_boundary_before_section_95_on_pdf219; 5_nodes_3_edges_all_8_evidence_items_verified; translation_x_to_a_to_zero_epsilon_delta_definition_one_sided_limits_and_two_sided_equivalence_checked",
+      "pdf_page_end": 219,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 95,
@@ -1046,9 +1247,12 @@
       "pdf_page": 219,
       "heading": "Steadily increasing or decreasing functions. If there is a",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 90,
+      "math_verification": "human_checked_pdf_219_printed_203; exact_boundary_before_section_96_on_pdf220; 6_nodes_6_edges_all_12_evidence_items_verified; local_monotonicity_one_sided_limit_existence_and_value_bracket_checked; apparent_printed_plus_minus_sign_error_flagged; rechecked_pdf_219_on_2026-10-18; source_plus_minus_0_printing_issue_and_left_limit_relation_verified",
+      "pdf_page_end": 219,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 96,
@@ -1057,9 +1261,12 @@
       "pdf_page": 220,
       "heading": "Limits of indetermination and the principle of conver-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 91,
+      "math_verification": "human_checked_pdf_220_221_printed_204_205; exact_boundary_before_section_97_on_pdf221; 11_nodes_10_edges_all_21_evidence_items_verified; local_boundedness_upper_lower_limits_cauchy_criterion_and_Examples_XXXV_1_8_checked; exercise_status_and_rational_power_real_domain_qualified",
+      "pdf_page_end": 221,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 97,
@@ -1068,9 +1275,12 @@
       "pdf_page": 221,
       "heading": "The reader will probably fail to see at first that any proof of such",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 92,
+      "math_verification": "human_verified_original_pdf_pp221-226_including_examples_XXXVI_1-22_and_boundary_before_section_98",
+      "pdf_page_end": 226,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 98,
@@ -1079,9 +1289,12 @@
       "pdf_page": 226,
       "heading": "Continuous functions of a real variable. The reader has no",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 93,
+      "math_verification": "human_verified_original_pdf_pp226-228_and_boundary_before_section_99",
+      "pdf_page_end": 228,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 99,
@@ -1090,9 +1303,12 @@
       "pdf_page": 228,
       "heading": "The definition of continuity given in the last section may be illus-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 94,
+      "math_verification": "human_verified_original_pdf_pp228-231_including_examples_XXXVII_and_boundary_before_section_100",
+      "pdf_page_end": 231,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 100,
@@ -1101,9 +1317,12 @@
       "pdf_page": 232,
       "heading": "The fundamental property of a continuous function. It",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 95,
+      "math_verification": "human_verified_original_pdf_pp232-234_and_boundary_before_section_101",
+      "pdf_page_end": 234,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 101,
@@ -1112,9 +1331,12 @@
       "pdf_page": 234,
       "heading": "In this and the following paragraphs we shall state and prove",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 96,
+      "math_verification": "human_verified_original_pdf_p235_and_reader_screenshot",
+      "pdf_page_end": 235,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 102,
@@ -1123,9 +1345,15 @@
       "pdf_page": 235,
       "heading": "The range of values of a continuous function. Let us",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 97,
+      "math_verification": "human_verified_original_pdf_pp235-237_and_examples_XXXVIII_1-5_before_section_103",
+      "pdf_page_end": 237,
+      "supplementary_candidate_ids": [
+        98
+      ],
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 103,
@@ -1134,9 +1362,12 @@
       "pdf_page": 237,
       "heading": "The oscillation of a function in an interval. Let ϕ(x) be",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 99,
+      "math_verification": "human_verified_original_pdf_pp237-238_and_boundary_before_section_104",
+      "pdf_page_end": 238,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 104,
@@ -1145,9 +1376,12 @@
       "pdf_page": 238,
       "heading": "Alternative proofs of Theorem 2 of § 102. The most straight-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 100,
+      "math_verification": "human_verified_original_pdf_pp238-239_including_both_alternative_proofs_and_boundary_before_section_105",
+      "pdf_page_end": 239,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 105,
@@ -1156,9 +1390,15 @@
       "pdf_page": 239,
       "heading": "Sets of intervals on a line. The Heine-Borel Theorem.",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 101,
+      "math_verification": "human_verified_reader_screenshots_pdf_239_241_242_and_original_pages_239-242",
+      "pdf_page_end": 242,
+      "supplementary_candidate_ids": [
+        102
+      ],
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 106,
@@ -1167,9 +1407,12 @@
       "pdf_page": 242,
       "heading": "We shall now apply the Heine-Borel Theorem to the proof of two",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 103,
+      "math_verification": "human_verified_reader_screenshot_pdf_244_and_original_pages_242-244_before_multivariable_section_107",
+      "pdf_page_end": 244,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 107,
@@ -1178,9 +1421,11 @@
       "pdf_page": 244,
       "heading": "Continuous functions of several variables. The notions of",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
+      "workflow_status": "out_of_scope_univariate_objective",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_multivariable"
     },
     {
       "section": 108,
@@ -1189,20 +1434,26 @@
       "pdf_page": 245,
       "heading": "Implicit functions. We have already, in Ch. II, met with the idea",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "out_of_scope_univariate_objective",
+      "candidate_id": 104,
+      "math_verification": "source_checked_reader_pdf_245_247_stop_before_section_109; manually_reviewed_10_nodes_9_edges; textbook_page_evidence_19_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 247,
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_multivariable"
     },
     {
       "section": 109,
       "group_id": 115,
       "group": "V §108–109 隐函数与反函数",
-      "pdf_page": 248,
+      "pdf_page": 247,
       "heading": "Inverse Functions. Suppose in particular that f (x, y) is of the",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 105,
+      "math_verification": "human_verified_reader_screenshots_pdf_249_and_original_pdf_pp248-249_before_chapter_V_examples",
+      "pdf_page_end": 249,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 110,
@@ -1211,9 +1462,12 @@
       "pdf_page": 253,
       "heading": "Derivatives or Differential Coefficients. Let us return to",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 106,
+      "math_verification": "human_verified_reader_screenshot_pdf_255_and_original_pdf_pp253-255_before_section_111",
+      "pdf_page_end": 255,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 111,
@@ -1222,9 +1476,12 @@
       "pdf_page": 255,
       "heading": "Some general remarks. (1) The existence of a derived func-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 107,
+      "math_verification": "human_verified_reader_screenshot_pdf_258_and_original_pdf_pp255-258_including_examples_XXXIX_1-6_before_section_112",
+      "pdf_page_end": 258,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 112,
@@ -1233,20 +1490,26 @@
       "pdf_page": 258,
       "heading": "We have seen that ifϕ(x) is not continuous for a value ofx then it",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 108,
+      "math_verification": "human_verified_reader_screenshot_pdf_260_and_original_pdf_pp258-260_before_section_113",
+      "pdf_page_end": 260,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 113,
       "group_id": 117,
       "group": "VI §113 求导法则",
-      "pdf_page": 260,
+      "pdf_page": 259,
       "heading": "Some general rules for differentiation. Throughout the",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 109,
+      "math_verification": "human_verified_reader_screenshot_pdf_262_and_original_pdf_pp260-262_before_section_114",
+      "pdf_page_end": 262,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 114,
@@ -1255,9 +1518,12 @@
       "pdf_page": 262,
       "heading": "Derivatives of complex functions. So far we have supposed",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "out_of_scope_user_confirmed",
+      "candidate_id": 110,
+      "math_verification": "source_checked_reader_pdf_262_stop_before_section_115; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 262,
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。",
+      "scope_status": "out_of_scope_complex_variable"
     },
     {
       "section": 115,
@@ -1266,9 +1532,12 @@
       "pdf_page": 262,
       "heading": "The notation of the differential calculus. We have already",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 111,
+      "math_verification": "human_verified_reader_screenshots_pdf_264_265_and_original_pdf_pp262-264_including_examples_XL_1-2",
+      "pdf_page_end": 264,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 116,
@@ -1277,9 +1546,12 @@
       "pdf_page": 265,
       "heading": "Standard forms. We shall now investigate more systematically",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 112,
+      "math_verification": "human_verified_reader_screenshots_pdf_267_and_original_pdf_pp265-267_including_examples_XLI_1-10_before_section_117",
+      "pdf_page_end": 267,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 117,
@@ -1288,9 +1560,12 @@
       "pdf_page": 267,
       "heading": "B. Rational Functions. If",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 113,
+      "math_verification": "human_verified_reader_screenshot_pdf_269_and_original_pdf_pp267-269_including_examples_XLII_1-4_before_section_118",
+      "pdf_page_end": 269,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 118,
@@ -1298,10 +1573,13 @@
       "group": "VI §118 代数函数求导",
       "pdf_page": 269,
       "heading": "C. Algebraical Functions. The results of the preceding sec-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 114,
+      "math_verification": "human_verified_reader_screenshots_pdf_269_270_271_and_original_pdf_pages_269-271_stop_before_section_119; manually_reviewed_7_nodes_5_edges; verified_textbook_evidence_12_records",
+      "pdf_page_end": 271,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 119,
@@ -1309,10 +1587,13 @@
       "group": "VI §119 超越函数求导",
       "pdf_page": 271,
       "heading": "D. Transcendental Functions. We have already proved",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 115,
+      "math_verification": "human_verified_reader_screenshots_pdf_271_272_273_274_and_original_pdf_pages_271-274_stop_before_section_120; manually_reviewed_12_nodes_10_edges; verified_textbook_evidence_22_records",
+      "pdf_page_end": 274,
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。",
+      "scope_status": "in_scope_real_single_variable"
     },
     {
       "section": 120,
@@ -1320,10 +1601,13 @@
       "group": "VI §120 高阶导数",
       "pdf_page": 274,
       "heading": "Repeated differentiation. We may form a new functionϕ′′(x)",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 116,
+      "math_verification": "human_verified_reader_screenshots_pdf_275_276_277_278_and_original_pdf_pages_274-278_stop_before_section_121; manually_reviewed_13_nodes_10_edges; verified_textbook_evidence_23_records",
+      "pdf_page_end": 278,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 121,
@@ -1331,10 +1615,13 @@
       "group": "VI §121 导数一般定理与罗尔定理",
       "pdf_page": 278,
       "heading": "Some general theorems concerning derived functions.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 117,
+      "math_verification": "human_verified_reader_screenshots_pdf_279_and_280_and_original_pdf_pages_278-280_stop_before_section_122_same_page; manually_reviewed_8_nodes_6_edges; verified_textbook_evidence_14_records",
+      "pdf_page_end": 280,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 122,
@@ -1342,10 +1629,13 @@
       "group": "VI §122–124 极大值与极小值",
       "pdf_page": 280,
       "heading": "Maxima and Minima. We shall say that the value ϕ(ξ) as-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 118,
+      "math_verification": "human_verified_reader_screenshots_pdf_281_282_and_original_pdf_pages_280-282; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records; stop_before_section_123_on_p282",
+      "pdf_page_end": 282,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 123,
@@ -1353,10 +1643,13 @@
       "group": "VI §122–124 极大值与极小值",
       "pdf_page": 282,
       "heading": "There is another way of stating the conditions for a maximum",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 119,
+      "math_verification": "human_verified_reader_screenshot_pdf_282_and_original_pdf_p282; manually_reviewed_5_nodes_4_edges; verified_textbook_evidence_9_records; preserve_and_flag_sign_error_in_proof",
+      "pdf_page_end": 282,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 124,
@@ -1364,10 +1657,13 @@
       "group": "VI §122–124 极大值与极小值",
       "pdf_page": 282,
       "heading": "In what has preceded (apart from the last paragraph) we have as-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 120,
+      "math_verification": "human_verified_reader_screenshots_pdf_283_284_286_290_and_original_pdf_text_evidence_pages_282-290_stop_before_section_125; manually_reviewed_9_nodes_8_edges; verified_textbook_evidence_17_records",
+      "pdf_page_end": 290,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 125,
@@ -1375,10 +1671,13 @@
       "group": "VI §125–126 中值定理",
       "pdf_page": 290,
       "heading": "The Mean Value Theorem. We can proceed now to the proof",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 121,
+      "math_verification": "human_verified_reader_screenshots_pdf_291_292_and_original_pdf_pages_290-292_stop_before_section_126; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records",
+      "pdf_page_end": 292,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 126,
@@ -1386,10 +1685,13 @@
       "group": "VI §125–126 中值定理",
       "pdf_page": 292,
       "heading": "The Mean Value Theorem furnishes us with a proof of a result",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 122,
+      "math_verification": "human_verified_reader_screenshot_pdf_292_and_original_pdf_p292_stop_before_section_127; manually_reviewed_4_nodes_3_edges; verified_textbook_evidence_7_records",
+      "pdf_page_end": 292,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 127,
@@ -1397,10 +1699,13 @@
       "group": "VI §127–128 积分与对数函数",
       "pdf_page": 293,
       "heading": "Integration. We have in this chapter seen how we can find the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 123,
+      "math_verification": "human_verified_reader_screenshots_pdf_293_294_and_original_pdf_text; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records; stop_before_section_128_same_page",
+      "pdf_page_end": 294,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 128,
@@ -1408,10 +1713,13 @@
       "group": "VI §127–128 积分与对数函数",
       "pdf_page": 295,
       "heading": "The practical problem of integration. The results of the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 124,
+      "math_verification": "human_verified_reader_screenshots_pdf_295_296_and_original_pdf_p294_boundary; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records; stop_before_section_129",
+      "pdf_page_end": 296,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 129,
@@ -1419,10 +1727,13 @@
       "group": "VI §129 多项式积分",
       "pdf_page": 297,
       "heading": "Polynomials. All the general theorems of § 113 may of course",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 125,
+      "math_verification": "human_verified_reader_screenshot_pdf_297_and_original_pdf_p297; manually_reviewed_4_nodes_3_edges; verified_textbook_evidence_7_records; stop_before_section_130_same_page",
+      "pdf_page_end": 297,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 130,
@@ -1430,10 +1741,13 @@
       "group": "VI §130–131 有理函数积分",
       "pdf_page": 297,
       "heading": "Rational Functions. After integrating polynomials it is natu-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 126,
+      "math_verification": "human_verified_reader_screenshots_pdf_298_299_300_301_and_original_pdf_text_pp297-301_including_examples_XLVIII_1-7; manually_reviewed_9_nodes_8_edges; verified_textbook_evidence_17_records; stop_before_section_131_same_page",
+      "pdf_page_end": 301,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 131,
@@ -1441,10 +1755,13 @@
       "group": "VI §130–131 有理函数积分",
       "pdf_page": 301,
       "heading": "Note on the practical integration of rational functions.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 127,
+      "math_verification": "human_verified_reader_screenshots_pdf_301_302_and_original_pdf_text; manually_reviewed_3_nodes_2_edges; verified_textbook_evidence_5_records; stop_before_section_132_same_page",
+      "pdf_page_end": 302,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 132,
@@ -1452,10 +1769,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 302,
       "heading": "Algebraical Functions. We naturally pass on next to the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 128,
+      "math_verification": "human_verified_reader_screenshot_pdf_302_and_original_pdf_p302; manually_reviewed_4_nodes_3_edges; verified_textbook_evidence_7_records; stop_before_section_133_same_page",
+      "pdf_page_end": 302,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 133,
@@ -1463,10 +1783,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 302,
       "heading": "Integration by substitution and rationalisation. It follows",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 129,
+      "math_verification": "human_verified_reader_screenshots_pdf_302_303_and_original_pdf_text; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records; stop_before_section_134_same_page",
+      "pdf_page_end": 303,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 134,
@@ -1474,10 +1797,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 303,
       "heading": "Integrals connected with conics. Let us suppose that",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 130,
+      "math_verification": "human_verified_reader_screenshots_pdf_303_304_and_original_pdf_text_pages_303-304_stop_before_section_135; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records",
+      "pdf_page_end": 304,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 135,
@@ -1485,10 +1811,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 305,
       "heading": "The integral",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 131,
+      "math_verification": "human_verified_reader_screenshots_pdf_305_and_original_pdf_p305; manually_reviewed_5_nodes_4_edges; verified_textbook_evidence_9_records; stop_before_section_136_same_page",
+      "pdf_page_end": 305,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 136,
@@ -1496,10 +1825,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 305,
       "heading": "The integral",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 132,
+      "math_verification": "human_verified_reader_screenshots_pdf_305_306_and_original_pdf_text; manually_reviewed_5_nodes_4_edges; verified_textbook_evidence_9_records; stop_before_section_137_same_page",
+      "pdf_page_end": 306,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 137,
@@ -1507,10 +1839,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 306,
       "heading": "The integral",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 133,
+      "math_verification": "human_verified_reader_screenshot_pdf_306_and_original_pdf_p306; manually_reviewed_5_nodes_4_edges; verified_textbook_evidence_9_records; stop_before_section_138_same_page",
+      "pdf_page_end": 306,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 138,
@@ -1518,10 +1853,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 307,
       "heading": "Integration by parts. The theorem of integration by parts is",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 134,
+      "math_verification": "human_verified_reader_screenshots_pdf_307_308_309_and_original_pdf_text_pages_307-309_including_examples_XLIX_1-17; manually_reviewed_7_nodes_6_edges; verified_textbook_evidence_13_records; stop_before_section_139",
+      "pdf_page_end": 309,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 139,
@@ -1529,10 +1867,13 @@
       "group": "VI §132–139 代数函数积分、有理化积分与分部积分",
       "pdf_page": 310,
       "heading": "The general integral",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 135,
+      "math_verification": "human_verified_reader_screenshots_pdf_310_313_and_original_pdf_text_pages_310-313_including_examples_L_1-10; manually_reviewed_8_nodes_7_edges; verified_textbook_evidence_15_records; stop_before_section_140",
+      "pdf_page_end": 313,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 140,
@@ -1540,10 +1881,13 @@
       "group": "VI §140–144 超越函数积分",
       "pdf_page": 314,
       "heading": "Transcendental Functions. Owing to the immense variety",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 136,
+      "math_verification": "human_verified_reader_screenshot_pdf_314_and_original_pdf_p314; manually_reviewed_3_nodes_2_edges; verified_textbook_evidence_5_records; stop_before_section_141_same_page",
+      "pdf_page_end": 314,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 141,
@@ -1551,10 +1895,13 @@
       "group": "VI §140–144 超越函数积分",
       "pdf_page": 314,
       "heading": "Polynomials in cosines and sines of multiples of x. We",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 137,
+      "math_verification": "human_verified_reader_screenshots_pdf_314_315_and_original_pdf_text; manually_reviewed_5_nodes_4_edges; verified_textbook_evidence_9_records; stop_before_section_142_same_page",
+      "pdf_page_end": 315,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 142,
@@ -1562,10 +1909,13 @@
       "group": "VI §140–144 超越函数积分",
       "pdf_page": 315,
       "heading": "The integrals",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "human_verified_reader",
+      "workflow_status": "saved_after_manual_review",
+      "candidate_id": 138,
+      "math_verification": "human_verified_reader_screenshot_pdf_315_and_original_pdf_p315; manually_reviewed_4_nodes_3_edges; verified_textbook_evidence_7_records; stop_before_section_143",
+      "pdf_page_end": 315,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 143,
@@ -1574,9 +1924,12 @@
       "pdf_page": 316,
       "heading": "Rational Functions of cos x and sin x. The integral of any",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 139,
+      "math_verification": "source_checked_reader_screenshot_pdf_316_and_extracted_317_examples_LIII_1_7; stopped_before_section_144; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 317,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 144,
@@ -1585,9 +1938,12 @@
       "pdf_page": 317,
       "heading": "Integrals involving arc sinx, arc tanx, and log x. The inte-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 140,
+      "math_verification": "source_checked_reader_screenshot_pdf_317_and_extracted_318; inverse_function_and_log_power_recursion_checked; stopped_before_section_145; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 318,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 145,
@@ -1596,9 +1952,12 @@
       "pdf_page": 318,
       "heading": "Areas of plane curves. One of the most important appli-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 141,
+      "math_verification": "source_checked_pdf_318_320_area_increment_bound_and_derivative_proof_base_constant_and_signed_area; stopped_before_section_146; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 320,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 146,
@@ -1607,9 +1966,12 @@
       "pdf_page": 320,
       "heading": "Lengths of plane curves. The notion of the length of a curve,",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 142,
+      "math_verification": "source_checked_reader_pdf_320_screenshot_and_extracted_320_323; arc_length_assumptions_and_parametric_closed_polar_formulae_checked; manually_reviewed_7_nodes_6_edges; textbook_page_evidence_13_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 323,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 147,
@@ -1618,9 +1980,12 @@
       "pdf_page": 335,
       "heading": "Higher Mean Value Theorems. In the preceding chapter",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 143,
+      "math_verification": "reader_screenshot_pdf_335_verified; original_pdf_335_339_taylor_remainder_newton_and_counterexamples_checked; stopped_before_section_148; manually_reviewed_6_nodes_5_edges; textbook_page_evidence_11_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 339,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 148,
@@ -1629,9 +1994,12 @@
       "pdf_page": 340,
       "heading": "Taylor’s Series. Suppose that f (x) is a function all of whose",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 144,
+      "math_verification": "reader_screenshot_pdf_340_verified; source_checked_pdf_340_342_lagrange_remainder_sine_cosine_and_binomial_series; stopped_before_section_149; manually_reviewed_6_nodes_5_edges; textbook_page_evidence_11_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 342,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 149,
@@ -1640,9 +2008,12 @@
       "pdf_page": 342,
       "heading": "Applications of Taylor’s Theorem. A. Maxima and",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 145,
+      "math_verification": "source_checked_pdf_342_343_higher_order_extremum_test_and_examples_LVII_1_3; stopped_before_section_150; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 343,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 150,
@@ -1651,9 +2022,12 @@
       "pdf_page": 343,
       "heading": "B. The calculation of certain limits. Suppose that f (x)",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 146,
+      "math_verification": "reader_screenshot_pdf_343_confirms_section_150; original_pdf_343_345_higher_order_ratio_limit_parity_sign_and_continuity_checked; stopped_before_section_151; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 345,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 151,
@@ -1662,9 +2036,12 @@
       "pdf_page": 346,
       "heading": "C. The contact of plane curves. Two curves are said to",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 147,
+      "math_verification": "source_checked_pdf_346_350_contact_order_tangent_inflection_circle_of_curvature_formula; p351_multivariable_section_152_excluded; manually_reviewed_7_nodes_6_edges; textbook_page_evidence_13_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 350,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 152,
@@ -1675,7 +2052,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_multivariable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 153,
@@ -1686,7 +2065,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_multivariable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 154,
@@ -1697,7 +2078,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_multivariable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 155,
@@ -1706,9 +2089,12 @@
       "pdf_page": 358,
       "heading": "Differentials. In the applications of the Calculus, especially in",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 148,
+      "math_verification": "source_checked_pdf_358_359_only_single_variable_differential_definition_increment_approximation_and_exact_identity; multivariable_continuation_excluded; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 359,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 156,
@@ -1717,9 +2103,12 @@
       "pdf_page": 363,
       "heading": "Definite Integrals and Areas. It will be remembered that,",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 149,
+      "math_verification": "source_checked_pdf_363_367_definitions_of_lower_upper_sums_refinement_gap_and_common_area_limit; stopped_before_section_157; manually_reviewed_7_nodes_7_edges; textbook_page_evidence_14_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 367,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 157,
@@ -1728,9 +2117,12 @@
       "pdf_page": 367,
       "heading": "The definite integral. Let us now suppose that f (x) is a",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 150,
+      "math_verification": "source_checked_pdf_367_369_area_notation_fundamental_theorem_and_integral_terminology; stopped_before_section_158; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 369,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 158,
@@ -1739,9 +2131,12 @@
       "pdf_page": 369,
       "heading": "Area of a sector of a circle. The circular functions. The",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 151,
+      "math_verification": "source_checked_pdf_369_372_sector_area_radian_definition_arctan_integral_definite_integral_examples_branch_and_fourier_relations; stopped_before_section_159; manually_reviewed_6_nodes_5_edges; textbook_page_evidence_11_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 372,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 159,
@@ -1750,9 +2145,12 @@
       "pdf_page": 372,
       "heading": "Calculation of the definite integral from its definition as",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 152,
+      "math_verification": "source_checked_pdf_372_373_riemann_sum_examples_LXIV_1_6; stopped_before_section_160; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 373,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 160,
@@ -1761,9 +2159,12 @@
       "pdf_page": 373,
       "heading": "General properties of the definite integral. The definite",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 153,
+      "math_verification": "source_checked_pdf_373_378_integral_algebra_positivity_bounds_first_and_general_mean_value_fundamental_theorem_examples_LXV; stopped_before_section_161; manually_reviewed_8_nodes_6_edges; textbook_page_evidence_14_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 378,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 161,
@@ -1772,9 +2173,12 @@
       "pdf_page": 378,
       "heading": "Integration by parts and by substitution. It follows from",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 154,
+      "math_verification": "reader_screenshot_pdf_378_section_neighborhood_checked; source_checked_pdf_378_383_definite_parts_substitution_second_mean_value_bonnet_and_examples_LXVI; stopped_before_section_162; manually_reviewed_8_nodes_6_edges; textbook_page_evidence_14_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 383,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 162,
@@ -1783,9 +2187,12 @@
       "pdf_page": 383,
       "heading": "Proof of Taylor’s Theorem by Integration by Parts. We",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 155,
+      "math_verification": "source_checked_pdf_383_384_integration_by_parts_taylor_integral_remainder_normalized_form_and_lagrange_cauchy_forms; stopped_before_section_163; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 384,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 163,
@@ -1794,9 +2201,12 @@
       "pdf_page": 384,
       "heading": "Application of Cauchy’s form to the Binomial Series. If",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 156,
+      "math_verification": "source_checked_pdf_384_385_cauchy_remainder_binomial_series_rational_exponents_range_minus1_1; negative_x_issue_resolved; stopped_before_section_164_complex_integrals; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 385,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 164,
@@ -1805,9 +2215,12 @@
       "pdf_page": 385,
       "heading": "Integrals of complex functions of a real variable. So far we",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 157,
+      "math_verification": "source_checked_pdf_385_397_complex_valued_integral_modulus_bound_and_single_variable_misc_integral_theorems_quadrature; multivariable_only_examples_omitted; Chapter_VIII_starts_398; manually_reviewed_7_nodes_4_edges; textbook_page_evidence_11_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 397,
+      "scope_status": "partially_in_scope_real_valued_results_reviewed",
+      "scope_note": "只计入本节图谱中经核读的实值积分不等式、积分判零及数值求积内容；复值积分定义和模长不等式不计入本次完成范围。"
     },
     {
       "section": 165,
@@ -1816,9 +2229,12 @@
       "pdf_page": 398,
       "heading": "In Ch. IV we explained what was meant by saying that an infi-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 158,
+      "math_verification": "source_checked_pdf_398_series_scope_and_sigma_notation; stopped_before_section_166; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 398,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 166,
@@ -1827,9 +2243,12 @@
       "pdf_page": 398,
       "heading": "Series of Positive Terms. The theory of the convergence of",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 159,
+      "math_verification": "source_checked_pdf_398_399_positive_series_finite_terms_and_section_167_boundary; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 398,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 167,
@@ -1838,9 +2257,12 @@
       "pdf_page": 399,
       "heading": "It will be well to recall the following fundamental theorems es-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 160,
+      "math_verification": "source_checked_pdf_399_positive_series_comparison_and_limit_comparison_tests; stopped_before_section_168; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 399,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 168,
@@ -1849,9 +2271,12 @@
       "pdf_page": 400,
       "heading": "First applications of these tests. The one important fact",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 161,
+      "math_verification": "source_checked_pdf_400_403_cauchy_root_dalembert_ratio_tests_and_examples_LXVII; stopped_before_section_169; manually_reviewed_6_nodes_7_edges; textbook_page_evidence_13_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 403,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 169,
@@ -1860,9 +2285,12 @@
       "pdf_page": 404,
       "heading": "Before proceeding further in the investigation of tests of con-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 162,
+      "math_verification": "source_checked_pdf_404_dirichlet_rearrangement_positive_terms_and_scope; stopped_before_section_170; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 404,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 170,
@@ -1871,9 +2299,12 @@
       "pdf_page": 404,
       "heading": "Multiplication of Series of Positive Terms. An immediate",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 163,
+      "math_verification": "source_checked_pdf_404_406_positive_cauchy_product_double_array_rearrangement_and_multiple_product_example; stopped_before_section_171; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 406,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 171,
@@ -1882,9 +2313,12 @@
       "pdf_page": 406,
       "heading": "Further tests for convergence and divergence. The exam-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 164,
+      "math_verification": "source_checked_pdf_406_407_ratio_test_limit_one_crude_geometric_comparison_and_polynomial_decay; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 407,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 172,
@@ -1893,9 +2327,12 @@
       "pdf_page": 407,
       "heading": "We shall proceed to establish two further tests for the con-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 165,
+      "math_verification": "source_checked_pdf_407_408_positive_term_monotone_nonincreasing_assumption_and_test_scope_only; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 408,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 173,
@@ -1904,9 +2341,12 @@
       "pdf_page": 408,
       "heading": "Abel’s (or Pringsheim’s) Theorem. If P un is a convergent",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 166,
+      "math_verification": "source_checked_pdf_408_409_abel_pringsheim_necessary_condition_sparse_block_proof_and_two_counterexamples; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 409,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 174,
@@ -1915,9 +2355,12 @@
       "pdf_page": 409,
       "heading": "Maclaurin’s (or Cauchy’s) Integral Test. * If un decreases",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 167,
+      "math_verification": "source_checked_pdf_409_410_integral_test_monotone_sandwich_convergence_equivalence_and_strict_sum_bound; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 410,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 175,
@@ -1926,9 +2369,12 @@
       "pdf_page": 411,
       "heading": "The series P n−s. By far the most important application of",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 168,
+      "math_verification": "source_checked_pdf_411_412_p_series_rational_exponent_threshold_integral_bound_harmonic_integral_blocking; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 413,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 176,
@@ -1937,9 +2383,12 @@
       "pdf_page": 413,
       "heading": "Cauchy’s Condensation Test. The second of the two tests",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 169,
+      "math_verification": "source_checked_pdf_413_414_cauchy_condensation_group_bounds_p_series_application_and_abel_deduction; manually_reviewed_5_nodes_4_edges; textbook_page_evidence_9_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 414,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 177,
@@ -1948,9 +2397,12 @@
       "pdf_page": 414,
       "heading": "Infinite Integrals. The Integral Test of § 174 shows that, if",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 170,
+      "math_verification": "source_checked_pdf_414_416_infinite_integral_limit_definition_classification_antiderivative_value_positive_case_and_interval_splitting; manually_reviewed_6_nodes_5_edges; textbook_page_evidence_11_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 416,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 178,
@@ -1959,9 +2411,12 @@
       "pdf_page": 416,
       "heading": "The case in which ϕ(x) is positive. It is natural to consider",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 171,
+      "math_verification": "source_checked_pdf_416_419_positive_integral_boundedness_comparison_power_tests_nonvanishing_counterexample_two_sided_integrals_and_interval_series; manually_reviewed_9_nodes_7_edges; textbook_page_evidence_16_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 419,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 179,
@@ -1970,9 +2425,12 @@
       "pdf_page": 419,
       "heading": "Application to infinite integrals of the rules for substitu-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 172,
+      "math_verification": "source_checked_pdf_419_423_improper_substitution_orientation_by_parts_recurrence_examples; manually_reviewed_5_nodes_3_edges; textbook_page_evidence_8_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 423,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 180,
@@ -1981,9 +2439,12 @@
       "pdf_page": 423,
       "heading": "Other types of infinite integrals. It was assumed, in the",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 173,
+      "math_verification": "source_checked_pdf_423_425_second_kind_integral_definition_finite_exceptional_points_endpoint_limit_and_power_threshold_setup; manually_reviewed_4_nodes_2_edges; textbook_page_evidence_6_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 425,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 181,
@@ -1992,9 +2453,12 @@
       "pdf_page": 426,
       "heading": "We may now write the equation (4) of § 179 in the form",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 174,
+      "math_verification": "source_checked_pdf_426_431_transform_to_second_kind_integral_endpoint_comparison_bounded_truncation_mixed_singularities_removable_discontinuity_examples; manually_reviewed_7_nodes_6_edges; textbook_page_evidence_13_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 431,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 182,
@@ -2003,9 +2467,12 @@
       "pdf_page": 431,
       "heading": "Some care has occasionally to be exercised in applying the rule for",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 175,
+      "math_verification": "source_checked_pdf_431_432_substitution_monotonic_branches_inverse_sine_sign_change_and_turning_point_split; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 432,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 183,
@@ -2014,9 +2481,12 @@
       "pdf_page": 432,
       "heading": "Series of positive and negative terms. Our definitions of",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 176,
+      "math_verification": "source_checked_pdf_432_433_eventual_sign_conditions_and_persistent_sign_change_examples; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 433,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 184,
@@ -2025,9 +2495,12 @@
       "pdf_page": 434,
       "heading": "Absolutely Convergent Series. Let us then consider a seriesP un in which any term may be either positive or negative. Let",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 177,
+      "math_verification": "source_checked_pdf_434_435_absolute_convergence_definition_positive_negative_parts_implication_and_cauchy_proof; manually_reviewed_5_nodes_5_edges; textbook_page_evidence_10_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 435,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 185,
@@ -2036,9 +2509,12 @@
       "pdf_page": 436,
       "heading": "Extension of Dirichlet’s Theorem to absolutely conver-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 178,
+      "math_verification": "source_checked_pdf_436_absolute_convergent_rearrangement_preserves_positive_negative_subseries_sums; manually_reviewed_3_nodes_2_edges; textbook_page_evidence_5_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 436,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 186,
@@ -2047,9 +2523,12 @@
       "pdf_page": 436,
       "heading": "Conditionally convergent series. B. We have now to con-",
       "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "workflow_status": "graph_saved",
+      "candidate_id": 179,
+      "math_verification": "source_checked_pdf_436_437_conditional_convergence_definition_both_sign_parts_diverge_and_rearrangement_caveat; manually_reviewed_4_nodes_3_edges; textbook_page_evidence_7_records; validator_fallback_local_due_quota_exhausted",
+      "pdf_page_end": 437,
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 187,
@@ -2057,10 +2536,12 @@
       "group": "VIII §186–187 条件收敛级数",
       "pdf_page": 437,
       "heading": "Tests of convergence for conditionally convergent series.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 180,
+      "math_verification": "original PDF checked through p437; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 188,
@@ -2068,10 +2549,12 @@
       "group": "VIII §188 交错级数",
       "pdf_page": 438,
       "heading": "Alternating Series. The simplest and most common condi-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 181,
+      "math_verification": "original PDF checked through p440; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 189,
@@ -2079,10 +2562,12 @@
       "group": "VIII §189 阿贝尔与狄利克雷收敛判别法",
       "pdf_page": 441,
       "heading": "Abel’s and Dirichlet’s Tests of Convergence. A more gen-",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 182,
+      "math_verification": "original PDF checked through p443; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 190,
@@ -2090,10 +2575,12 @@
       "group": "VIII §190 复项级数",
       "pdf_page": 443,
       "heading": "Series of complex terms. So far we have confined ourselves",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 183,
+      "math_verification": "original PDF checked through p444; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 191,
@@ -2101,10 +2588,12 @@
       "group": "VIII §191–194 幂级数",
       "pdf_page": 444,
       "heading": "Power Series. One of the most important parts of the theory of",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 184,
+      "math_verification": "original PDF checked through p445; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 192,
@@ -2112,10 +2601,12 @@
       "group": "VIII §191–194 幂级数",
       "pdf_page": 445,
       "heading": "B. If a power series P anzn is convergent for a particular value",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 185,
+      "math_verification": "original PDF checked through p445; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 193,
@@ -2123,10 +2614,12 @@
       "group": "VIII §191–194 幂级数",
       "pdf_page": 446,
       "heading": "The region of convergence of a power series. The circle",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 186,
+      "math_verification": "original PDF checked through p448; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 194,
@@ -2134,10 +2627,12 @@
       "group": "VIII §191–194 幂级数",
       "pdf_page": 448,
       "heading": "Uniqueness of a power series. If P anzn is a power series",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 187,
+      "math_verification": "original PDF checked; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 195,
@@ -2145,10 +2640,12 @@
       "group": "VIII §195 一般级数乘法",
       "pdf_page": 449,
       "heading": "Multiplication of Series. We saw in § 170 that if P un andP vn are two convergent series of positive terms, then P un × P vn =P wn, where",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 188,
+      "math_verification": "original PDF checked; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 196,
@@ -2156,10 +2653,12 @@
       "group": "IX §196–197 对数函数",
       "pdf_page": 460,
       "heading": "The number of essentially different types of functions with which",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 189,
+      "math_verification": "original PDF checked through p461; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 197,
@@ -2167,10 +2666,12 @@
       "group": "IX §196–197 对数函数",
       "pdf_page": 461,
       "heading": "Definition of log x. We define log x, the logarithm of x, by the",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 190,
+      "math_verification": "original PDF checked through p463; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 198,
@@ -2178,10 +2679,12 @@
       "group": "IX §198 log x满足的函数方程",
       "pdf_page": 463,
       "heading": "The functional equation satisfied by log x. The function",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 191,
+      "math_verification": "original PDF checked through p463; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 199,
@@ -2189,10 +2692,12 @@
       "group": "IX §199–201 log x趋于无穷或零时的性质",
       "pdf_page": 464,
       "heading": "The manner in which log x tends to infinity with x. It will",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 192,
+      "math_verification": "original PDF checked through p465; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 200,
@@ -2200,10 +2705,12 @@
       "group": "IX §199–201 log x趋于无穷或零时的性质",
       "pdf_page": 465,
       "heading": "Proof that (log x)/xα → 0 as x → ∞. Let β be any positive",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 193,
+      "math_verification": "original PDF checked through p465; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 201,
@@ -2211,10 +2718,12 @@
       "group": "IX §199–201 log x趋于无穷或零时的性质",
       "pdf_page": 465,
       "heading": "The behaviour of log x as x → +0. Since",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 194,
+      "math_verification": "original PDF checked through p466; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 202,
@@ -2222,10 +2731,12 @@
       "group": "IX §202 无穷的对数尺度",
       "pdf_page": 466,
       "heading": "Scales of infinity. The logarithmic scale. Let us consider",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 195,
+      "math_verification": "original PDF checked through p468; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 203,
@@ -2233,10 +2744,12 @@
       "group": "IX §203 自然常数e",
       "pdf_page": 468,
       "heading": "The number e. We shall now introduce a number, usually",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 196,
+      "math_verification": "original PDF checked through p469; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 204,
@@ -2244,10 +2757,12 @@
       "group": "IX §204–206 指数函数",
       "pdf_page": 469,
       "heading": "The exponential function. We now define the exponential",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 197,
+      "math_verification": "original PDF checked through p470; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 205,
@@ -2255,10 +2770,12 @@
       "group": "IX §204–206 指数函数",
       "pdf_page": 470,
       "heading": "The principal properties of the exponential function.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 198,
+      "math_verification": "original PDF checked through p471; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 206,
@@ -2266,10 +2783,12 @@
       "group": "IX §204–206 指数函数",
       "pdf_page": 471,
       "heading": "(3) The function ey tends to infinity with y more rapidly than",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 199,
+      "math_verification": "original PDF checked through p472; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 207,
@@ -2277,10 +2796,12 @@
       "group": "IX §207 一般幂函数aˣ",
       "pdf_page": 472,
       "heading": "The general power ax. The function ax has been defined only",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 200,
+      "math_verification": "original PDF p472 checked; only real-power definition included, stopped before §208; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 208,
@@ -2288,10 +2809,12 @@
       "group": "IX §208 指数极限",
       "pdf_page": 473,
       "heading": "The representation of ex as a limit. In Ch. IV, § 73, we",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 201,
+      "math_verification": "original PDF checked through p475; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 209,
@@ -2299,10 +2822,12 @@
       "group": "IX §209 对数极限",
       "pdf_page": 475,
       "heading": "The representation of log x as a limit. We can also prove (cf.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 202,
+      "math_verification": "original PDF checked through p476; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 210,
@@ -2310,10 +2835,12 @@
       "group": "IX §210 常用对数",
       "pdf_page": 476,
       "heading": "Common logarithms. The reader is probably familiar with",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 203,
+      "math_verification": "original PDF checked through p481; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 211,
@@ -2321,10 +2848,12 @@
       "group": "IX §211 对数收敛判别法",
       "pdf_page": 482,
       "heading": "Logarithmic tests of convergence for series and integrals.",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 204,
+      "math_verification": "original PDF checked through p486; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 212,
@@ -2332,10 +2861,12 @@
       "group": "IX §212 指数级数",
       "pdf_page": 487,
       "heading": "Series connected with the exponential and logarithmic",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 205,
+      "math_verification": "original PDF checked through p491; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 213,
@@ -2343,10 +2874,12 @@
       "group": "IX §213 对数级数",
       "pdf_page": 491,
       "heading": "The logarithmic series. Another very important expansion",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 206,
+      "math_verification": "original PDF checked through p492; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 214,
@@ -2354,10 +2887,12 @@
       "group": "IX §214 反正切函数级数",
       "pdf_page": 492,
       "heading": "The series for the inverse tangent. It is easy to prove in a",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 207,
+      "math_verification": "original PDF checked through p496; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 215,
@@ -2365,10 +2900,12 @@
       "group": "IX §215 二项级数",
       "pdf_page": 496,
       "heading": "The Binomial Series. We have already ( § 163) investigated",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 208,
+      "math_verification": "original PDF checked through p498; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 216,
@@ -2376,10 +2913,12 @@
       "group": "IX §216 理论的另一种构造",
       "pdf_page": 498,
       "heading": "An alternative method of development of the theory",
-      "source_heading_status": "pdf_text_extracted_unreviewed",
-      "workflow_status": "not_started",
-      "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "source_heading_status": "pdf_text_extracted_reviewed",
+      "workflow_status": "graph_saved",
+      "candidate_id": 209,
+      "math_verification": "original PDF checked through p500; graph candidate saved; manual source review, AI semantic review unavailable",
+      "scope_status": "in_scope_real_single_variable",
+      "scope_note": "实变量一元分析/微积分主线；按现有逐节人工核读与图谱记录计入完成范围。"
     },
     {
       "section": 217,
@@ -2390,7 +2929,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 218,
@@ -2401,7 +2942,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 219,
@@ -2412,7 +2955,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 220,
@@ -2423,7 +2968,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 221,
@@ -2434,7 +2981,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 222,
@@ -2445,7 +2994,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 223,
@@ -2456,7 +3007,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 224,
@@ -2467,7 +3020,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 225,
@@ -2478,7 +3033,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 226,
@@ -2489,7 +3046,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 227,
@@ -2500,7 +3059,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 228,
@@ -2511,7 +3072,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 229,
@@ -2522,7 +3085,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 230,
@@ -2533,7 +3098,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 231,
@@ -2544,7 +3111,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 232,
@@ -2555,7 +3124,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 233,
@@ -2566,7 +3137,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 234,
@@ -2577,7 +3150,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 235,
@@ -2588,7 +3163,9 @@
       "source_heading_status": "untitled_section_opening",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 236,
@@ -2599,7 +3176,9 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     },
     {
       "section": 237,
@@ -2610,7 +3189,34 @@
       "source_heading_status": "pdf_text_extracted_unreviewed",
       "workflow_status": "not_started",
       "candidate_id": null,
-      "math_verification": "needs_section_review"
+      "math_verification": "needs_section_review",
+      "scope_status": "out_of_scope_complex_variable",
+      "scope_note": "依据用户确认“只做实变量微积分”，此节的几何基础、多元内容或复数/复变内容不纳入本次范围。"
     }
-  ]
+  ],
+  "chapter_exercise_inventories": [
+    {
+      "chapter": "I",
+      "title": "Miscellaneous Examples on Chapter I",
+      "exercise_start": 1,
+      "exercise_end": 38,
+      "pdf_start": 50,
+      "pdf_end": 58,
+      "printed_start": 34,
+      "printed_end": 42,
+      "candidate_id": 32,
+      "workflow_status": "saved_grouped_exercise_map_formula_review_pending",
+      "math_verification": "Eight grouped nodes cover exercises 1-38; explicitly labeled chapter exercises/pending. UI save completed; semantic_status=fallback_local because DeepSeek returned empty response. Formula/OCR source checks remain pending.",
+      "scope_status": "supporting_foundation_exercises_not_core_calculus"
+    }
+  ],
+  "scope_filter": {
+    "confirmed_on": "2026-10-18",
+    "user_scope": "只做实变量微积分；完成并确认全部一元微积分内容已读取后结束。",
+    "included": "一元实函数与图像（§16–30）、极限与连续性、微分与积分、实数项级数，以及实变量指数/对数/三角函数和级数展开。",
+    "excluded": "多元微积分、复数基础、复值函数与级数、复变函数章节，以及几何预备内容。",
+    "partial_section_164": "仅统计其中核读过的实值积分与求积结果；复值积分定义和模长不等式不计入。",
+    "section_status_audit": "计入范围的小节均有已保存并人工核读的图谱记录；§164只纳入实值结果子集。未开始小节经范围审计均属排除项。§1–15实数构造与代数基础及Chapter I杂例保留为辅助资料，不列入一元微积分完成判据。",
+    "historical_out_of_scope_data": "此前已保存的复数/复变候选图谱继续保留在数据库中，但不计入本次一元实变量完成范围；本次未删除这些历史数据。"
+  }
 }

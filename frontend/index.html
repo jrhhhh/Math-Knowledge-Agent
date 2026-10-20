@@ -31,6 +31,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   <link rel="stylesheet" href="./product-polish.css?v=1" />
   <link rel="stylesheet" href="./math-lab-expanded.css?v=1" />
+  <link rel="stylesheet" href="./graph-evidence-review.css?v=3" />
 </head>
 <body>
   <div class="math-flow" aria-hidden="true">
@@ -122,11 +123,11 @@
         <div class="panel answer-panel"><div class="panel-heading"><div><span class="section-label">01 / RESPONSE</span><h3>推理结果</h3></div><span id="answerStatus" class="muted">等待提问</span></div><div id="answer" class="answer empty-state">你的数学解答会显示在这里。</div></div>
         <div class="panel concepts-panel"><div class="panel-heading"><div><span class="section-label">02 / CONCEPTS</span><h3>相关知识点</h3></div><span id="conceptCount" class="count">0</span></div><div id="concepts" class="concept-list"><div class="empty-state">提问后显示相关概念</div></div></div>
       </section>
-      <section class="panel graph-panel" id="graph"><div class="panel-heading"><div><span class="section-label">03 / KNOWLEDGE GRAPH</span><h3>知识关系网络</h3></div><div class="graph-tools"><span id="graphStatus" class="muted">正在加载</span><button type="button" id="saveGraphButton" class="graph-save hidden">校验并保存</button></div></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state">加载知识图谱中…</div></div><div id="legend" class="legend"></div><details id="graphHistory" class="graph-history"><summary>候选图谱历史</summary><div class="candidate-filter"><label for="candidateStatusFilter">状态</label><select id="candidateStatusFilter"><option value="">全部</option><option value="pending">待审核</option><option value="needs_review">需复核</option><option value="validated">已校验</option><option value="saved">已保存</option><option value="rejected">已拒绝</option></select></div><div id="candidateList" class="candidate-list"><span class="muted">正在加载候选记录…</span></div></details><details id="graphEditorPanel" class="graph-editor"><summary>审核并编辑候选图谱</summary><p>可修改节点或关系；应用后需要重新进行 AI 校验。</p><textarea id="graphEditor" spellcheck="false" aria-label="候选图谱 JSON"></textarea><button type="button" id="applyGraphEdit" class="graph-edit-button">应用修改</button></details></section>
+      <section class="panel graph-panel" id="graph"><div class="panel-heading"><div><span class="section-label">03 / KNOWLEDGE GRAPH</span><h3>知识关系网络</h3></div><div class="graph-tools"><span id="graphStatus" class="muted">正在加载</span><button type="button" id="cancelGraphCandidate" class="graph-cancel hidden">取消候选</button><button type="button" id="saveGraphButton" class="graph-save hidden">校验并保存</button></div></div><div id="graphCanvas" class="graph-canvas"><div class="empty-state">加载知识图谱中…</div></div><div id="legend" class="legend"></div><details id="graphHistory" class="graph-history"><summary>候选图谱历史</summary><div class="candidate-filter"><label for="candidateStatusFilter">状态</label><select id="candidateStatusFilter"><option value="">全部</option><option value="pending">待审核</option><option value="needs_review">需复核</option><option value="validated">已校验</option><option value="saved">已保存</option><option value="rejected">已拒绝</option><option value="cancelled">已取消</option></select></div><div id="candidateList" class="candidate-list"><span class="muted">正在加载候选记录…</span></div></details><details id="graphEvidenceReview" class="graph-evidence-review" hidden><summary>教材原页证据 <span id="graphEvidenceProgress"></span></summary><p>逐项核对知识点和关系。对不确定的关系，请先在“审核并编辑候选图谱”中删除；不要用相邻出现的文字代替关系依据。</p><div id="graphEvidenceItems"></div></details><details id="graphEditorPanel" class="graph-editor"><summary>审核并编辑候选图谱</summary><p>可修改节点或关系；无法判断方向或仅共同出现的关系请删除。应用后需要重新核对教材出处并校验。</p><textarea id="graphEditor" spellcheck="false" aria-label="候选图谱 JSON"></textarea><button type="button" id="applyGraphEdit" class="graph-edit-button">应用修改</button></details></section>
       <section class="management-workbench panel" id="management" aria-label="管理工作区"><div class="panel-heading"><div><span class="section-label">WORKSPACE MANAGEMENT</span><h2>管理与审核</h2></div><p>运行状态、后台任务和资料维护。</p></div><details id="learningMetrics" class="learning-metrics"><summary>学习闭环与使用记录</summary><div class="metrics-toolbar"><label>统计范围<select id="metricsDays"><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="0">全部记录</option></select></label><button type="button" id="refreshLearningMetrics">刷新</button><button type="button" id="exportLearningMetrics" disabled>导出明细 JSON</button></div><p id="metricsStatus" role="status"></p><div id="metricsCards" class="metrics-cards"></div><p id="metricsVisits"></p><details><summary>统计口径与限制</summary><p>同一时间范围内有作答的题目为统一分母。每一步按题目去重，反馈后再练要求新作答晚于前次人工审核；延迟独立完成还要求至少相隔 24 小时、审核正确、独立、无提示且非修订。未审核作答不计正确。</p><p>审核等待为提交至当前审核时间的中位数；重复审核会覆盖该时间。回答帮助度按每份回答最新评分去重。访问按上海日期每日去重，仅本地记录，刷新不会增加活跃天数。历史未采集的回访无法恢复；这些统计不证明学习效果提升。</p></details><details><summary>查看原始记录编号与时间</summary><div id="metricsEvidence"></div></details></details><div id="managementTools"></div></section>
       <section id="course-reader" class="course-reader workspace-hidden" aria-label="教材伴读工作台">
         <div class="cr-heading"><div><span class="section-label">TEXTBOOK COMPANION</span><h2>读到哪里，理解到哪里。</h2></div><div class="cr-book-tools"><select id="crBook" aria-label="选择伴读教材"><option value="">选择一本教材</option></select><button id="crImport" type="button" data-ui-icon="upload">导入 PDF</button><button id="crRefresh" type="button" data-ui-icon="refresh" aria-label="刷新伴读教材">刷新</button></div></div>
-        <p id="crNotice" class="cr-notice" role="status">打开教材，在原页选取文字或指定页码，开始伴读。</p>
+        <div class="cr-feedback"><p id="crNotice" class="cr-notice" role="status">打开教材，在原页选取文字或指定页码，开始伴读。</p><button id="crRetry" type="button" hidden>重试打开</button><a id="crDiagnostics" href="http://127.0.0.1:8000/ai/health" target="_blank" rel="noopener" hidden>查看服务状态</a></div>
         <div class="cr-mobile-tabs"><button type="button" data-cr-tab="reader" aria-pressed="true">阅读教材</button><button type="button" data-cr-tab="chat" aria-pressed="false">伴读对话</button></div>
         <div id="crWorkspace" class="cr-workspace" hidden>
           <div class="cr-reading">
@@ -146,7 +147,7 @@
               <details class="cr-quick"><summary>伴读快捷动作</summary><div class="cr-actions"><button type="button" data-cr-action="explain">解释这一段</button><button type="button" data-cr-action="reason">补全推理</button><button type="button" data-cr-action="example">举例或反例</button><button type="button" data-cr-action="hint">只给提示</button></div></details>
               <textarea id="crQuestion" aria-label="教材伴读问题" placeholder="写下你想追问的地方…" rows="2"></textarea>
               <div class="cr-send-row"><button type="button" id="crGraph" disabled>生成图谱</button><button type="button" id="crQuiz">生成练习</button><button type="button" id="crCancel" hidden>停止生成</button><button type="submit" id="crSend">提问</button></div>
-              <p id="crChatStatus" role="status">原文与补充解释分别标注，模型讲解仍需核对。</p>
+              <p id="crChatStatus" role="status">原文与补充解释分别标注；图形与公式仅凭文字层无法核验，请对照原 PDF。</p>
             </form>
             <details id="crDraftPanel" class="cr-drafts"><summary>教材练习草稿 <span id="crDraftCount">0</span></summary><div id="crDraftList"></div></details>
           </div>
@@ -157,7 +158,8 @@
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=reader-4"></script>
+  <script src="./app.js?v=reader-8"></script>
+  <script src="./graph-evidence-review.js?v=2"></script>
   <script src="./workspace.js?v=reader-1"></script>
   <script src="./evidence.js?v=final-1"></script>
   <script src="./practice.js?v=final-1"></script>
@@ -168,7 +170,7 @@
   <script src="./textbooks.js?v=final-2"></script>
   <script src="./learning-metrics.js?v=final-1"></script>
   <script src="./graph-explorer.js?v=orbit-2"></script>
-  <script type="module" src="./course-reader.js?v=reader-10"></script>
+  <script type="module" src="./course-reader.js?v=reader-11"></script>
   <script src="./ui-interactions.js?v=graph-3"></script>
   <script src="./motion.js?v=final-1"></script>
 </body>

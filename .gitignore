@@ -28,3 +28,4 @@ backend/uploads/
 
 # Local browser acceptance screenshots and generated artifacts
 output/
+tmp/

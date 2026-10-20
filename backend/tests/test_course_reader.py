@@ -9,7 +9,7 @@ from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.chunk_revision import ChunkRevision
 from app.models.course_reading import CourseMessage, CourseExerciseDraft
 from app.models.study_note import StudyNote
-from app.api.course_reader import (ReadingScope, ReadingQuestion, StateUpdate, resolve_scope, new_conversation, get_state, update_state, get_conversation, generate_reply, save_note, approve_draft, DraftReview, build_messages)
+from app.api.course_reader import (ReadingScope, ReadingQuestion, StateUpdate, resolve_scope, new_conversation, get_state, update_state, get_conversation, generate_reply, save_note, approve_draft, DraftReview, build_messages, supersede_answer)
 from app.api.textbooks import edit_chunk
 from fastapi import HTTPException
 
@@ -128,3 +128,53 @@ class CourseReaderTests(unittest.TestCase):
             self.db.commit()
             with self.assertRaises(HTTPException):generate_reading_graph(self.a.id,self.chat,self.db)
             model.assert_not_called()
+
+    def test_corrected_answer_is_kept_in_history_but_excluded_from_prompts_and_graph(self):
+        from app.api.course_reader import generate_reading_graph
+        first, _ = self.generate()
+        wrong = self.db.get(CourseMessage, first['assistant']['id'])
+        wrong.content = '旧错误：紧集的像一定不紧。'
+        self.db.commit()
+        supersede_answer(self.a.id, self.chat, wrong.id, self.db)
+        self.assertEqual(get_conversation(self.a.id, self.chat, self.db)['items'][-1]['status'], 'superseded')
+        prompt = build_messages(self.chat, ReadingQuestion(question='重新解释', scope=ReadingScope(start=1, end=1)), resolve_scope(self.a.id, ReadingScope(start=1, end=1), self.db), self.db)
+        self.assertNotIn('旧错误', str(prompt))
+        self.generate()
+        graph = {'nodes':[{'id':'a','name':'连续函数','type':'concept'}, {'id':'b','name':'紧集','type':'concept'}], 'edges':[]}
+        with patch('app.api.ai.call_deepseek', return_value=json.dumps(graph, ensure_ascii=False)) as model:
+            generate_reading_graph(self.a.id, self.chat, self.db)
+        self.assertNotIn('旧错误', model.call_args.kwargs['messages'][-1]['content'])
+
+    def test_textbook_candidate_needs_page_verified_evidence_before_save(self):
+        from app.api.course_reader import generate_reading_graph
+        from app.api.ai import review_textbook_evidence, TextbookEvidenceReview, validate_graph_candidate, save_graph_candidate, textbook_evidence_subjects, update_graph_candidate, GraphCandidateUpdateRequest
+        from app.models.graph_candidate import GraphCandidate
+        self.generate()
+        graph = {'nodes':[{'id':'a','name':'连续函数','type':'concept'}, {'id':'b','name':'紧集','type':'concept'}], 'edges':[{'source':'a','target':'b','relation':'supports'}]}
+        with patch('app.api.ai.call_deepseek', return_value=json.dumps(graph, ensure_ascii=False)):
+            generated = generate_reading_graph(self.a.id, self.chat, self.db)
+        candidate_id = generated['candidate_id']
+        with patch('app.api.ai.validate_graph_semantics', return_value={'valid':True,'confidence':.95,'issues':[],'invalid_edges':[]}):
+            validate_graph_candidate(candidate_id, self.db)
+        with self.assertRaises(HTTPException) as error:
+            save_graph_candidate(candidate_id, self.db)
+        self.assertEqual(error.exception.status_code, 409)
+        subjects = textbook_evidence_subjects(json.loads(self.db.get(GraphCandidate, candidate_id).graph_json))
+        subject_type, subject_key = next(iter(subjects))
+        with self.assertRaises(HTTPException) as error:
+            review_textbook_evidence(candidate_id, TextbookEvidenceReview(subject_type=subject_type, subject_key=subject_key, page=1, excerpt='     '), self.db)
+        self.assertEqual(error.exception.status_code, 422)
+        with self.assertRaises(HTTPException):
+            review_textbook_evidence(candidate_id, TextbookEvidenceReview(subject_type=subject_type, subject_key=subject_key, page=2, excerpt='连续函数在紧集上的像仍然紧。'), self.db)
+        for subject_type, subject_key in subjects:
+            review_textbook_evidence(candidate_id, TextbookEvidenceReview(subject_type=subject_type, subject_key=subject_key, page=1, excerpt='连续函数在紧集上的像仍然紧。'), self.db)
+        revised = json.loads(self.db.get(GraphCandidate, candidate_id).graph_json)
+        revised['edges'] = []
+        update_graph_candidate(candidate_id, GraphCandidateUpdateRequest(graph=revised), self.db)
+        current = json.loads(self.db.get(GraphCandidate, candidate_id).graph_json)
+        self.assertEqual(len(current['edges']), 0)
+        from app.models.graph_evidence import GraphEvidence
+        self.assertEqual(sum(item.source_kind == 'textbook_verified' for item in self.db.query(GraphEvidence).filter_by(candidate_id=candidate_id)), 2)
+        with patch('app.api.ai.validate_graph_semantics', return_value={'valid':True,'confidence':.95,'issues':[],'invalid_edges':[]}):
+            validate_graph_candidate(candidate_id, self.db)
+        self.assertEqual(save_graph_candidate(candidate_id, self.db)['status'], 'saved')

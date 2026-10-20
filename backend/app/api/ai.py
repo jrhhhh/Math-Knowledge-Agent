@@ -1395,6 +1395,13 @@ class GraphCandidateUpdateRequest(BaseModel):
     graph: dict
 
 
+class TextbookEvidenceReview(BaseModel):
+    subject_type: Literal['node', 'edge']
+    subject_key: str = Field(min_length=1, max_length=240)
+    page: int = Field(ge=1)
+    excerpt: str = Field(min_length=5, max_length=1200)
+
+
 class GraphCandidateBatchRequest(BaseModel):
     candidate_ids: list[int]
 
@@ -2006,7 +2013,7 @@ def get_related_graph(
 
     cached = (
         db.query(GraphCandidate)
-        .filter(GraphCandidate.question == question)
+        .filter(GraphCandidate.question == question, GraphCandidate.status != 'cancelled')
         .order_by(GraphCandidate.created_at.desc())
         .first()
     )
@@ -2285,7 +2292,7 @@ def list_graph_candidates(
     db: Session = Depends(get_db),
 ):
     """分页查看候选图谱，供审核界面使用。"""
-    allowed_statuses = {"pending", "validated", "rejected", "needs_review", "saved"}
+    allowed_statuses = {"pending", "validated", "rejected", "needs_review", "saved", "cancelled"}
     if status is not None and status not in allowed_statuses:
         raise HTTPException(status_code=400, detail="无效的候选图谱状态。")
     query = db.query(GraphCandidate)
@@ -2312,7 +2319,7 @@ def list_graph_candidates(
 def graph_candidate_stats(db: Session = Depends(get_db)):
     """返回候选图谱各审核状态的数量。"""
     rows = db.query(GraphCandidate.status).all()
-    counts = {status: 0 for status in {"pending", "validated", "rejected", "needs_review", "saved"}}
+    counts = {status: 0 for status in {"pending", "validated", "rejected", "needs_review", "saved", "cancelled"}}
     for (status,) in rows:
         counts[status] = counts.get(status, 0) + 1
     return {"total": len(rows), "by_status": counts}
@@ -2441,6 +2448,80 @@ def get_graph_candidate(candidate_id: int, db: Session = Depends(get_db)):
     }
 
 
+@router.post('/graph-candidates/{candidate_id}/cancel')
+def cancel_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    candidate = db.get(GraphCandidate, candidate_id)
+    if not candidate:
+        raise HTTPException(404, detail='候选图谱不存在。')
+    if candidate.status == 'saved':
+        raise HTTPException(409, detail='已写入知识库的图谱不能作为草稿取消。')
+    if candidate.status != 'cancelled':
+        record_candidate_event(db, candidate_id, 'cancelled', {'previous_status': candidate.status})
+        candidate.status = 'cancelled'
+        db.commit()
+    return {'candidate_id': candidate_id, 'status': 'cancelled'}
+
+
+@router.post('/graph-candidates/{candidate_id}/restore')
+def restore_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    candidate = db.get(GraphCandidate, candidate_id)
+    if not candidate:
+        raise HTTPException(404, detail='候选图谱不存在。')
+    if candidate.status != 'cancelled':
+        raise HTTPException(409, detail='该候选图谱并未取消。')
+    candidate.status = 'pending'
+    candidate.validation_json = json.dumps({'valid': False, 'reason': '候选已恢复，请重新校验。'}, ensure_ascii=False)
+    record_candidate_event(db, candidate_id, 'restored')
+    db.commit()
+    return {'candidate_id': candidate_id, 'status': 'pending'}
+
+
+def textbook_evidence_subjects(graph: dict) -> set[tuple[str, str]]:
+    return ({('node', str(node['id'])) for node in graph.get('nodes', [])}
+            | {('edge', f"{edge['source']}->{edge['target']}:{edge['relation']}") for edge in graph.get('edges', [])})
+
+
+@router.post('/graph-candidates/{candidate_id}/textbook-evidence')
+def review_textbook_evidence(candidate_id: int, payload: TextbookEvidenceReview, db: Session = Depends(get_db), _: bool = Depends(require_admin)):
+    candidate = db.get(GraphCandidate, candidate_id)
+    if not candidate:
+        raise HTTPException(404, detail='候选图谱不存在。')
+    if candidate.status in {'saved', 'cancelled'}:
+        raise HTTPException(409, detail='已保存或已取消的图谱不能修改来源证据。')
+    graph = json.loads(candidate.graph_json)
+    subject = (payload.subject_type, payload.subject_key)
+    if subject not in textbook_evidence_subjects(graph):
+        raise HTTPException(422, detail='节点或关系不在当前候选图谱中。')
+    items = db.query(GraphEvidence).filter_by(candidate_id=candidate_id).all()
+    textbook_items = [item for item in items if (json.loads(item.context_json or 'null') or {}).get('reading_context', {}).get('document_id')]
+    if not textbook_items:
+        raise HTTPException(422, detail='该候选图谱没有教材阅读快照。')
+    page = payload.page
+    passage = payload.excerpt.strip()
+    if len(passage) < 5:
+        raise HTTPException(422, detail='请填写至少 5 个字符的原文摘录。')
+    matches = [(saved_context, entry) for evidence in textbook_items
+               for saved_context in [json.loads(evidence.context_json)]
+               for entry in saved_context['reading_context'].get('sources', [])
+               if entry.get('page_start', 0) <= page <= (entry.get('page_end') or entry.get('page_start', 0)) and passage in entry.get('content', '')]
+    if not matches:
+        raise HTTPException(422, detail='摘录未出现在所选 PDF 页的保存文字中；请回到原页核对后再提交。')
+    context, source = matches[0]
+    snapshot = context['reading_context']
+    item = next((entry for entry in items if (entry.subject_type, entry.subject_key) == subject), None)
+    if item is None:
+        item = GraphEvidence(candidate_id=candidate_id, subject_type=payload.subject_type, subject_key=payload.subject_key, source_kind='textbook_verified')
+        db.add(item)
+    item.source_kind = 'textbook_verified'
+    item.source_message_id = None
+    item.review_status = 'verified'
+    item.excerpt = passage
+    item.context_json = json.dumps({**context, 'reading_context': snapshot, 'source_page': page, 'source_chunk_id': source['chunk_id'], 'source_hash': source['content_hash']}, ensure_ascii=False)
+    record_candidate_event(db, candidate_id, 'evidence_verified', {'subject_type': payload.subject_type, 'subject_key': payload.subject_key, 'page': page})
+    db.commit()
+    return {'id': item.id, 'subject_type': item.subject_type, 'subject_key': item.subject_key, 'page': page, 'review_status': item.review_status}
+
+
 @router.put("/graph-candidates/{candidate_id}")
 def update_graph_candidate(
     candidate_id: int,
@@ -2452,6 +2533,8 @@ def update_graph_candidate(
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
     if candidate is None:
         raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    if candidate.status == 'cancelled':
+        raise HTTPException(status_code=409, detail='候选已取消，请先恢复。')
     graph = request.graph
     nodes = graph.get("nodes")
     edges = graph.get("edges")
@@ -2501,9 +2584,26 @@ def update_graph_candidate(
             weight = 0.8
         clean_edges.append({"source": source, "target": target, "relation": relation, "weight": weight})
 
+    old_graph = json.loads(candidate.graph_json)
+    old_nodes = {str(node.get('id')): node for node in old_graph.get('nodes', [])}
+    new_nodes = {str(node['id']): node for node in clean_nodes}
+    semantic_defaults = {'name': '', 'type': 'concept', 'description': '', 'field': '数学', 'level': 1}
+    changed_nodes = {node_id for node_id, node in new_nodes.items() if node_id not in old_nodes or any(str(node.get(key, default)) != str(old_nodes[node_id].get(key, default)) for key, default in semantic_defaults.items())}
+    old_edges = {(str(edge.get('source')), str(edge.get('target')), str(edge.get('relation'))) for edge in old_graph.get('edges', [])}
+    new_edges = {(edge['source'], edge['target'], edge['relation']) for edge in clean_edges}
     candidate.graph_json = json.dumps({"nodes": clean_nodes, "edges": clean_edges}, ensure_ascii=False)
     candidate.validation_json = json.dumps({"valid": False, "reason": "图谱已修改，需要重新进行 AI 语义校验。"}, ensure_ascii=False)
     candidate.status = "pending"
+    for evidence in db.query(GraphEvidence).filter_by(candidate_id=candidate.id).all():
+        if evidence.source_kind == 'textbook_verified':
+            if evidence.subject_type == 'node' and evidence.subject_key in new_nodes and evidence.subject_key not in changed_nodes:
+                continue
+            if evidence.subject_type == 'edge':
+                edge_key = next((edge for edge in old_edges if f'{edge[0]}->{edge[1]}:{edge[2]}' == evidence.subject_key), None)
+                if edge_key in new_edges and edge_key[0] not in changed_nodes and edge_key[1] not in changed_nodes:
+                    continue
+            evidence.review_status = 'unreviewed'
+            evidence.source_kind = 'course_message'
     record_candidate_event(db, candidate.id, "edited", {"node_count": len(clean_nodes), "edge_count": len(clean_edges)})
     db.commit()
     return {
@@ -2519,6 +2619,8 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
     candidate = db.query(GraphCandidate).filter(GraphCandidate.id == candidate_id).first()
     if candidate is None:
         raise HTTPException(status_code=404, detail="候选图谱不存在。")
+    if candidate.status == 'cancelled':
+        raise HTTPException(status_code=409, detail='候选已取消，请先恢复。')
     graph = json.loads(candidate.graph_json)
     node_ids = {node.get("id") for node in graph.get("nodes", [])}
     invalid_edges = []
@@ -2556,14 +2658,17 @@ def validate_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _
                 failure_kind = "invalid_json"
             else:
                 failure_kind = "provider_error"
-            # Provider 空响应/截断时使用本地确定性检查兜底，避免候选图谱
-            # 因短暂的 AI 服务异常永远停在待复核；结果会带有明确降级标记。
-            if "deepseek" in error_lower or "content_length=0" in error_lower:
+            # Provider 空响应、截断或余额耗尽时使用本地确定性检查兜底。
+            # 返回值明确标记为 fallback_local，不冒充模型语义校验。
+            quota_exhausted = "insufficient balance" in error_lower or "error code: 402" in error_lower
+            if quota_exhausted:
+                failure_kind = "quota_exhausted"
+            if "deepseek" in error_lower or "content_length=0" in error_lower or quota_exhausted:
                 fallback = validate_graph_structure_locally(graph)
                 if fallback["valid"]:
                     validation.update({
-                        "semantic_valid": True,
-                        "confidence": 0.80,
+                        "semantic_valid": None,
+                        "confidence": None,
                         "semantic_issues": ["AI 服务暂时无响应，已完成本地结构校验"],
                         "invalid_edges": fallback["invalid_edges"],
                         "semantic_status": "fallback_local",
@@ -2678,6 +2783,12 @@ def save_graph_candidate(candidate_id: int, db: Session = Depends(get_db), _: bo
         raise HTTPException(status_code=409, detail="候选图谱尚未通过校验。")
 
     graph = json.loads(candidate.graph_json)
+    evidence = db.query(GraphEvidence).filter_by(candidate_id=candidate_id).all()
+    if (candidate.question or '').startswith('教材伴读 #') or any((json.loads(item.context_json or 'null') or {}).get('reading_context', {}).get('document_id') for item in evidence):
+        verified = {(item.subject_type, item.subject_key) for item in evidence if item.source_kind == 'textbook_verified' and item.review_status == 'verified'}
+        missing = textbook_evidence_subjects(graph) - verified
+        if missing:
+            raise HTTPException(409, detail=f'仍有 {len(missing)} 个节点或关系缺少已核对的教材原文摘录，请先完成出处核对。')
     id_map = {}
     created_concepts = 0
     for node in graph.get("nodes", []):

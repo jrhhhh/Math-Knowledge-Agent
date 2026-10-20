@@ -15,6 +15,8 @@ from app.api.ai import (
     save_graph_candidate,
     update_graph_candidate,
     validate_graph_candidate,
+    cancel_graph_candidate,
+    restore_graph_candidate,
 )
 from app.api.concepts import AliasRequest, LearningProgressRequest, add_concept_alias, get_concept_network, get_learning_path, get_learning_progress, search_concepts, set_learning_progress
 from app.database import Base
@@ -23,6 +25,7 @@ from app.models.concept_relation import ConceptRelation
 from app.models.graph_candidate import GraphCandidate
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.graph_evidence import GraphEvidence
+from app.models.problem_attempt import ProblemAttempt
 
 
 class GraphWorkflowTests(unittest.TestCase):
@@ -83,6 +86,17 @@ class GraphWorkflowTests(unittest.TestCase):
         events = get_graph_candidate_events(generated["candidate_id"], self.db)["events"]
         self.assertEqual([event["action"] for event in events], ["generated", "validated", "saved"])
 
+    def test_pending_candidate_can_be_cancelled_and_restored_without_losing_history(self):
+        with patch('app.api.ai.call_deepseek', return_value=json.dumps(self.graph_payload())):
+            generated = generate_ai_related_graph(self.db, '可撤回候选')
+        candidate_id = generated['candidate_id']
+        self.assertEqual(cancel_graph_candidate(candidate_id, self.db)['status'], 'cancelled')
+        with self.assertRaises(HTTPException):
+            validate_graph_candidate(candidate_id, self.db)
+        self.assertEqual(restore_graph_candidate(candidate_id, self.db)['status'], 'pending')
+        events = get_graph_candidate_events(candidate_id, self.db)['events']
+        self.assertEqual([event['action'] for event in events], ['generated', 'cancelled', 'restored'])
+
     def test_low_confidence_candidate_cannot_be_saved(self):
         semantic = {"valid": True, "confidence": 0.61, "issues": ["方向不确定"], "invalid_edges": []}
         with patch("app.api.ai.call_deepseek", side_effect=[json.dumps(self.graph_payload()), json.dumps(semantic)]):
@@ -125,6 +139,16 @@ class GraphWorkflowTests(unittest.TestCase):
                 self.assertEqual(error.exception.status_code, 503)
                 candidate = self.db.query(GraphCandidate).filter_by(id=generated["candidate_id"]).one()
                 self.assertEqual(json.loads(candidate.validation_json)["provider_diagnostics"]["failure_kind"], expected_kind)
+
+    def test_quota_exhaustion_uses_explicit_local_validation_fallback(self):
+        with patch("app.api.ai.call_deepseek", return_value=json.dumps(self.graph_payload())):
+            generated = generate_ai_related_graph(self.db, "余额不足时的结构校验兜底")
+        with patch("app.api.ai.validate_graph_semantics", side_effect=RuntimeError("APIStatusError: Error code: 402 Insufficient Balance")):
+            checked = validate_graph_candidate(generated["candidate_id"], self.db)
+        self.assertEqual(checked["status"], "validated")
+        self.assertTrue(checked["validation"]["valid"])
+        self.assertEqual(checked["validation"]["semantic_status"], "fallback_local")
+        self.assertEqual(checked["validation"]["provider_diagnostics"]["failure_kind"], "quota_exhausted")
 
     def test_graph_generation_uses_raw_conversation_messages(self):
         conversation = Conversation(title="原始消息测试")

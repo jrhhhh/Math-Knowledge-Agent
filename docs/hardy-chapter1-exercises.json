@@ -1,0 +1,319 @@
+{
+  "book": "G. H. Hardy, A Course of Pure Mathematics, 3rd ed.",
+  "section": "Miscellaneous Examples on Chapter I",
+  "pdf_start": 50,
+  "pdf_end": 58,
+  "printed_start": 34,
+  "printed_end": 42,
+  "exercise_count": 38,
+  "scope_note": "PDF p50 begins after §19 theorem; PDF p59 begins §20. This is an exercise inventory, not a list of proved textbook theorems. Formula-heavy prompts need visual comparison with original pages before graph approval.",
+  "items": [
+    {
+      "number": 1,
+      "pdf_start": 50,
+      "pdf_end": 50,
+      "category": "线性代数",
+      "topic": "线性式在约束下恒为零",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 2,
+      "pdf_start": 50,
+      "pdf_end": 51,
+      "category": "有理数表示",
+      "topic": "阶乘进制形式的有理数表示",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 3,
+      "pdf_start": 51,
+      "pdf_end": 51,
+      "category": "有理数表示",
+      "topic": "简单连分数的表示与唯一性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 4,
+      "pdf_start": 51,
+      "pdf_end": 51,
+      "category": "有理根",
+      "topic": "三次方程的有理根",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 5,
+      "pdf_start": 51,
+      "pdf_end": 51,
+      "category": "无理数",
+      "topic": "黄金分割比例的无理性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 6,
+      "pdf_start": 51,
+      "pdf_end": 51,
+      "category": "无理数",
+      "topic": "无理数分式线性变换何时为有理数",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 7,
+      "pdf_start": 51,
+      "pdf_end": 52,
+      "category": "不等式",
+      "topic": "两个非负数的幂均值型不等式",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 8,
+      "pdf_start": 52,
+      "pdf_end": 52,
+      "category": "不等式",
+      "topic": "第7题不等式推广到 n 个数",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 9,
+      "pdf_start": 52,
+      "pdf_end": 52,
+      "category": "不等式",
+      "topic": "算术平均数与几何平均数",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 10,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "不等式",
+      "topic": "Schwarz 不等式",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 11,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "不等式",
+      "topic": "正数乘积的上界",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 12,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "不等式",
+      "topic": "同序正数列的乘积和不等式",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 13,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "不等式",
+      "topic": "加权平均值的上下界",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 14,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "根式",
+      "topic": "不同二次根式的有理线性独立性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 15,
+      "pdf_start": 53,
+      "pdf_end": 53,
+      "category": "根式",
+      "topic": "根号2、3、5的有理线性独立性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 16,
+      "pdf_start": 53,
+      "pdf_end": 54,
+      "category": "根式",
+      "topic": "两个二次根式生成的多项式标准形",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 17,
+      "pdf_start": 54,
+      "pdf_end": 54,
+      "category": "根式",
+      "topic": "二次根式分式的有理化",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 18,
+      "pdf_start": 54,
+      "pdf_end": 54,
+      "category": "有理性判别",
+      "topic": "有理参数恒等式与有理平方条件",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 19,
+      "pdf_start": 54,
+      "pdf_end": 54,
+      "category": "二次型",
+      "topic": "两个二次型方程的有理解条件",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 20,
+      "pdf_start": 54,
+      "pdf_end": 54,
+      "category": "根式",
+      "topic": "由根号2加根号3表示相关根式",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 21,
+      "pdf_start": 55,
+      "pdf_end": 55,
+      "category": "根式",
+      "topic": "嵌套二次根式的分段化简",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 22,
+      "pdf_start": 55,
+      "pdf_end": 55,
+      "category": "代数数",
+      "topic": "m 次根的幂基约化",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 23,
+      "pdf_start": 55,
+      "pdf_end": 55,
+      "category": "代数数",
+      "topic": "三次根式表达式的幂基化简",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 24,
+      "pdf_start": 55,
+      "pdf_end": 56,
+      "category": "代数数",
+      "topic": "1、三次根号2、三次根号4的有理线性独立性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 25,
+      "pdf_start": 56,
+      "pdf_end": 56,
+      "category": "根式",
+      "topic": "平移后三次根式相等的条件",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 26,
+      "pdf_start": 56,
+      "pdf_end": 56,
+      "category": "根式",
+      "topic": "三个三次根式和为零的条件",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 27,
+      "pdf_start": 56,
+      "pdf_end": 56,
+      "category": "根式",
+      "topic": "三次根式的有理系数分解",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 28,
+      "pdf_start": 56,
+      "pdf_end": 56,
+      "category": "根式",
+      "topic": "复合三次根式表达式的有理性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 29,
+      "pdf_start": 56,
+      "pdf_end": 57,
+      "category": "代数数",
+      "topic": "n 次根的多项式满足有理系数方程",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 30,
+      "pdf_start": 57,
+      "pdf_end": 57,
+      "category": "代数数",
+      "topic": "p 加根号q的代数方程",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 31,
+      "pdf_start": 57,
+      "pdf_end": 57,
+      "category": "代数数",
+      "topic": "三次根幂基表达式的三次方程",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 32,
+      "pdf_start": 57,
+      "pdf_end": 57,
+      "category": "代数数",
+      "topic": "代数数与超越数的定义及闭包题",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 33,
+      "pdf_start": 57,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "代数数的四则运算封闭性",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 34,
+      "pdf_start": 58,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "代数系数多项式的根仍为代数数",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 35,
+      "pdf_start": 58,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "含根式系数二次方程的有理系数消元",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 36,
+      "pdf_start": 58,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "若干根式表达式的有理系数方程",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 37,
+      "pdf_start": 58,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "三次关系导出的幂次递推",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    },
+    {
+      "number": 38,
+      "pdf_start": 58,
+      "pdf_end": 58,
+      "category": "代数数",
+      "topic": "六次方程变换后的二次关系",
+      "review_status": "pdf_text_extracted_formula_check_pending"
+    }
+  ],
+  "candidate_id": 32,
+  "graph_status": "saved_grouped_exercise_map_formula_review_pending",
+  "validation": "UI candidate save succeeded; backend semantic_status=fallback_local (DeepSeek empty response); this checks structure, not mathematical truth."
+}

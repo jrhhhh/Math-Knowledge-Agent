@@ -13,6 +13,12 @@ body[data-workspace="course-reader"] .topbar { display:none; }
 #course-reader select { appearance:none; padding-right:38px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23496b90' stroke-width='1.5'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-size:16px; background-repeat:no-repeat; background-position:right 14px center; }
 #course-reader :is(button,input,select,textarea):focus-visible,#crDivider:focus-visible { outline:2px solid #4b8be4; outline-offset:3px; }
 .cr-notice { color:#6782a0; font-size:12px; min-height:18px; margin:14px 0; line-height:1.65; }
+.cr-feedback { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.cr-feedback .cr-notice { flex:1 1 240px; }
+#course-reader .cr-feedback button,#course-reader .cr-feedback a { font-size:11px; white-space:nowrap; }
+.cr-feedback a { color:#316eb1; text-decoration:underline; text-underline-offset:3px; }
+#course-reader .cr-feedback [hidden] { display:none !important; }
+.cr-message.superseded { opacity:.65; border-left:3px solid #8ba5bd; padding-left:8px; }
 .cr-workspace { display:grid; grid-template-columns:minmax(0,var(--cr-ratio)) 12px minmax(0,1fr); height:calc(100dvh - 220px); min-height:550px; gap:0; }
 .cr-reading,.cr-chat { min-width:0; min-height:0; border:1px solid #ffffffe0; border-radius:22px; background:#f5f9ffb8; box-shadow:0 12px 35px #4a77a617; overflow:hidden; }
 .cr-reading { display:flex; flex-direction:column; }
