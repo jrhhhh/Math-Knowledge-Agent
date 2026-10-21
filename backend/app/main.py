@@ -38,6 +38,7 @@ from app.models.chunk_revision import ChunkRevision
 from app.models.learning_visit import LearningVisit
 from app.models.course_reading import CourseReadingState, CourseConversation, CourseMessage, CourseExerciseDraft
 from app.models.problem_hint import ProblemHint
+from app.models.concept_exercise import ConceptExerciseDraft
 from app.models.knowledge_source import KnowledgeDocument, KnowledgeChunk
 from app.models.problem_source import ProblemSource
 from app.models.conversation import Conversation, ConversationMessage, MessageConcept
@@ -59,6 +60,7 @@ from app.api.textbooks import router as textbooks_router
 from app.api.learning_metrics import router as learning_metrics_router
 from app.api.course_reader import router as course_reader_router
 from app.api.math_lab import router as math_lab_router
+from app.api.concept_exercises import router as concept_exercise_router
 
 
 Base.metadata.create_all(
@@ -99,6 +101,7 @@ app.include_router(textbooks_router)
 app.include_router(learning_metrics_router)
 app.include_router(course_reader_router)
 app.include_router(math_lab_router)
+app.include_router(concept_exercise_router)
 
 
 @app.get("/")

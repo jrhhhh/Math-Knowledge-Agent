@@ -1,0 +1,131 @@
+.concept-exercise-panel { scroll-margin-top: 100px; margin-bottom: 22px; padding: 20px 24px; border: 1px solid rgba(81,133,180,.22); border-radius: 20px; background: linear-gradient(135deg,rgba(240,248,255,.92),rgba(255,255,255,.86)); }
+.concept-exercise-panel > summary { cursor: pointer; color: #244d73; font-size: 17px; font-weight: 650; }
+.concept-exercise-panel > p { margin: 12px 0; line-height: 1.7; }
+.concept-exercise-panel button, .graph-card-practice button { padding: 10px 16px; border: 1px solid #c3d8e8; border-radius: 10px; background: #f3f9fd; color: #285b83; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s ease; }
+.concept-exercise-panel button:hover, .graph-card-practice button:hover { background: #e2f0fa; }
+.concept-exercise-panel button:focus-visible, .graph-card-practice button:focus-visible { outline: 2px solid #438ec8; outline-offset: 3px; }
+.concept-exercise-search { display: flex; gap: 10px; align-items: center; }
+.concept-exercise-search input { flex: 1; min-width: 0; }
+.concept-exercise-results { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.concept-exercise-results button { text-align: left; display: grid; gap: 4px; white-space: normal; }
+.concept-exercise-results small { color: #62758a; }
+.concept-exercise-selected { padding: 12px 14px; border-left: 3px solid #599acb; background: #eaf4fc; color: #244d73; border-radius: 4px 10px 10px 4px; }
+.concept-exercise-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.concept-exercise-form label, .concept-exercise-edit label { display: grid; gap: 7px; color: #40576e; font-size: 13px; }
+.concept-exercise-form label:last-of-type { grid-column: 1/-1; }
+.concept-exercise-form textarea { min-height: 72px; resize: vertical; }
+.concept-exercise-form button { justify-self: start; background: #245a88; color: white; border-color: #245a88; }
+.concept-exercise-form button:hover { background: #194b76; }
+.concept-exercise-panel input, .concept-exercise-panel select, .concept-exercise-panel textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #c5d7e6; border-radius: 10px; background: rgba(255,255,255,.9); color: #233c53; font: inherit; }
+.concept-exercise-panel button:disabled { opacity: .55; cursor: wait; }
+.concept-exercise-status { display: block; margin: 12px 0; font-size: 13px; color: #45637e; }
+.concept-exercise-drafts { display: grid; gap: 16px; }
+.concept-exercise-draft { min-width: 0; padding: 20px; border: 1px solid #d9e5ef; border-radius: 16px; background: rgba(255,255,255,.9); }
+.concept-exercise-draft-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; color: #46769b; font-size: 12px; }
+.concept-exercise-draft h3 { margin: 12px 0; font-size: 17px; color: #203f59; }
+.concept-exercise-preview { line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; }
+.concept-exercise-origin { font-size: 12px; line-height: 1.7; color: #6a7d8e; }
+.concept-exercise-draft details { margin: 14px 0; border-top: 1px solid #e5edf3; padding-top: 12px; }
+.concept-exercise-draft summary { cursor: pointer; color: #486d8e; font-size: 13px; }
+.concept-exercise-draft details > div, .concept-exercise-edit label { margin-top: 12px; }
+.concept-exercise-item-status { display: block; margin-top: 8px; color: #95533f; font-size: 13px; }
+.graph-card-practice { margin: 14px 0; }
+@media(max-width: 640px) { .concept-exercise-panel { padding: 16px; } .concept-exercise-form, .concept-exercise-results { grid-template-columns: minmax(0,1fr); } .concept-exercise-draft { padding: 14px; } .concept-exercise-search { flex-wrap: wrap; } }
+/* Exercise studio: compact configuration with a focused, navigable question deck. */
+.concept-exercise-panel [hidden] { display: none !important; }
+.concept-exercise-panel > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; }
+.concept-exercise-panel > summary::before { content: '+'; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: #e0edf7; flex: 0 0 auto; }
+.concept-exercise-panel[open] > summary::before { content: '−'; }
+.concept-exercise-panel > summary > span { flex: 1; }
+.exercise-summary-tag { font-size: 11px; font-weight: 500; color: #607f99; }
+.exercise-studio { display: grid; grid-template-columns: minmax(250px,.75fr) minmax(0,1.5fr); gap: 26px; margin-top: 22px; align-items: start; }
+.exercise-studio-config { padding: 18px; background: rgba(232,242,250,.65); border: 1px solid #d8e6f0; border-radius: 16px; min-width: 0; }
+.exercise-studio-results { min-width: 0; }
+.exercise-step-label { margin: 0 0 14px; font-size: 11px; letter-spacing: .07em; color: #597d9b; font-weight: 650; }
+.exercise-studio-config > .exercise-step-label:not(:first-child) { margin-top: 24px; }
+.exercise-studio-config .concept-exercise-search { flex-wrap: wrap; }
+.exercise-studio-config .concept-exercise-results { grid-template-columns: minmax(0,1fr); max-height: 300px; overflow-y: auto; }
+.exercise-studio-config .concept-exercise-selected { font-size: 13px; line-height: 1.7; padding: 10px; }
+.exercise-goal-presets { grid-column: 1/-1; display: flex; flex-wrap: wrap; gap: 6px; }
+.exercise-goal-presets button { padding: 7px 10px; font-size: 12px; background: rgba(255,255,255,.65); }
+.exercise-goal-presets button[aria-pressed=true], .exercise-deck-filters button[aria-pressed=true] { background: #dceefa; color: #215a85; border-color: #94c2e2; }
+.concept-exercise-form .exercise-plan { grid-column: 1/-1; font-size: 12px; line-height: 1.7; color: #5a7891; margin: 0; }
+.concept-exercise-form > button { grid-column: 1/-1; width: 100%; min-height: 44px; }
+.exercise-deck-toolbar { display: grid; gap: 12px; }
+.exercise-deck-toolbar > div:first-child { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.exercise-deck-toolbar strong { font-size: 16px; color: #274c6a; }
+.exercise-deck-toolbar small { font-size: 12px; color: #71879b; }
+.exercise-deck-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.exercise-deck-filters button { padding: 7px 12px; font-size: 12px; }
+.exercise-deck-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.exercise-deck-nav button { font-size: 12px; padding: 7px 10px; }
+.exercise-deck-nav span { font-size: 12px; color: #66839a; font-variant-numeric: tabular-nums; }
+.exercise-card-title { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.exercise-card-title h3 { line-height: 1.65; }
+.exercise-card-title button { padding: 6px 9px; flex-shrink: 0; font-size: 12px; border-color: transparent; background: transparent; }
+.concept-exercise-draft:has([data-toggle-draft][aria-expanded=true]) { border-color: #a4c9e2; box-shadow: 0 8px 24px rgba(44,91,127,.05); }
+.exercise-empty { padding: 42px 20px; border: 1px dashed #c4d9e9; border-radius: 16px; text-align: center; color: #638099; }
+.exercise-empty > span { display: block; font: 36px Georgia,serif; margin-bottom: 14px; color: #699dc3; }
+.exercise-empty h3 { font-size: 16px; font-weight: 550; color: #42647f; }
+.exercise-empty p { line-height: 1.8; font-size: 13px; }
+.exercise-generating { display: flex; align-items: flex-start; gap: 14px; padding: 20px; border: 1px solid #b6d7ee; background: #edf7fd; border-radius: 14px; margin-bottom: 16px; }
+.exercise-generating strong { color: #315f83; font-size: 14px; }
+.exercise-generating p, .exercise-generating small { font-size: 12px; color: #5b7e98; line-height: 1.7; }
+.exercise-generating p { margin: 7px 0; }
+.exercise-spinner { flex: 0 0 auto; width: 18px; height: 18px; border: 2px solid #bdd8eb; border-top-color: #367eaf; border-radius: 50%; animation: exercise-spin 1s linear infinite; }
+.concept-exercise-status:empty { display: none; }
+.concept-exercise-status[data-state=success] { padding: 12px; border-radius: 10px; background: #edf6f1; color: #3e755c; }
+.concept-exercise-status[data-state=error] { padding: 12px; border-radius: 10px; background: #fff1ec; color: #914e3c; }
+#practicePrompt { scroll-margin-top: 120px; }
+@keyframes exercise-spin { to { transform: rotate(360deg); } }
+@media(max-width:1000px) { .exercise-studio { grid-template-columns: minmax(0,1fr); } .exercise-studio-config { padding: 16px; } .exercise-studio-config .concept-exercise-search { flex-wrap: nowrap; } }
+@media(max-width:640px) { .exercise-summary-tag { display: none; } .exercise-studio { gap: 20px; } .exercise-studio-config .concept-exercise-search { flex-wrap: wrap; } .concept-exercise-panel { scroll-margin-top: 140px; } .exercise-card-title { align-items: flex-start; } .exercise-card-title h3 { font-size: 15px; } .exercise-card-title button { margin-top: 12px; } .exercise-empty { padding: 28px 12px; } }
+@media(prefers-reduced-motion:reduce) { .exercise-spinner { animation: none; } .concept-exercise-panel button { transition: none; } }
+.concept-exercise-form .exercise-goal-presets button { color: #315f83; border-color: #c3d8e8; }
+.concept-exercise-form .exercise-goal-presets button:hover { color: #244f71; background: #e2f0fa; }
+.concept-exercise-form .exercise-goal-presets button[aria-pressed=true] { color: #215a85; border-color: #94c2e2; background: #dceefa; }
+.exercise-deck-nav button:disabled { cursor: default; }
+/* A quiet reading surface, with a compact directory rather than nested cards. */
+.exercise-notebook { margin-top: 32px; padding: 0; overflow: hidden; border: 1px solid #d5e3ed; border-radius: 22px; background: rgba(255,255,255,.9); scroll-margin-top: 110px; box-shadow: 0 12px 36px rgba(51,89,122,.035); }
+.notebook-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 26px 28px; border-bottom: 1px solid #e5edf3; }
+.notebook-heading h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 23px; color: #243d53; letter-spacing: -.03em; }
+.notebook-heading h3 small { font-size: 11px; font-weight: 500; letter-spacing: 0; padding: 4px 9px; border-radius: 20px; background: #eaf2f8; color: #577b97; }
+.notebook-heading p { margin: 7px 0 0; color: #8192a1; font-size: 12px; }
+.notebook-tools { display: flex; align-items: center; gap: 10px; }
+#notebookQuery { width: 240px; min-width: 0; box-sizing: border-box; padding: 11px 14px; border: 1px solid #dde6ee; border-radius: 11px; background: #f6f9fc; margin: 0; font: inherit; font-size: 13px; color: #324d65; }
+.notebook-layout { display: grid; grid-template-columns: 250px minmax(0,1fr); gap: 0; }
+.notebook-directory { min-width: 0; padding: 20px 12px; border-right: 1px solid #e5edf3; background: #f8fbfe; }
+.notebook-directory-label { display: flex; justify-content: space-between; gap: 8px; padding: 0 10px 14px; font-size: 12px; color: #486a85; }
+.notebook-directory-label span { font-size: 10px; color: #97a7b5; }
+.notebook-list { display: grid; gap: 4px; align-content: start; max-height: 520px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #d5e3ef transparent; padding: 2px; }
+.exercise-notebook button { font: inherit; font-size: 12px; padding: 10px 14px; border: 1px solid #d7e5ef; border-radius: 9px; background: white; color: #54758e; cursor: pointer; transition: background .15s,border-color .15s; }
+.exercise-notebook button:hover { background: #f0f6fb; border-color: #b9d1e3; }
+.exercise-notebook button:focus-visible { outline: 2px solid #5598c9; outline-offset: 2px; }
+.exercise-notebook button:disabled { opacity: .6; cursor: wait; }
+.exercise-notebook .notebook-list button { display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 13px 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #526b80; width: 100%; }
+.exercise-notebook .notebook-list button:hover { background: #eef4f9; }
+.exercise-notebook .notebook-list button[aria-pressed=true] { background: #e6f1fa; color: #1d6295; border-color: #d3e6f6; }
+.notebook-item-number { font-size: 11px; line-height: 1.7; padding-top: 2px; color: #8ca4b8; font-variant-numeric: tabular-nums; flex: 0 0 20px; }
+.notebook-item-copy { display: grid; gap: 6px; min-width: 0; }
+.notebook-item-copy b { font-weight: 550; font-size: 13px; line-height: 1.65; }
+.notebook-item-copy small { font-size: 10px; color: #94a4b2; }
+.notebook-detail { min-width: 0; padding: 30px 32px; scroll-margin-top: 135px; }
+#exerciseNotebook #practicePrompt { background: transparent; border: 0; border-radius: 0; box-shadow: none; padding: 0; margin: 0; min-height: 0; color: #2c4154; }
+.notebook-reading-meta { display: flex; align-items: center; gap: 10px; color: #7791a6; font-size: 11px; letter-spacing: .03em; margin-bottom: 12px; }
+.notebook-reading-meta span:last-child { padding: 3px 8px; background: #eff5fa; border-radius: 5px; }
+#exerciseNotebook #practicePrompt h3 { margin: 0 0 22px; color: #243d53; font-size: 23px; font-weight: 600; line-height: 1.65; letter-spacing: -.02em; }
+#exerciseNotebook #practicePrompt .concept-exercise-preview { font-size: 16px; line-height: 2; }
+#exerciseNotebook .practice-source { display: block; margin-top: 20px; color: #95a5b2; font-size: 11px; line-height: 1.7; }
+.notebook-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 22px 0; margin: 22px 0 0; border-top: 1px solid #e8eef4; }
+#exerciseNotebook #practiceHint { background: #2e6d9b; color: white; border-color: #2e6d9b; }
+#exerciseNotebook #practiceHint:hover { background: #245c87; }
+#notebookSolution { padding: 18px 0; border: 0; border-top: 1px solid #e8eef4; border-radius: 0; color: #5f7d94; background: transparent; }
+#notebookSolution summary { cursor: pointer; font-size: 13px; }
+#notebookSolutionContent { margin-top: 20px; color: #31495e; font-size: 15px; line-height: 1.95; }
+#exerciseNotebook .practice-hints:empty, #exerciseNotebook .practice-status:empty { display: none; }
+#exerciseNotebook .practice-hints > div { padding: 18px; margin-bottom: 20px; border: 1px solid #e0ecf5; border-radius: 12px; background: #f3f8fc; color: #46667f; font-size: 14px; line-height: 1.9; }
+@media(max-width:1100px) { .notebook-layout { grid-template-columns: 215px minmax(0,1fr); } .notebook-detail { padding: 24px; } .notebook-heading { padding: 22px; } }
+@media(max-width:900px) { .notebook-layout { grid-template-columns: minmax(0,1fr); } .notebook-directory { border-right: 0; border-bottom: 1px solid #e5edf3; padding: 14px 20px; } .notebook-list { display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden; max-height: none; padding-bottom: 6px; scroll-snap-type: x proximity; } .exercise-notebook .notebook-list button { flex: 0 0 210px; scroll-snap-align: start; background: white; border-color: #e4ecf3; min-height: 84px; } .notebook-item-copy b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .notebook-directory-label { padding: 0 0 10px; } .notebook-detail { padding: 26px; } }
+@media(max-width:600px) { .notebook-heading { align-items: flex-start; flex-direction: column; gap: 18px; padding: 20px; } .notebook-tools { width: 100%; } #notebookQuery { flex: 1; width: 100%; } .notebook-detail { padding: 22px 20px; } #exerciseNotebook #practicePrompt h3 { font-size: 20px; } .notebook-directory { padding: 14px; } .exercise-notebook { scroll-margin-top: 140px; } }
+
+.exercise-studio-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #244d73; font-size: 17px; font-weight: 650; }

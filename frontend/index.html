@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./motion.css" />
   <link rel="stylesheet" href="./glass.css" />
   <link rel="stylesheet" href="./glass-refinements.css" />
-  <link rel="stylesheet" href="./workspace.css?v=spacing-7" />
+  <link rel="stylesheet" href="./workspace.css?v=conversation-menu-1" />
   <link rel="stylesheet" href="./graph-explorer.css?v=orbit-2" />
   <link rel="stylesheet" href="./pdf-reader-vendor.css?v=scope-1" />
   <link rel="stylesheet" href="./course-reader.css?v=reader-4" />
@@ -32,6 +32,8 @@
   <link rel="stylesheet" href="./product-polish.css?v=1" />
   <link rel="stylesheet" href="./math-lab-expanded.css?v=1" />
   <link rel="stylesheet" href="./graph-evidence-review.css?v=3" />
+  <link rel="stylesheet" href="./resource-library.css?v=2" />
+  <link rel="stylesheet" href="./concept-exercises.css?v=notebook-layout-2" />
 </head>
 <body>
   <div class="math-flow" aria-hidden="true">
@@ -46,7 +48,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><svg class="brand-symbol" viewBox="0 0 32 32" aria-label="知识路径" role="img"><path d="M7 24V8l9 11 9-11v16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="8" r="3"/><circle cx="16" cy="19" r="3"/><circle cx="25" cy="8" r="3"/></svg><div><strong>Math Agent</strong><small>数学知识空间</small></div></div>
-      <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#course-reader" data-ui-icon="book">教材伴读</a><a href="#knowledge-library">知识库</a><a href="#study-notes">笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
+      <nav aria-label="工作区"><a class="active" href="#ask">学习</a><a href="#practice">练习</a><a href="#course-reader" data-ui-icon="book">教材伴读</a><a href="#knowledge-library">知识与笔记</a><a href="#graph">图谱</a><a href="#math-lab">实验</a><a href="#management">管理</a></nav>
       <div class="side-note"><span class="status-dot"></span><div><b id="workspaceConnection">连接中</b><small>本地学习空间</small></div></div>
     </aside>
     <main class="main-content">
@@ -71,7 +73,6 @@
           <form id="askForm" class="chat-composer"><textarea aria-label="数学问题" id="question" placeholder="输入题目、继续追问，或针对某一步展开…" required></textarea><div class="form-footer"><span id="chatContextStatus">上下文已就绪</span><div class="form-actions"><button type="button" class="graph-trigger" id="generateGraphButton" data-ui-icon="graph">生成本次对话图谱</button><button type="submit" id="askButton">发送 <span>↑</span></button></div></div><details class="composer-tools"><summary>学习工具</summary><div><label class="agent-mode-toggle"><input type="checkbox" id="agentMode" checked> 自动使用适用的计算工具</label><button type="button" class="graph-trigger" id="runAgentButton">查看计算步骤</button></div></details></form>
         </div>
       </section>
-      <section id="learningPulse" class="learning-pulse" aria-live="polite"><span class="learning-pulse-label">LEARNING PULSE</span><div class="learning-pulse-track"><i></i></div><strong>正在读取你的学习进度…</strong><div class="learning-pulse-next"></div></section>
       <div id="message" class="message hidden"></div>
       <section id="math-lab" class="math-lab workspace-hidden" aria-label="数学交互实验">
         <div class="panel-heading"><div><span class="section-label">MATH EXPLORATION</span><h2>改变参数，看见数学。</h2></div><button id="labReset" type="button">恢复默认参数</button></div>
@@ -86,8 +87,12 @@
         </div><div class="lab-canvas"><svg id="labPlot" viewBox="0 0 640 440" role="img" aria-label="数学参数实验图"></svg><output id="labResult" aria-live="polite"></output><div id="labFormula" class="lab-formula"></div><div id="labMatrixResults" hidden></div></div></div>
         <p id="labCondition" class="lab-condition"></p><button type="button" id="labToStudy">带着实验继续提问 ↗</button>
       </section>
+      <section id="resourceHub" class="resource-hub" aria-label="知识与笔记">
+        <div class="resource-hub-heading"><div><span>YOUR LEARNING LIBRARY</span><h1>知识与笔记</h1></div><p>查找知识，整理理解，保留原始资料。</p></div>
+        <div class="resource-tabs" role="group" aria-label="资料分类"><button type="button" data-resource-tab="concepts" aria-pressed="true"><b>知识点</b><small>定义、定理与关联</small></button><button type="button" data-resource-tab="notes" aria-pressed="false"><b>学习笔记</b><small>自己的理解与收藏</small></button><button type="button" data-resource-tab="textbooks" aria-pressed="false"><b>教材资料</b><small>PDF、原文与校对</small></button></div>
+      </section>
       <section class="knowledge-library" id="knowledge-library" aria-label="知识库检索"><div class="library-tabs"><button type="button" data-library-view="concepts" aria-pressed="true">概念与定理</button><button type="button" data-library-view="textbooks" aria-pressed="false">教材与阅读</button></div>
-        <div class="library-intro"><span class="pill">LOCAL KNOWLEDGE LIBRARY</span><h2>从已有知识出发。</h2><p>检索本地已保存的概念、定理、性质和方法，查看关系网络，再把知识点带回当前对话。</p></div>
+        <div class="library-intro"><span class="pill">LOCAL KNOWLEDGE LIBRARY</span><h2>查找知识点</h2><p>检索定义、定理与方法，查看关联，或生成辅助习题。</p></div>
         <div class="library-workbench">
           <form id="knowledgeSearchForm" class="library-search-form">
             <label for="knowledgeSearchInput">搜索知识点</label>
@@ -97,9 +102,9 @@
           <div id="knowledgeSearchResults" class="library-results" aria-live="polite"><div class="library-empty">检索结果会显示在这里</div></div>
           <aside id="knowledgeDetail" class="library-detail hidden" aria-live="polite"></aside>
         </div>
-        <div id="textbookWorkspace" class="textbook-workspace workspace-hidden"><div class="panel-heading"><div><span class="section-label">SOURCE READER</span><h2>对照原页，读懂教材。</h2></div><button type="button" id="openTextbookImport">导入 PDF</button></div><p class="muted">提取文字后请校对公式；只有教材和片段均已审核，才进入回答引用。</p><div id="textbookList" class="textbook-list"></div><div id="textbookReader" hidden><div class="reader-toolbar"><h3 id="readerTitle"></h3><select id="readerPage" aria-label="教材页码"></select><a id="originalPdfLink" target="_blank" rel="noopener">打开原稿 ↗</a></div><details class="document-review"><summary>课程、章节与教材审核</summary><label>标题<input id="readerDocumentTitle"></label><label>课程<input id="readerCourse"></label><label>章节<input id="readerChapter"></label><label>教材状态<select id="readerDocumentStatus"><option value="draft">待审核</option><option value="approved">已审核</option><option value="rejected">不采用</option></select></label><button type="button" id="saveDocumentReview">保存教材信息</button></details><div class="reader-columns"><div class="reader-text"><label>片段章节<input id="readerHeading"></label><label>提取文字与公式<textarea id="readerText" aria-label="教材片段文本"></textarea></label><div class="reader-actions"><select id="readerChunkStatus" aria-label="片段审核状态"><option value="unreviewed">待校对</option><option value="approved">已审核</option><option value="rejected">不采用</option></select><button type="button" id="previewReaderMath">预览公式</button><button type="button" id="saveChunkReview">保存校对</button></div><div id="readerMathPreview" class="reader-preview"></div><details><summary>修订记录与恢复</summary><div id="chunkRevisionList"></div></details><div class="reader-question"><label>选段后输入问题<input id="readerQuestion" placeholder="这一步使用了什么条件？"></label><button type="button" id="askReadingSelection">选段带入学习 ↗</button><small>在上方文本框中选中一段；未选中时不会默认发送整本教材。</small></div></div><div class="reader-original"><iframe id="originalPdf" title="教材原始 PDF 页面"></iframe><div id="originalPdfUnavailable" hidden>此旧资料尚未附加可读原稿，请导入 PDF。</div></div></div><output id="readerStatus"></output></div><dialog id="textbookImportDialog" aria-labelledby="textbookImportTitle"><form id="textbookImportForm"><div class="panel-heading"><h3 id="textbookImportTitle">导入教材 PDF</h3><button type="button" id="closeTextbookImport" aria-label="关闭教材导入">×</button></div><label>教材标题<input id="importBookTitle" required maxlength="240"></label><label>课程<input id="importBookCourse" required maxlength="160"></label><label>章节<input id="importBookChapter" maxlength="160"></label><label>PDF 文件<input id="importBookFile" type="file" accept="application/pdf,.pdf" required></label><p class="muted">最大 50 MB、1000 页。扫描页若无文字层，会保留原页并标为待补录。公式提取不保证准确。</p><output id="textbookImportStatus"></output><button type="submit" id="submitTextbookImport">导入并校对</button></form></dialog></div>
+        <div id="textbookWorkspace" class="textbook-workspace workspace-hidden"><div class="panel-heading"><div><span class="section-label">SOURCE READER</span><h2>教材资料</h2></div><button type="button" id="openTextbookImport">导入 PDF</button></div><p class="muted">提取文字后请校对公式；只有教材和片段均已审核，才进入回答引用。</p><div id="textbookList" class="textbook-list"></div><div id="textbookReader" hidden><div class="reader-toolbar"><h3 id="readerTitle"></h3><select id="readerPage" aria-label="教材页码"></select><a id="originalPdfLink" target="_blank" rel="noopener">打开原稿 ↗</a></div><details class="document-review"><summary>课程、章节与教材审核</summary><label>标题<input id="readerDocumentTitle"></label><label>课程<input id="readerCourse"></label><label>章节<input id="readerChapter"></label><label>教材状态<select id="readerDocumentStatus"><option value="draft">待审核</option><option value="approved">已审核</option><option value="rejected">不采用</option></select></label><button type="button" id="saveDocumentReview">保存教材信息</button></details><div class="reader-columns"><div class="reader-text"><label>片段章节<input id="readerHeading"></label><label>提取文字与公式<textarea id="readerText" aria-label="教材片段文本"></textarea></label><div class="reader-actions"><select id="readerChunkStatus" aria-label="片段审核状态"><option value="unreviewed">待校对</option><option value="approved">已审核</option><option value="rejected">不采用</option></select><button type="button" id="previewReaderMath">预览公式</button><button type="button" id="saveChunkReview">保存校对</button></div><div id="readerMathPreview" class="reader-preview"></div><details><summary>修订记录与恢复</summary><div id="chunkRevisionList"></div></details><div class="reader-question"><label>选段后输入问题<input id="readerQuestion" placeholder="这一步使用了什么条件？"></label><button type="button" id="askReadingSelection">选段带入学习 ↗</button><small>在上方文本框中选中一段；未选中时不会默认发送整本教材。</small></div></div><div class="reader-original"><iframe id="originalPdf" title="教材原始 PDF 页面"></iframe><div id="originalPdfUnavailable" hidden>此旧资料尚未附加可读原稿，请导入 PDF。</div></div></div><output id="readerStatus"></output></div><dialog id="textbookImportDialog" aria-labelledby="textbookImportTitle"><form id="textbookImportForm"><div class="panel-heading"><h3 id="textbookImportTitle">导入教材 PDF</h3><button type="button" id="closeTextbookImport" aria-label="关闭教材导入">×</button></div><label>教材标题<input id="importBookTitle" required maxlength="240"></label><label>课程<input id="importBookCourse" required maxlength="160"></label><label>章节<input id="importBookChapter" maxlength="160"></label><label>PDF 文件<input id="importBookFile" type="file" accept="application/pdf,.pdf" required></label><p class="muted">最大 50 MB、1000 页。扫描页若无文字层，会保留原页并标为待补录。公式提取不保证准确。</p><output id="textbookImportStatus"></output><button type="submit" id="submitTextbookImport">导入并校对</button></form></dialog></div>
       </section>
-      <section id="study-notes" class="panel notes-workspace" aria-label="学习笔记"><div class="panel-heading"><div><span class="section-label">LEARNING ARCHIVE</span><h2>留下自己的理解。</h2></div><button type="button" id="newNote">新建笔记</button></div><div class="notes-toolbar"><input id="noteSearch" type="search" aria-label="搜索笔记" placeholder="搜索标题或正文"><select id="noteCourse" aria-label="笔记课程"><option value="">全部课程</option></select><select id="noteFilter" aria-label="笔记状态"><option value="all">全部笔记</option><option value="active">当前笔记</option><option value="favorite">收藏</option><option value="archived">已归档</option></select><span id="noteCount" class="notes-count" aria-live="polite"></span></div><div id="noteList"></div><dialog id="noteDialog" aria-labelledby="noteDialogTitle"><form id="noteForm"><div class="panel-heading"><h3 id="noteDialogTitle">编辑笔记</h3><button type="button" id="closeNote" aria-label="关闭笔记编辑">×</button></div><label>标题<input id="noteTitle" required maxlength="240"></label><label>课程<input id="noteCourseEdit" required maxlength="160"></label><label>正文<textarea id="noteContent" required></textarea></label><p class="muted">你的编辑不会覆盖保存时的原回答与证据。</p><output id="noteStatus"></output><button type="submit" id="saveNoteEdit">保存笔记</button></form></dialog></section>
+      <section id="study-notes" class="panel notes-workspace" aria-label="学习笔记"><div class="panel-heading"><div><span class="section-label">MY NOTES</span><h2>学习笔记</h2></div><button type="button" id="newNote">新建笔记</button></div><div class="notes-toolbar"><input id="noteSearch" type="search" aria-label="搜索笔记" placeholder="搜索标题或正文"><select id="noteCourse" aria-label="笔记课程"><option value="">全部课程</option></select><select id="noteFilter" aria-label="笔记状态"><option value="all">全部笔记</option><option value="active">当前笔记</option><option value="favorite">收藏</option><option value="archived">已归档</option></select><span id="noteCount" class="notes-count" aria-live="polite"></span></div><div id="noteList"></div><dialog id="noteDialog" aria-labelledby="noteDialogTitle"><form id="noteForm"><div class="panel-heading"><h3 id="noteDialogTitle">编辑笔记</h3><button type="button" id="closeNote" aria-label="关闭笔记编辑">×</button></div><label>标题<input id="noteTitle" required maxlength="240"></label><label>课程<input id="noteCourseEdit" required maxlength="160"></label><label>正文<textarea id="noteContent" required></textarea></label><p class="muted">你的编辑不会覆盖保存时的原回答与证据。</p><output id="noteStatus"></output><button type="submit" id="saveNoteEdit">保存笔记</button></form></dialog></section>
       <section class="proof-workbench" id="proof">
         <div class="proof-intro"><span class="pill">PROOF REVIEW</span><h2>把证明交给第二双眼睛。</h2><p>逐步检查推理链，定位缺失条件与逻辑跳跃。适合提交自己的证明草稿。</p></div>
         <form id="proofForm" class="proof-form">
@@ -110,13 +115,41 @@
         <div id="proofResult" class="proof-result empty-state">提交证明后，这里会出现逐步审查结果。</div>
       </section>
       <section class="practice-workbench" id="practice">
-        <div class="practice-intro"><span class="pill">PRACTICE LOOP</span><h2>做一道题，留下可验证的进步。</h2><p>作答会先保存为“未验证”。只有经过审核的结果，才会影响学习判断。</p></div>
+        <div class="practice-intro"><span class="pill">EXERCISE STUDIO</span><h2>生成好题，收进习题本。</h2><p>围绕知识点生成练习，随时查看题目、思路提示与参考解答。</p></div>
         <div class="practice-panel">
-          <div class="practice-toolbar"><label for="practiceProblem">选择练习</label><select id="practiceProblem"><option value="">正在加载题目…</option></select><button type="button" id="refreshPractice">刷新</button><button type="button" id="practiceToStudy">带入学习</button></div>
-          <div id="practicePrompt" class="practice-prompt">选择一道题开始作答。</div>
-          <form id="practiceForm" class="practice-form"><textarea aria-label="练习解答" id="practiceAnswer" placeholder="写出你的思路、计算或证明步骤…" required></textarea><div><label><input type="checkbox" id="practiceIndependent"> 我在没有提示的情况下完成</label><button type="button" id="practiceHint">获取一级提示</button><button type="submit" id="practiceSubmit">提交作答</button></div><div id="practiceHints" class="practice-hints" aria-live="polite"></div></form>
-          <div id="practiceRevision" class="practice-revision" hidden></div><div id="practiceStatus" class="practice-status muted">作答结果会显示在这里</div>
-          <details id="reviewWorkspace" class="review-workspace"><summary>错题与复习 <span id="reviewCounts">正在读取…</span></summary><p class="muted">当天重复作答不计延迟重测。完成历史保留，当前状态按最新审核证据判断。</p><div class="review-filters"><button type="button" data-review-filter="due" aria-pressed="true">待复习</button><button type="button" data-review-filter="wrong" aria-pressed="false">错题档案</button><button type="button" data-review-filter="all" aria-pressed="false">全部记录</button></div><div id="reviewList"></div></details><div id="practiceHistory" class="practice-history"><span class="muted">暂无作答记录</span></div>
+          <section id="conceptExercisePanel" class="concept-exercise-panel" aria-label="根据知识点生成辅助习题">
+            <div class="exercise-studio-heading"><span>根据知识点生成辅助习题</span><small class="exercise-summary-tag">DeepSeek · 定向训练</small></div>
+            <p class="muted">选一个知识点，练习定义、应用或证明。生成结果先保存为草稿，参考解答仍需核对。</p>
+            <div class="exercise-studio"><div class="exercise-studio-config"><div class="exercise-step-label">01 / 选择知识点</div>
+            <div class="concept-exercise-search"><input id="conceptExerciseQuery" type="search" maxlength="120" aria-label="搜索出题知识点" placeholder="搜索知识点，例如：有理数、连续性"><button type="button" id="conceptExerciseSearch">查找知识点</button></div>
+            <div id="conceptExerciseSearchResults" class="concept-exercise-results" aria-live="polite"></div>
+            <p id="conceptExerciseSelected" class="concept-exercise-selected" hidden></p>
+            <div class="exercise-step-label">02 / 设计本次训练</div>
+            <form id="conceptExerciseForm" class="concept-exercise-form">
+              <label>难度<select id="conceptExerciseDifficulty"><option>基础</option><option>应用</option><option>进阶</option></select></label>
+              <label>题数<select id="conceptExerciseCount"><option value="1">1 道</option><option value="2">2 道</option><option value="3" selected>3 道</option><option value="4">4 道</option><option value="5">5 道</option></select></label>
+              <label>训练目标（可选）<textarea id="conceptExerciseObjective" maxlength="600" placeholder="例如：辨别适用条件，先给简单例子，再练习反例。"></textarea></label>
+              <div class="exercise-goal-presets" aria-label="训练目标快捷选择"><button type="button" aria-pressed="false" data-exercise-goal="从定义出发，用简单实例辨别概念，说明适用条件。">理解定义</button><button type="button" aria-pressed="false" data-exercise-goal="重点练习条件检查，构造反例辨别容易混淆的结论。">辨析反例</button><button type="button" aria-pressed="false" data-exercise-goal="循序渐进练习完整证明，要求写清每一步依据。">练习证明</button></div>
+              <p id="conceptExercisePlan" class="exercise-plan">选择知识点后，设置训练难度和题数。</p>
+              <button id="conceptExerciseGenerate" type="submit" disabled>生成辅助习题</button>
+            </form>
+            </div><div class="exercise-studio-results"><div class="exercise-step-label">03 / 预览与收藏</div>
+            <div id="conceptExerciseLoading" class="exercise-generating" hidden><span class="exercise-spinner" aria-hidden="true"></span><div><strong>DeepSeek 正在生成习题</strong><p>正在组织题干与参考解答，完成后自动保存。</p><small id="conceptExerciseElapsed" aria-hidden="true">已等待 0 秒</small></div></div>
+            <output id="conceptExerciseStatus" class="concept-exercise-status" aria-live="polite"></output>
+            <div id="conceptExerciseDrafts" class="concept-exercise-drafts"><div class="exercise-empty"><span>∑</span><h3>从一个知识点，开始一组练习。</h3><p>选择知识点，生成适合当前阶段的题目。</p></div></div>
+            </div></div>
+          </section>
+          <section id="exerciseNotebook" class="exercise-notebook" aria-label="习题本">
+            <div class="notebook-heading"><div><h3>习题本 <small id="notebookCount">0 道</small></h3><p>收藏每一道值得再想的题。</p></div><div class="notebook-tools"><input id="notebookQuery" type="search" aria-label="搜索习题本" placeholder="搜索题目或题干"><button type="button" id="refreshPractice" aria-label="刷新习题本">刷新</button></div></div>
+            <select id="practiceProblem" aria-label="选择习题" hidden></select>
+            <div class="notebook-layout"><aside class="notebook-directory"><div class="notebook-directory-label">题目目录 <span>选择一道开始阅读</span></div><div id="notebookList" class="notebook-list" aria-label="已保存习题"></div></aside><div class="notebook-detail">
+              <div id="practicePrompt" class="practice-prompt" tabindex="-1">从习题本选择一道题。</div>
+              <div class="notebook-actions"><button type="button" id="practiceHint">获取思路提示</button><button type="button" id="practiceToStudy">带入学习</button><button type="button" id="practiceBackToGenerated" hidden>返回生成题目 ↑</button></div>
+              <div id="practiceHints" class="practice-hints" aria-live="polite"></div>
+              <details id="notebookSolution"><summary>查看参考解答</summary><div id="notebookSolutionContent" class="concept-exercise-preview"></div></details>
+              <p id="practiceStatus" class="practice-status muted" role="status"></p>
+            </div></div>
+          </section>
         </div>
       </section>
       <section class="dashboard-grid">
@@ -158,16 +191,16 @@
       <aside id="graphConceptCard" class="graph-concept-card hidden" aria-live="polite"></aside>
     </main>
   </div>
-  <script src="./app.js?v=reader-8"></script>
+  <script src="./app.js?v=no-pulse-1"></script>
   <script src="./graph-evidence-review.js?v=2"></script>
-  <script src="./workspace.js?v=reader-1"></script>
+  <script src="./workspace.js?v=resources-1"></script>
   <script src="./evidence.js?v=final-1"></script>
-  <script src="./practice.js?v=final-1"></script>
-  <script src="./review.js?v=final-1"></script>
-  <script src="./notes.js?v=reader-2"></script>
+  <script src="./concept-exercises.js?v=expanded-1"></script>
+  <script src="./notes.js?v=resources-2"></script>
   <script src="./math-lab-core.js?v=final-1"></script>
   <script src="./math-lab.js?v=expanded-1"></script>
   <script src="./textbooks.js?v=final-2"></script>
+  <script src="./resource-library.js?v=1"></script>
   <script src="./learning-metrics.js?v=final-1"></script>
   <script src="./graph-explorer.js?v=orbit-2"></script>
   <script type="module" src="./course-reader.js?v=reader-11"></script>

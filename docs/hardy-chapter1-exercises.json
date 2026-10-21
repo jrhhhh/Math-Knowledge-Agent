@@ -6,7 +6,7 @@
   "printed_start": 34,
   "printed_end": 42,
   "exercise_count": 38,
-  "scope_note": "PDF p50 begins after §19 theorem; PDF p59 begins §20. This is an exercise inventory, not a list of proved textbook theorems. Formula-heavy prompts need visual comparison with original pages before graph approval.",
+  "scope_note": "PDF pages are 1-based. Exercises begin under Miscellaneous Examples on Chapter I near the bottom of PDF p50, after §19; end at exercise 38 on p58. PDF p59 begins Chapter II §20. This is an exercise inventory, not a list of independently proved conclusions. Source agreement does not certify mathematical truth; original hints and proofs remain exercise source material.",
   "items": [
     {
       "number": 1,
@@ -14,7 +14,13 @@
       "pdf_end": 50,
       "category": "线性代数",
       "topic": "线性式在约束下恒为零",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 34,
+      "printed_end": 34,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "ax+by+cz=0; \\alpha x+\\beta y+\\gamma z=0; Ax+By+Cz=0",
+      "review_note": "三个小问依次为无约束、一个齐次约束、两个齐次约束；本题完整止于p50。"
     },
     {
       "number": 2,
@@ -22,7 +28,13 @@
       "pdf_end": 51,
       "category": "有理数表示",
       "topic": "阶乘进制形式的有理数表示",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 34,
+      "printed_end": 35,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a_1+\\frac{a_2}{2!}+\\cdots+\\frac{a_k}{k!};\\quad 0\\le a_1,\\ 0\\le a_j<j\\ (2\\le j<k),\\ 0<a_k<k",
+      "review_note": "正有理数；各位为整数。p50给展开式，p51顶部续整数条件及末位严格为正。"
     },
     {
       "number": 3,
@@ -30,7 +42,13 @@
       "pdf_end": 51,
       "category": "有理数表示",
       "topic": "简单连分数的表示与唯一性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 35,
+      "printed_end": 35,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a_1+\\cfrac{1}{a_2+\\cfrac{1}{a_3+\\cdots+\\frac{1}{a_n}}}",
+      "review_note": "原书称正有理数的表示唯一；各a_i为正整数，只有a_1可为0。原页未规定末项a_n>1，唯一性条件有缺漏。"
     },
     {
       "number": 4,
@@ -38,7 +56,13 @@
       "pdf_end": 51,
       "category": "有理根",
       "topic": "三次方程的有理根",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 35,
+      "printed_end": 35,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "9x^3-6x^2+15x-10=0",
+      "review_note": "要求找有理根（若存在）；核对系数9,-6,15,-10。"
     },
     {
       "number": 5,
@@ -46,7 +70,13 @@
       "pdf_end": 51,
       "category": "无理数",
       "topic": "黄金分割比例的无理性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 35,
+      "printed_end": 35,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "AB\\cdot AC=BC^2;\\quad AC/AB\\notin\\mathbb Q",
+      "review_note": "分点为C；勿把AC与BC互换。"
     },
     {
       "number": 6,
@@ -54,7 +84,13 @@
       "pdf_end": 51,
       "category": "无理数",
       "topic": "无理数分式线性变换何时为有理数",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 35,
+      "printed_end": 35,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\frac{aA+b}{cA+d};\\quad A\\notin\\mathbb Q,\\ a,b,c,d\\in\\mathbb Q",
+      "review_note": "询问何时分式为有理数；使用时须分母非零，不能把未定义分式算成有理数。"
     },
     {
       "number": 7,
@@ -62,7 +98,13 @@
       "pdf_end": 52,
       "category": "不等式",
       "topic": "两个非负数的幂均值型不等式",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 35,
+      "printed_end": 36,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(a_1^p-a_2^p)(a_1^q-a_2^q)\\ge0;\\quad a_1^{p+q}+a_2^{p+q}\\ge a_1^pa_2^q+a_1^qa_2^p;\\quad \\frac{a_1^{p+q}+a_2^{p+q}}2\\ge\\frac{a_1^p+a_2^p}2\\frac{a_1^q+a_2^q}2;\\quad \\frac{a_1^{p+q+r+\\cdots}+a_2^{p+q+r+\\cdots}}2\\ge\\frac{a_1^p+a_2^p}2\\frac{a_1^q+a_2^q}2\\frac{a_1^r+a_2^r}2\\cdots;\\quad \\frac{a_1^p+a_2^p}2\\ge(\\frac{a_1+a_2}2)^p",
+      "review_note": "a_i非负，p,q等为正整数；p51公式(1)-(3)，p52顶部公式(4)及说明仍属第7题；原书附推导。"
     },
     {
       "number": 8,
@@ -70,7 +112,13 @@
       "pdf_end": 52,
       "category": "不等式",
       "topic": "第7题不等式推广到 n 个数",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 36,
+      "printed_end": 36,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "n\\sum a^{p+q}\\ge(\\sum a^p)(\\sum a^q);\\quad \\frac{\\sum a^{p+q}}n\\ge\\frac{\\sum a^p}n\\frac{\\sum a^q}n;\\quad \\frac{\\sum a^p}n\\ge(\\frac{\\sum a}n)^p",
+      "review_note": "公式(5)-(7)；沿用第7题非负数及正整数指数条件；原书附推导。"
     },
     {
       "number": 9,
@@ -78,7 +126,13 @@
       "pdf_end": 52,
       "category": "不等式",
       "topic": "算术平均数与几何平均数",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 36,
+      "printed_end": 36,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "G=(\\prod_{i=1}^n a_i)^{1/n};\\quad a_r^{\\prime}=G,\\ a_s^{\\prime}=a_ra_s/G;\\quad a_r^{\\prime}+a_s^{\\prime}-a_r-a_s=(a_r-G)(a_s-G)/G\\le0",
+      "review_note": "算术平均不小于几何平均；G=0单列，其余用最大项和最小项替换。全题及所附证明均在p52。"
     },
     {
       "number": 10,
@@ -86,7 +140,13 @@
       "pdf_end": 53,
       "category": "不等式",
       "topic": "Schwarz 不等式",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(\\sum a_rb_r)^2\\le(\\sum a_r^2)(\\sum b_r^2)",
+      "review_note": "两组数可正可负。原书上一行恒等式第二因子印作sum a_s^2，按上下文应为sum b_s^2；差平方项应按无序对r<s求和，原文未明确求和域。记录原书疑误，不将其当作已验证恒等式。"
     },
     {
       "number": 11,
@@ -94,7 +154,13 @@
       "pdf_end": 53,
       "category": "不等式",
       "topic": "正数乘积的上界",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "s_n=a_1+\\cdots+a_n;\\quad\\prod_{i=1}^n(1+a_i)\\le1+s_n+\\frac{s_n^2}{2!}+\\cdots+\\frac{s_n^n}{n!}",
+      "review_note": "a_i全正；末项为s_n^n/n!，不是无穷级数。"
     },
     {
       "number": 12,
@@ -102,7 +168,13 @@
       "pdf_end": 53,
       "category": "不等式",
       "topic": "同序正数列的乘积和不等式",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(\\sum a_i)(\\sum b_i)\\le n\\sum a_ib_i",
+      "review_note": "两组正数均按递减次序排列；方向为小于等于。"
     },
     {
       "number": 13,
@@ -110,15 +182,27 @@
       "pdf_end": 53,
       "category": "不等式",
       "topic": "加权平均值的上下界",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\min(A,B,\\ldots,K)\\le\\frac{aA+bB+\\cdots+kK}{a+b+\\cdots+k}\\le\\max(A,B,\\ldots,K)",
+      "review_note": "第一组权重a,b,...,k全正，第二组A,B,...,K不要求全正。"
     },
     {
       "number": 14,
       "pdf_start": 53,
       "pdf_end": 53,
       "category": "根式",
-      "topic": "不同二次根式的有理线性独立性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "非同类二次根式生成的四项有理线性独立性",
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a+b\\sqrt p+c\\sqrt q+d\\sqrt{pq}=0\\ \\Longrightarrow\\ a=b=c=d=0",
+      "review_note": "原书要求sqrt(p),sqrt(q)为dissimilar surds（非同类无理二次根式），不只是p与q不同；a,b,c,d为有理数；附提示引用§14。"
     },
     {
       "number": 15,
@@ -126,7 +210,13 @@
       "pdf_end": 53,
       "category": "根式",
       "topic": "根号2、3、5的有理线性独立性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 37,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a\\sqrt2+b\\sqrt3+c\\sqrt5=0\\ \\Longrightarrow\\ a=b=c=0",
+      "review_note": "a,b,c为有理数；没有常数项。"
     },
     {
       "number": 16,
@@ -134,7 +224,13 @@
       "pdf_end": 54,
       "category": "根式",
       "topic": "两个二次根式生成的多项式标准形",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 37,
+      "printed_end": 38,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "A(\\sqrt p)^m(\\sqrt q)^n\\ \\leadsto\\ a+b\\sqrt p+c\\sqrt q+d\\sqrt{pq}",
+      "review_note": "有理系数的有限多项式约化；p53末尾为标准形，p54顶部续a,b,c,d有理。"
     },
     {
       "number": 17,
@@ -142,7 +238,13 @@
       "pdf_end": 54,
       "category": "根式",
       "topic": "二次根式分式的有理化",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 38,
+      "printed_end": 38,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\frac{a+b\\sqrt p+c\\sqrt q}{d+e\\sqrt p+f\\sqrt q}=A+B\\sqrt p+C\\sqrt q+D\\sqrt{pq};\\quad\\frac1{1+\\sqrt2+\\sqrt3}=\\frac12+\\frac{\\sqrt2}4-\\frac{\\sqrt6}4",
+      "review_note": "核对两次共轭有理化提示；输出有sqrt(pq)项；分式须有定义。"
     },
     {
       "number": 18,
@@ -150,23 +252,41 @@
       "pdf_end": 54,
       "category": "有理性判别",
       "topic": "有理参数恒等式与有理平方条件",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 38,
+      "printed_end": 38,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(ay-bx)^2+4(a-x)(b-y)=0",
+      "review_note": "a,b,x,y有理；结论为(i)x=a,y=b，或(ii)1-ab与1-xy均为有理数的平方。"
     },
     {
       "number": 19,
       "pdf_start": 54,
       "pdf_end": 54,
       "category": "二次型",
-      "topic": "两个二次型方程的有理解条件",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "两二次型方程的解全为有理数时的必要条件",
+      "review_status": "original_pdf_verified",
+      "printed_start": 38,
+      "printed_end": 38,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "ax^2+2hxy+by^2=1,\\quad a^{\\prime}x^2+2h^{\\prime}xy+b^{\\prime}y^2=1;\\quad(h-h^{\\prime})^2-(a-a^{\\prime})(b-b^{\\prime});\\quad(ab^{\\prime}-a^{\\prime}b)^2+4(ah^{\\prime}-a^{\\prime}h)(bh^{\\prime}-b^{\\prime}h)",
+      "review_note": "原书是：若两方程给出的全部x,y均有理，则后面两个量均为有理数的平方；不是有理解的充要条件。"
     },
     {
       "number": 20,
       "pdf_start": 54,
       "pdf_end": 54,
       "category": "根式",
-      "topic": "由根号2加根号3表示相关根式",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "由根号2加根号3表示根式及线性分式",
+      "review_status": "original_pdf_verified",
+      "printed_start": 38,
+      "printed_end": 38,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\sqrt2,\\sqrt3\\text{ are cubic functions of }t=\\sqrt2+\\sqrt3;\\quad\\sqrt2-\\sqrt6+3",
+      "review_note": "还须将sqrt(2)-sqrt(6)+3表示为t的两个一次函数之比；该式没有外层平方根。"
     },
     {
       "number": 21,
@@ -174,15 +294,27 @@
       "pdf_end": 55,
       "category": "根式",
       "topic": "嵌套二次根式的分段化简",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 39,
+      "printed_end": 39,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\sqrt{a+2m\\sqrt{a-m^2}}+\\sqrt{a-2m\\sqrt{a-m^2}}=\\begin{cases}2m& m^2<a<2m^2\\\\2\\sqrt{a-m^2}&a>2m^2\\end{cases}",
+      "review_note": "逐字保留原书分支。原书未写m>=0；第一支一般应为2|m|；a=m^2和a=2m^2边界未列，不能宣称完整分段公式已通过数学审核。"
     },
     {
       "number": 22,
       "pdf_start": 55,
       "pdf_end": 55,
       "category": "代数数",
-      "topic": "m 次根的幂基约化",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "三次根号2及一般m次根的幂约化",
+      "review_status": "original_pdf_verified",
+      "printed_start": 39,
+      "printed_end": 39,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a+b\\sqrt[3]2+c\\sqrt[3]4;\\quad\\alpha=\\sqrt[m]p,\\quad\\sum_{j=0}^{m-1}a_j\\alpha^j;\\quad r=\\lambda m+s,\\ 0\\le s\\le m-1,\\ \\alpha^r=p^\\lambda\\alpha^s",
+      "review_note": "先给立方根2的特例，再给p有理、m次根的一般幂约化；附推导。"
     },
     {
       "number": 23,
@@ -190,15 +322,27 @@
       "pdf_end": 55,
       "category": "代数数",
       "topic": "三次根式表达式的幂基化简",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 39,
+      "printed_end": 39,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(\\sqrt[3]2-1)^5;\\quad\\frac{\\sqrt[3]2-1}{\\sqrt[3]2+1};\\quad a+b\\sqrt[3]2+c\\sqrt[3]4",
+      "review_note": "第二式提示乘以sqrt[3](4)-sqrt[3](2)+1；第一个指数为5。"
     },
     {
       "number": 24,
       "pdf_start": 55,
       "pdf_end": 56,
       "category": "代数数",
-      "topic": "1、三次根号2、三次根号4的有理线性独立性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "1、三次根号2、三次根号4的有理线性独立性及推广疑点",
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 39,
+      "printed_end": 40,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a+b\\sqrt[3]2+c\\sqrt[3]4=0\\ \\Longrightarrow\\ a=b=c=0;\\quad\\sum_{j=0}^{m-1}a_jp^{j/m}=0",
+      "review_note": "p55主命题及证明在p56续完，随后有唯一性推论和一般化附注。附注仅以p不是完全m次幂推断全部系数为零，条件过弱，例如m=4,p=4时p非四次幂但p^(2/4)=2；勿作为已证明的一般定理。"
     },
     {
       "number": 25,
@@ -206,7 +350,13 @@
       "pdf_end": 56,
       "category": "根式",
       "topic": "平移后三次根式相等的条件",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 40,
+      "printed_end": 40,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "A+\\sqrt[3]B=C+\\sqrt[3]D",
+      "review_note": "原书结论：或A=C,B=D，或B,D均为有理数的立方。此处原页未重申A,B,C,D有理；脱离有理参数语境不可无条件使用。"
     },
     {
       "number": 26,
@@ -214,7 +364,13 @@
       "pdf_end": 56,
       "category": "根式",
       "topic": "三个三次根式和为零的条件",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 40,
+      "printed_end": 40,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\sqrt[3]A+\\sqrt[3]B+\\sqrt[3]C=0",
+      "review_note": "或A,B,C之一为0且另外两个互为相反数，或三个立方根均为同一根式sqrt[3](X)的有理倍数；参数的有理性原页未重申，独立使用需补明语境。"
     },
     {
       "number": 27,
@@ -222,7 +378,13 @@
       "pdf_end": 56,
       "category": "根式",
       "topic": "三次根式的有理系数分解",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 40,
+      "printed_end": 40,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\sqrt[3]{7+5\\sqrt2}=\\alpha+\\beta\\sqrt2,\\quad\\alpha,\\beta\\in\\mathbb Q",
+      "review_note": "三次根号覆盖7+5sqrt(2)整体，要求求有理系数。"
     },
     {
       "number": 28,
@@ -230,7 +392,13 @@
       "pdf_end": 56,
       "category": "根式",
       "topic": "复合三次根式表达式的有理性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 40,
+      "printed_end": 40,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "(a-b^3)b>0;\\quad\\sqrt[3]{a+\\frac{9b^3+a}{3b}\\sqrt{\\frac{a-b^3}{3b}}}+\\sqrt[3]{a-\\frac{9b^3+a}{3b}\\sqrt{\\frac{a-b^3}{3b}}}\\in\\mathbb Q",
+      "review_note": "核对9b^3+a、分母3b及两个大三次根号边界；原书提示每个被开立方数可写为(alpha+beta sqrt((a-b^3)/(3b)))^3。a,b有理在本题未明写，独立使用需补明。"
     },
     {
       "number": 29,
@@ -238,7 +406,13 @@
       "pdf_end": 57,
       "category": "代数数",
       "topic": "n 次根的多项式满足有理系数方程",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 40,
+      "printed_end": 41,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "\\alpha=\\sqrt[n]p;\\quad x=l_1+m_1\\alpha+\\cdots+r_1\\alpha^{n-1};\\quad L_1x+\\cdots+L_nx^n=\\Delta",
+      "review_note": "p56题干与展开，p57顶部续x^2,...,x^n、行列式Delta及余子式L_i提示；原书称满足n次有理系数方程，不表示最小多项式次数恰为n。p57续式把alpha印成a，按前式统一为alpha。"
     },
     {
       "number": 30,
@@ -246,7 +420,13 @@
       "pdf_end": 57,
       "category": "代数数",
       "topic": "p 加根号q的代数方程",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 41,
+      "printed_end": 41,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "x=p+\\sqrt q",
+      "review_note": "应用第29题过程，并推导§14的定理；不是单独给出一个现成代数方程。"
     },
     {
       "number": 31,
@@ -254,15 +434,27 @@
       "pdf_end": 57,
       "category": "代数数",
       "topic": "三次根幂基表达式的三次方程",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 41,
+      "printed_end": 41,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "y=a+bp^{1/3}+cp^{2/3};\\quad y^3-3ay^2+3y(a^2-bcp)-a^3-b^3p-c^3p^2+3abcp=0",
+      "review_note": "核对-b^3p、-c^3p^2及+3abcp的符号与幂次。"
     },
     {
       "number": 32,
       "pdf_start": 57,
       "pdf_end": 57,
       "category": "代数数",
-      "topic": "代数数与超越数的定义及闭包题",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "topic": "原书代数数与超越数定义及有理倍、分数幂练习",
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 41,
+      "printed_end": 41,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a_0x^n+a_1x^{n-1}+\\cdots+a_n=0;\\quad kx,\\ x^{m/n}",
+      "review_note": "原书将满足整系数方程的某些无理数称为algebraical numbers，并称其他无理数为transcendental；随后要求kx与x^(m/n)仍为代数数。该历史措辞未显式包含有理数，k=0等情形需按现代定义解释；还须非零多项式、n!=0及幂的定义域。"
     },
     {
       "number": 33,
@@ -270,7 +462,13 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "代数数的四则运算封闭性",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 41,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "x+y,\\ x-y,\\ xy,\\ x/y",
+      "review_note": "p57题干和两条整系数方程，p58顶部续z=x+y、消去x的提示；商必须y非零。"
     },
     {
       "number": 34,
@@ -278,7 +476,13 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "代数系数多项式的根仍为代数数",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified_with_source_caveat",
+      "printed_start": 42,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "a_0x^n+a_1x^{n-1}+\\cdots+a_n=0,\\quad a_i\\text{ algebraical}",
+      "review_note": "原书附消去各代数系数的提示；需多项式非零（通常a_0!=0），否则恒等零多项式不能推出x为代数数。"
     },
     {
       "number": 35,
@@ -286,7 +490,13 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "含根式系数二次方程的有理系数消元",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 42,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "x^2-2x\\sqrt2+\\sqrt3=0;\\quad x^8-16x^6+58x^4-48x^2+9=0",
+      "review_note": "原书附结果为八次方程；核对系数16,58,48,9与正负号。"
     },
     {
       "number": 36,
@@ -294,7 +504,13 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "若干根式表达式的有理系数方程",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 42,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "1+\\sqrt2+\\sqrt3;\\quad\\frac{\\sqrt3+\\sqrt2}{\\sqrt3-\\sqrt2};\\quad\\sqrt{\\sqrt3+\\sqrt2}+\\sqrt{\\sqrt3-\\sqrt2};\\quad\\sqrt[3]2+\\sqrt[3]3",
+      "review_note": "共四个表达式；第三个的两个外层平方根不能遗漏，第四个是两个立方根之和。"
     },
     {
       "number": 37,
@@ -302,7 +518,13 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "三次关系导出的幂次递推",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 42,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "x^3=x+1;\\quad x^{3n}=a_nx+b_n+c_n/x;\\quad a_{n+1}=a_n+b_n,\\ b_{n+1}=a_n+b_n+c_n,\\ c_{n+1}=a_n+c_n",
+      "review_note": "核对指数3n而非3^n，以及全部三个递推式；前提自动排除x=0。"
     },
     {
       "number": 38,
@@ -310,10 +532,49 @@
       "pdf_end": 58,
       "category": "代数数",
       "topic": "六次方程变换后的二次关系",
-      "review_status": "pdf_text_extracted_formula_check_pending"
+      "review_status": "original_pdf_verified",
+      "printed_start": 42,
+      "printed_end": 42,
+      "content_kind": "chapter_exercise",
+      "proof_status": "not_independently_verified",
+      "source_formula_latex": "x^6+x^5-2x^4-x^3+x^2+1=0;\\quad y=x^4-x^2+x-1;\\quad y^2+y+1=0",
+      "review_note": "题干为y满足有理系数二次方程，方括号给具体结果；本题止于p58，不进入p59第二章§20。"
     }
   ],
   "candidate_id": 32,
-  "graph_status": "saved_grouped_exercise_map_formula_review_pending",
-  "validation": "UI candidate save succeeded; backend semantic_status=fallback_local (DeepSeek empty response); this checks structure, not mathematical truth."
+  "graph_status": "saved_grouped_exercise_map_source_review_complete_graph_sync_not_verified",
+  "validation": "2026-10-20: local JSON inventory visually checked against original PDF. Candidate #32 historical UI save and fallback_local only established structure. This review does not update or certify persisted graph formulas, semantic validation, or independent proofs.",
+  "source_pdf": "backend/uploads/textbooks/4258e970d8a748fab70a9e7eaac150bc.pdf",
+  "source_sha256": "25fc9115424b97ec0b2e8649d89adc8ef0a6c4b8ed4bd75814903fe9e6c32d70",
+  "review": {
+    "date": "2026-10-20",
+    "method": "Visual comparison of rendered original PDF pages 50-59; all 38 numbers, formula structures, hypotheses, and page continuations inspected. source_formula_latex records key formulas, not full verbatim prompts or proofs.",
+    "status_definitions": {
+      "original_pdf_verified": "Number, page range and recorded formula/topic checked against the original PDF; no unresolved source-reading issue.",
+      "original_pdf_verified_with_source_caveat": "Source reading confirmed, but original wording/formula needs the caveat in review_note; not mathematical approval."
+    },
+    "verified_count": 38,
+    "source_caveat_numbers": [
+      3,
+      10,
+      21,
+      24,
+      25,
+      26,
+      28,
+      32,
+      34
+    ],
+    "unresolved_source_reading_numbers": [],
+    "independent_proof_verification": false,
+    "cross_page_numbers": [
+      2,
+      7,
+      16,
+      24,
+      29,
+      33
+    ],
+    "report": "docs/hardy-chapter1-exercises-review.md"
+  }
 }

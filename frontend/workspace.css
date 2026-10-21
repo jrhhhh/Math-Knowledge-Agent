@@ -254,3 +254,10 @@
   background-size:16px 16px;
 }
 @media(forced-colors:active) { #math-lab select { appearance:auto; background-image:none; } }
+
+.conversation-context-menu { position: fixed; z-index: 10000; width: 218px; padding: 6px; border: 1px solid rgba(161,188,211,.5); border-radius: 13px; background: rgba(255,255,255,.97); box-shadow: 0 12px 40px rgba(30,64,93,.18); backdrop-filter: blur(18px); }
+.conversation-context-menu[hidden] { display: none; }
+.conversation-context-title { display: block; padding: 8px 10px; font-size: 11px; color: #8496a5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-context-menu button { display: block; width: 100%; padding: 11px 10px; border: 0; border-radius: 8px; color: #b34848; background: transparent; text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+.conversation-context-menu button:hover, .conversation-context-menu button:focus-visible { outline: none; background: #fdf0ef; }
+.conversation-context-menu button:disabled { color: #a9a9a9; cursor: default; background: transparent; }

@@ -12,7 +12,6 @@ let lastAskRequestId = null;
 let lastSecurityAlertSignature = '';
 let activeGraphContext = { nodes: [], edges: [] };
 let activeGraphEvidence = [];
-let practiceHintLevel = 0;
 const trackedFetch = window.fetch;
 window.fetch = (input, init = {}) => {
   const url = typeof input === 'string' ? input : input?.url || '';
@@ -342,8 +341,9 @@ function initKnowledgeLibrary() {
   const showDetail = async item => {
     if (!item) return;
     detail.classList.remove('hidden');
-    detail.innerHTML = '<div class="library-detail-head"><span class="graph-card-tag">' + escapeHtml(item.type || 'concept').toUpperCase() + ' · ' + escapeHtml(item.field || '数学知识') + '</span><button type="button" aria-label="关闭知识点详情">×</button></div><h3>' + escapeHtml(item.name) + '</h3><p>' + escapeHtml(item.description || '该知识点暂无定义。') + '</p><div class="library-detail-actions"><button type="button" data-library-network>加载关系网络</button><button type="button" data-library-add>带入当前对话</button></div><div class="library-detail-network">选择操作查看更多信息</div>';
+    detail.innerHTML = '<div class="library-detail-head"><span class="graph-card-tag">' + escapeHtml(item.type || 'concept').toUpperCase() + ' · ' + escapeHtml(item.field || '数学知识') + '</span><button type="button" aria-label="关闭知识点详情">×</button></div><h3>' + escapeHtml(item.name) + '</h3><p>' + escapeHtml(item.description || '该知识点暂无定义。') + '</p><div class="library-detail-actions"><button type="button" data-library-network>加载关系网络</button><button type="button" data-library-add>带入当前对话</button><button type="button" data-library-exercises>生成辅助习题</button></div><div class="library-detail-network">选择操作查看更多信息</div>';
     detail.querySelector('button[aria-label]').onclick = () => detail.classList.add('hidden');
+    detail.querySelector('[data-library-exercises]').onclick = () => window.MathConceptExercises?.open(item);
     detail.querySelector('[data-library-add]').onclick = () => {
       const question = $('question');
       const prefix = question.value.trim() ? question.value.trim() + '\\n\\n' : '';
@@ -586,8 +586,9 @@ async function openGraphConceptCard(concept) {
   card.classList.remove('hidden');
   card.dataset.conceptId = String(concept.id);
   const evidenceMarkup = nodeEvidence.length ? nodeEvidence.map(item => `<blockquote><small>${item.context ? `教材 PDF ${escapeHtml(String(item.context.reading_context.start))}–${escapeHtml(String(item.context.reading_context.end))} 页 · ${item.source_kind === 'textbook_verified' ? '人工对照原页' : `伴读消息 ${escapeHtml(String(item.context.course_message_id))}`}` : `消息 ${escapeHtml(String(item.source_message_id || ''))}`} · ${escapeHtml(item.review_status || '未审核')}</small>${escapeHtml(item.excerpt || '')}${item.context ? `<button type="button" data-course-source="${item.id}">回到教材与讨论</button>` : ''}</blockquote>`).join('') : '';
-  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-practice"><button type="button" data-concept-exercises>生成辅助习题 ↗</button></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
   card.querySelectorAll('[data-course-source]').forEach(button=>button.onclick=()=>{const origin=nodeEvidence.find(e=>String(e.id)===button.dataset.courseSource)?.context;if(origin){card.classList.add('hidden');MathWorkspace.showView('course-reader');window.MathCourseReader.openSource(origin.reading_context.document_id,origin.reading_context.start,origin.course_conversation_id);}});
+  card.querySelector('[data-concept-exercises]').onclick = () => window.MathConceptExercises?.open(concept);
   card.setAttribute('aria-labelledby', 'graphCardTitle');
   const closeCard = () => { card.classList.add('hidden'); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
   card.querySelector('.graph-card-close').onclick = closeCard;
@@ -616,8 +617,8 @@ async function openGraphConceptCard(concept) {
       $('question').dispatchEvent(new Event('input',{bubbles:true})); $('question').focus();
     });
     pathElement.querySelectorAll('[data-path-practice]').forEach(button=>button.onclick=async()=>{
-      closeCard();MathWorkspace.showView('practice');MathPractice.clearRevision();$('practiceProblem').value=button.dataset.pathPractice;$('practiceAnswer').value='';$('practiceHistory').hidden=false;
-      await loadPracticeProblem();$('practiceStatus').textContent=`依据“${path.concept.name}”的学习路径推荐；提交作答后再确认理解。`;
+      closeCard();MathWorkspace.showView('practice');await loadPracticeProblems();$('practiceProblem').value=button.dataset.pathPractice;
+      await loadPracticeProblem();$('practiceStatus').textContent=`依据“${path.concept.name}”的学习路径推荐，可查看思路提示。`;
     });
   } catch (error) {
     card.querySelector('.graph-card-links').textContent = '关联知识点暂不可用';
@@ -644,32 +645,6 @@ function initGraphCardDrag(card) {
   card.addEventListener('pointerup', stop); card.addEventListener('pointercancel', stop);
 }
 
-async function loadLearningPulse() {
-  const panel = $('learningPulse');
-  if (!panel) return;
-  try {
-    const response = await fetch(`${API}/concepts/learning-progress`);
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || '读取失败');
-    const summary = data.summary || {};
-    panel.querySelector('.learning-pulse-track i').style.width = `${summary.percent || 0}%`;
-    panel.querySelector('strong').textContent = summary.total ? `历史独立完成 ${summary.completed || 0} / ${summary.total} · ${summary.percent || 0}%` : '知识库尚未加入可学习的知识点';
-    const next = panel.querySelector('.learning-pulse-next');
-    const concepts = summary.next_concepts || [];
-    next.innerHTML = concepts.length ? concepts.map(item => `<button type="button" data-pulse-concept="${item.id}">下一步：${escapeHtml(item.name)}</button>`).join('') : `<span class="muted">${summary.total ? '已独立完成当前知识库，仍需延迟复习' : '添加知识点后，学习路径会在这里展开'}</span>`;
-    next.querySelectorAll('[data-pulse-concept]').forEach(button => button.addEventListener('click', async () => {
-      const response = await fetch(`${API}/concepts/${encodeURIComponent(button.dataset.pulseConcept)}`);
-      const concept = await response.json();
-      if (!response.ok || !concept.id) { showMessage('知识点暂不可用。'); return; }
-      window.MathWorkspace?.showView('graph');
-      $('graph').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      openGraphConceptCard(concept);
-    }));
-  } catch (error) {
-    panel.querySelector('strong').textContent = '学习进度暂不可用';
-  }
-}
-
 $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
@@ -685,7 +660,6 @@ $('proofForm').addEventListener('submit', analyzeProof);
 $('refreshGraph').addEventListener('click', loadGraph);
 ensureBatchAuditButton();
 loadGraph();
-loadLearningPulse();
 loadCandidateStats();
 loadCandidateHistory();
 const loadRetryAlertsBase = loadRetryAlerts;
@@ -972,16 +946,77 @@ async function renameActiveConversation() {
   } catch (error) { showMessage(error.message); }
 }
 
-async function deleteActiveConversation() {
-  if (!activeConversationId || !window.confirm('删除这段对话及其消息？此操作不能撤销。')) return;
+async function deleteConversationById(id, title = '') {
+  if (!id || conversationSwitchBusy || askController) return;
+  if (!window.confirm(`删除${title ? '“' + title + '”' : '这段对话'}及其消息？此操作不能撤销。`)) return;
+  setConversationSwitchBusy(true);
+  let deletedActive = false;
   try {
-    const response = await fetch(`${API}/conversations/${activeConversationId}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error('删除失败');
-    activeConversationId = null;
-    localStorage.removeItem('math-agent-conversation-id');
-    await createConversation();
-  } catch (error) { showMessage(error.message); }
+    const response = await fetch(`${API}/conversations/${id}`, {method: 'DELETE'});
+    if (!response.ok && response.status !== 404) throw new Error('删除失败，请稍后重试');
+    deletedActive = Number(activeConversationId) === Number(id);
+    if (deletedActive) {
+      activeConversationId = null;
+      localStorage.removeItem('math-agent-conversation-id');
+    }
+    await loadConversationList();
+  } catch(error) { showMessage(error.message); }
+  finally { setConversationSwitchBusy(false); }
+  if (deletedActive) await createConversation();
 }
+async function deleteActiveConversation() {
+  await deleteConversationById(activeConversationId, $('conversationTitle').textContent);
+}
+
+// Context actions target the clicked history row without switching conversations.
+(() => {
+  const list = $('conversationList');
+  const menu = document.createElement('div');
+  menu.id = 'conversationContextMenu';
+  menu.className = 'conversation-context-menu';
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', '历史对话操作');
+  menu.hidden = true;
+  menu.innerHTML = '<span class="conversation-context-title"></span><button type="button" role="menuitem">删除此对话</button>';
+  document.body.appendChild(menu);
+  let target = null;
+  function close(restoreFocus = false) {
+    menu.hidden = true;
+    if (restoreFocus && target?.isConnected) target.focus({preventScroll: true});
+  }
+  function open(row, x, y) {
+    close(); target = row;
+    menu.querySelector('span').textContent = row.querySelector('strong')?.textContent || '历史对话';
+    menu.querySelector('button').disabled = conversationSwitchBusy || Boolean(askController);
+    menu.hidden = false;
+    menu.style.left = `${Math.max(8, Math.min(x, innerWidth - menu.offsetWidth - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y, innerHeight - menu.offsetHeight - 8))}px`;
+    menu.querySelector('button').focus({preventScroll: true});
+  }
+  list.addEventListener('contextmenu', event => {
+    const row = event.target.closest('[data-conversation-id]');
+    if (!row) return;
+    event.preventDefault(); open(row, event.clientX, event.clientY);
+  });
+  list.addEventListener('keydown', event => {
+    if (event.key !== 'ContextMenu' && !(event.shiftKey && event.key === 'F10')) return;
+    const row = event.target.closest('[data-conversation-id]');
+    if (!row) return;
+    event.preventDefault(); const rect = row.getBoundingClientRect(); open(row, rect.left + 12, rect.bottom);
+  });
+  menu.querySelector('button').onclick = async () => {
+    const row = target;
+    close();
+    if (row) await deleteConversationById(Number(row.dataset.conversationId), row.querySelector('strong')?.textContent || '');
+    if (row?.isConnected) row.focus({preventScroll: true});
+  };
+  document.addEventListener('pointerdown', event => { if (!menu.contains(event.target)) close(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !menu.hidden) { event.preventDefault(); close(true); } else if (event.key === 'Tab' && !menu.hidden) close(); });
+  window.addEventListener('wheel', () => close(), {passive: true});
+  window.addEventListener('touchmove', () => close(), {passive: true});
+  window.addEventListener('resize', () => close());
+  window.addEventListener('blur', () => close());
+})();
 
 async function requestConversationStream(question, signal) {
   const response = await fetch(`${API}/conversations/${activeConversationId}/messages/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: question, teaching_mode: window.MathWorkspace?.mode === 'hint' ? 'hint' : 'explain', automatic_verification: Boolean($('agentMode')?.checked) }), signal });
@@ -1073,70 +1108,64 @@ async function conversationAsk(event) {
   }
 }
 
+let notebookItems = [];
+let notebookVersion = 0;
+function notebookDifficulty(value) { return ({easy:'基础',medium:'应用',hard:'进阶'})[value] || value || '练习'; }
+function keepNotebookSelectionVisible() {
+  const list = $('notebookList');
+  const selected = list?.querySelector('[aria-pressed="true"]');
+  if (!selected) return;
+  const bounds = list.getBoundingClientRect();
+  const item = selected.getBoundingClientRect();
+  if (innerWidth <= 900) {
+    if (item.left < bounds.left) list.scrollLeft -= bounds.left - item.left;
+    else if (item.right > bounds.right) list.scrollLeft += item.right - bounds.right;
+  } else {
+    if (item.top < bounds.top) list.scrollTop -= bounds.top - item.top;
+    else if (item.bottom > bounds.bottom) list.scrollTop += item.bottom - bounds.bottom;
+  }
+}
+window.addEventListener('resize', () => requestAnimationFrame(keepNotebookSelectionVisible));
+function renderNotebook() {
+  const directory = $('notebookList');
+  const scrollPosition = {left: directory.scrollLeft, top: directory.scrollTop};
+  const query = $('notebookQuery').value.trim().toLocaleLowerCase();
+  const items = notebookItems.filter(item => `${item.title} ${item.content}`.toLocaleLowerCase().includes(query));
+  $('notebookCount').textContent = `${notebookItems.length} 道`;
+  $('notebookList').innerHTML = items.length ? items.map(item => `<button type="button" data-notebook-id="${item.id}" aria-pressed="${String(item.id) === $('practiceProblem').value}"><span class="notebook-item-number">${String(notebookItems.findIndex(x=>x.id===item.id)+1).padStart(2,'0')}</span><span class="notebook-item-copy"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(notebookDifficulty(item.difficulty))} · ${item.generation ? 'DeepSeek' : '已收藏'}</small></span></button>`).join('') : '<p class="muted">暂无匹配题目。可先生成题目，再加入习题本。</p>';
+  directory.scrollLeft = scrollPosition.left;
+  directory.scrollTop = scrollPosition.top;
+  keepNotebookSelectionVisible();
+  $('notebookList').querySelectorAll('[data-notebook-id]').forEach(button => button.onclick = () => { $('practiceProblem').value = button.dataset.notebookId; loadPracticeProblem(); if (innerWidth <= 900) document.querySelector('.notebook-detail').scrollIntoView({behavior:'smooth',block:'start'}); });
+}
 async function loadPracticeProblems() {
   const select = $('practiceProblem');
   if (!select) return;
+  const previous = select.value;
   try {
     const response = await fetch(`${API}/problems/`);
     const items = await response.json();
-    if (!response.ok) throw new Error(items.detail || '题目读取失败');
-    select.innerHTML = items.length ? items.map(item => `<option value="${item.id}">${escapeHtml(item.title)}${item.difficulty ? ` · ${escapeHtml(item.difficulty)}` : ''}</option>`).join('') : '<option value="">暂无练习</option>';
+    if (!response.ok) throw new Error(items.detail || '习题本读取失败');
+    notebookItems = items;
+    select.innerHTML = items.map(item => `<option value="${item.id}">${escapeHtml(item.title)}</option>`).join('');
+    if (items.some(item => String(item.id) === previous)) select.value = previous;
+    renderNotebook();
     await loadPracticeProblem();
-  } catch (error) { select.innerHTML = '<option value="">题目暂不可用</option>'; $('practiceStatus').textContent = error.message; }
+  } catch(error) { $('practiceStatus').textContent = error.message; }
 }
-
 async function loadPracticeProblem() {
-  const id = $('practiceProblem')?.value;
-  if (!id) return;
-  try {
-    const response = await fetch(`${API}/problems/`);
-    const items = await response.json();
-    const problem = items.find(item => String(item.id) === String(id));
-    practiceHintLevel = 0;
-    if ($('practiceHints')) $('practiceHints').innerHTML = '';
-    if ($('practiceHint')) { $('practiceHint').disabled = false; $('practiceHint').textContent = '获取一级提示'; }
-    $('practicePrompt').innerHTML = problem ? `<b>${escapeHtml(problem.title)}</b>：${escapeHtml(problem.content)}${(problem.sources || []).length ? `<small class="practice-source">教材来源：${problem.sources.map(source => `${escapeHtml(source.document_title || '课程文档')} · ${escapeHtml(source.chapter || '未分章')} · 第 ${escapeHtml(String(source.page_start || '?'))} 页`).join('；')}</small>` : '<small class="practice-source">暂无已审核教材出处</small>'}` : '题目不存在';
-    typesetMath($('practicePrompt'));
-    const historyResponse = await fetch(`${API}/problems/${id}/attempts`);
-    const history = await historyResponse.json();
-    window.MathPractice?.render(history.items || []);
-    window.MathReview?.load();
-  } catch (error) { $('practiceStatus').textContent = `练习记录暂不可用：${error.message}`; }
-}
-
-async function reviewPracticeAttempt(panel) {
-  if (!panel) return;
-  const button = panel.querySelector('[data-review-submit]');
-  button.disabled = true;
-  try {
-    const response = await fetch(`${API}/problems/attempts/${panel.dataset.attemptId}/review`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ correctness: panel.querySelector('select').value, error_type: panel.querySelector('[data-review-error]').value.trim() || null, feedback: panel.querySelector('[data-review-feedback]').value.trim() || null }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || '审核失败');
-    const remediation = data.learning_update?.remediation || [];
-    $('practiceStatus').textContent = remediation.length ? `审核已保存；建议补学：${remediation.map(item => item.name).join('、')}` : (data.learning_update?.updated_concept_ids?.length ? '审核已保存：独立正确，关联知识点已标记为掌握。' : '审核已保存：当前知识点仍处于学习中。');
-    await loadPracticeProblem();
-  } catch (error) { $('practiceStatus').textContent = `审核失败：${error.message}`; button.disabled = false; }
-}
-
-async function submitPractice(event) {
-  event.preventDefault();
-  const problemId = $('practiceProblem').value;
-  const answer = $('practiceAnswer').value.trim();
-  if (!problemId || !answer) return;
-  const button = $('practiceSubmit');
-  button.disabled = true;
-  try {
-    const independent = practiceHintLevel === 0 && $('practiceIndependent').checked;
-    const response = await fetch(`${API}/problems/${problemId}/attempts`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer, hint_level: practiceHintLevel, independent, parent_attempt_id: window.MathPractice?.parentId || null }) });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || '提交失败');
-    $('practiceAnswer').value = '';
-    window.MathPractice?.clearRevision();
-    $('practiceIndependent').checked = false;
-    practiceHintLevel = 0;
-    $('practiceStatus').textContent = '已记录：数学正确性未验证，等待审核反馈。';
-    await loadPracticeProblem();
-  } catch (error) { $('practiceStatus').textContent = `提交失败：${error.message}`; } finally { button.disabled = false; }
+  ++notebookVersion;
+  const id = $('practiceProblem').value;
+  const problem = notebookItems.find(item => String(item.id) === id);
+  renderNotebook();
+  $('practiceHints').innerHTML = '';
+  $('practiceHint').disabled = !problem;
+  $('practiceHint').textContent = '获取思路提示';
+  $('notebookSolution').open = false;
+  $('notebookSolutionContent').textContent = problem?.solution || '这道题暂未收录参考解答。';
+  $('practiceStatus').textContent = '';
+  $('practicePrompt').innerHTML = problem ? `<div class="notebook-reading-meta"><span>题目 ${String(notebookItems.indexOf(problem)+1).padStart(2,'0')}</span><span>${escapeHtml(notebookDifficulty(problem.difficulty))}</span></div><h3>${escapeHtml(problem.title)}</h3><div class="concept-exercise-preview">${escapeHtml(problem.content)}</div><small class="practice-source">${problem.generation ? 'DeepSeek 生成辅助习题 · 参考解答待核对' : '习题本已保存题目'}</small>` : '习题本还没有题目，先生成一组辅助习题吧。';
+  typesetMath($('exerciseNotebook'));
 }
 
 function renderAgentClarification(data) {
@@ -1249,23 +1278,25 @@ async function runAgentWorkflow(options = {}) {
   }
 }
 
-$('practiceForm')?.addEventListener('submit', submitPractice);
 $('practiceProblem')?.addEventListener('change', loadPracticeProblem);
 $('refreshPractice')?.addEventListener('click', loadPracticeProblems);
+$('notebookQuery')?.addEventListener('input', renderNotebook);
 $('practiceHint')?.addEventListener('click', async () => {
-  const problemId = $('practiceProblem')?.value;
-  if (!problemId) return;
+  const id = $('practiceProblem').value;
+  if (!id) return;
+  const version = notebookVersion;
   const button = $('practiceHint');
+  button.disabled = true; button.textContent = '正在获取提示…';
+  $('practiceStatus').textContent = '';
   try {
-    const response = await fetch(`${API}/problems/${problemId}/hints?level=${practiceHintLevel + 1}`);
+    const response = await fetch(`${API}/concept-exercises/problems/${id}/hint`, {method:'POST'});
     const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || '提示读取失败');
-    practiceHintLevel = Math.min(practiceHintLevel + 1, data.max_level || practiceHintLevel + 1);
-    $('practiceHints').innerHTML = (data.items || []).map(item => `<div><b>提示 ${item.level}</b><span>${escapeHtml(item.content)}</span></div>`).join('');
-    button.textContent = practiceHintLevel >= data.max_level ? '已显示全部提示' : `获取${practiceHintLevel + 1}级提示`;
-    button.disabled = practiceHintLevel >= data.max_level;
-    $('practiceIndependent').checked = false;
-  } catch (error) { $('practiceStatus').textContent = `提示暂不可用：${error.message}`; }
+    if (!response.ok) throw new Error(data.detail || '提示获取失败');
+    if (version !== notebookVersion) return;
+    $('practiceHints').innerHTML = `<div><b>思路提示 · ${data.source === 'curated' ? '已收录' : 'DeepSeek'}</b><p>${escapeHtml(data.content)}</p></div>`;
+    typesetMath($('practiceHints'));
+  } catch(error) { if (version === notebookVersion) $('practiceStatus').textContent = error.message; }
+  finally { if (version === notebookVersion) { button.disabled = false; button.textContent = '获取思路提示'; } }
 });
 $('practiceProblem') && loadPracticeProblems();
 

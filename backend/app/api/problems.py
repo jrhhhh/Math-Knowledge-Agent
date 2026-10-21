@@ -5,6 +5,7 @@ from app.database import SessionLocal
 from app.models.problem import Problem
 from app.models.problem_source import ProblemSource
 from app.models.knowledge_source import KnowledgeChunk, KnowledgeDocument
+from app.models.concept_exercise import ConceptExerciseDraft
 
 
 router = APIRouter(
@@ -52,6 +53,10 @@ def get_problems(
 ):
 
     problems = db.query(Problem).order_by(Problem.id.asc()).all()
+    generations = {draft.problem_id: {
+        "draft_id": draft.id, "concept_id": draft.concept_id,
+        "origin": "ai_generated", "mathematical_verification": "unverified"
+    } for draft in db.query(ConceptExerciseDraft).filter(ConceptExerciseDraft.problem_id.is_not(None)).all()}
     return [{
         "id": problem.id,
         "title": problem.title,
@@ -59,6 +64,7 @@ def get_problems(
         "solution": problem.solution,
         "difficulty": problem.difficulty,
         "created_at": problem.created_at.isoformat() if problem.created_at else None,
+        "generation": generations.get(problem.id),
         "sources": [{"chunk_id": source.chunk_id, "page_start": chunk.page_start, "page_end": chunk.page_end,
                       "document_title": document.title, "chapter": document.chapter, "relation": source.relation}
                      for source, chunk, document in db.query(ProblemSource, KnowledgeChunk, KnowledgeDocument)

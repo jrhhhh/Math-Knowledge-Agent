@@ -1,0 +1,53 @@
+.resource-hub { margin: 0 0 22px; }
+.resource-hub-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 0 0 24px; }
+.resource-hub-heading > div > span { color: #7290a8; font-size: 10px; letter-spacing: .14em; }
+.resource-hub-heading h1 { font-size: 28px; color: #243f57; margin: 10px 0 0; letter-spacing: -.03em; }
+.resource-hub-heading p { font-size: 13px; color: #7c91a3; margin: 0 0 4px; }
+.resource-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); padding: 6px; gap: 6px; border: 1px solid #d8e5ef; border-radius: 17px; background: rgba(242,248,252,.85); }
+.resource-tabs button { display: grid; gap: 6px; text-align: left; padding: 16px 20px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: #68839a; cursor: pointer; transition: background .15s; }
+.resource-tabs b { font-size: 15px; font-weight: 600; }
+.resource-tabs small { font-size: 11px; color: #91a3b2; }
+.resource-tabs button[aria-pressed=true] { background: white; border-color: #dce8f1; color: #286795; box-shadow: 0 3px 10px rgba(48,88,120,.04); }
+.resource-tabs button:hover { background: rgba(255,255,255,.7); }
+.resource-tabs button:focus-visible { outline: 2px solid #75abd2; outline-offset: 1px; }
+#knowledge-library > .library-tabs { display: none; }
+body[data-workspace=knowledge-library] #knowledge-library, body[data-workspace=study-notes] #study-notes { margin-top: 0; border: 1px solid #dbe7ef; background: rgba(255,255,255,.86); box-shadow: 0 10px 30px rgba(45,85,115,.025); border-radius: 20px; padding: 26px; }
+#knowledge-library .library-intro { padding: 0 0 20px; }
+#knowledge-library .library-intro .pill, #study-notes > .panel-heading .section-label { display: none; }
+#knowledge-library .library-intro h2, #study-notes > .panel-heading h2, #textbookWorkspace .panel-heading h2 { font-size: 20px; letter-spacing: -.02em; margin: 0 0 8px; color: #34526b; }
+#knowledge-library .library-intro p { color: #8195a5; font-size: 12px; line-height: 1.8; margin: 0; }
+#knowledge-library .library-search-form { background: #f7fafd; border: 1px solid #e3edf4; border-radius: 13px; padding: 18px; }
+#knowledge-library .library-search-form > label { font-size: 12px; color: #657f95; }
+#knowledge-library .library-results { margin-top: 18px; }
+#knowledge-library .library-result { border-radius: 11px; border-color: #e4ecf3; background: white; box-shadow: none; }
+#knowledge-library .library-detail { border-radius: 13px; background: #f6faff; border-color: #dce9f3; box-shadow: none; }
+#study-notes .notes-toolbar { display: grid; grid-template-columns: minmax(180px,1fr) 150px 140px; gap: 10px; padding: 0 0 22px; border-bottom: 1px solid #e7eef4; }
+#study-notes .notes-count { grid-column: 1/-1; font-size: 11px; color: #91a1af; margin-top: 3px; }
+#study-notes .notes-toolbar input, #study-notes .notes-toolbar select { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid #dce6ee; background: #f7fafd; padding: 11px 12px; border-radius: 10px; font-size: 13px; }
+#noteList { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 20px; align-items: start; }
+#study-notes .note-card { min-width: 0; margin: 0; padding: 20px; border: 1px solid #e0eaf2; border-radius: 14px; background: white; box-shadow: none; }
+#study-notes .note-card h3 { color: #34516a; font-size: 16px; line-height: 1.65; }
+#study-notes .note-card-heading { align-items: start; gap: 12px; }
+#study-notes .note-card-heading > span { font-size: 10px; color: #90a2b1; background: #f2f6fa; border-radius: 5px; padding: 4px 7px; flex-shrink: 0; }
+#study-notes .note-excerpt { font-size: 13px; line-height: 1.9; color: #72899b; white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#study-notes .note-actions { gap: 7px; flex-wrap: wrap; border-top: 1px solid #edf2f6; padding-top: 14px; }
+#study-notes .note-actions button, #study-notes .note-actions a { padding: 5px 8px; font-size: 11px; background: #f6f9fc; border: 1px solid #e2ebf2; color: #6b879e; border-radius: 6px; box-shadow: none; text-decoration: none; }
+#study-notes .note-actions button:first-child { color: #2d719f; background: #edf5fc; border-color: #d4e6f4; }
+#study-notes .note-card > details { margin-top: 14px; font-size: 12px; color: #7791a6; border-top: 1px solid #edf2f6; padding-top: 12px; }
+#study-notes .note-full { color: #3d586e; font-size: 14px; line-height: 1.95; overflow-wrap: anywhere; }
+#study-notes .note-provenance { font-size: 11px; line-height: 1.8; color: #859aab; }
+#textbookWorkspace { padding-top: 0; }
+#textbookList { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+#textbookList > button { text-align: left; border: 1px solid #e0eaf2; background: white; border-radius: 12px; padding: 18px; display: grid; gap: 9px; color: #456782; }
+#textbookList small { font-size: 11px; line-height: 1.8; color: #8b9fae; }
+@media(max-width:900px) { #noteList { grid-template-columns: minmax(0,1fr); } .resource-hub-heading { align-items: start; flex-direction: column; gap: 12px; } }
+@media(max-width:600px) { .resource-tabs button { padding: 12px 9px; } .resource-tabs b { font-size: 13px; } .resource-tabs small { font-size: 10px; line-height: 1.6; } body[data-workspace=knowledge-library] #knowledge-library, body[data-workspace=study-notes] #study-notes { padding: 18px; } #study-notes .notes-toolbar { grid-template-columns: 1fr 1fr; } #noteSearch { grid-column: 1/-1; } #textbookList { grid-template-columns: minmax(0,1fr); } }
+
+body[data-workspace=knowledge-library] .topbar, body[data-workspace=study-notes] .topbar { display: none; }
+#study-notes .note-card h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+
+#study-notes .note-full { white-space: normal; }
+#study-notes .note-full pre { max-width: 100%; overflow-x: auto; }
+#study-notes .note-title-group { min-width: 0; }
+#study-notes .note-full, #study-notes .note-provenance { min-width: 0; max-width: 100%; overflow-x: auto; }
+#study-notes .note-full mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; }

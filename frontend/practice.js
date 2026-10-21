@@ -48,7 +48,6 @@
           await loadPracticeProblem();
           const remediation=data.learning_update?.remediation || [];
           $('practiceStatus').textContent=`人工审核已保存。${remediation.length?`建议补学：${remediation.map(x=>x.name).join('、')}`:data.correctness==='correct'?'可继续练习，并安排延迟重测。':'请根据反馈修订重交。'}`;
-          loadLearningPulse();
         } catch(error) { $('practiceStatus').textContent=error.message; event.target.disabled=false; }
       };
       const next=card.querySelector('[data-attempt-next]');
