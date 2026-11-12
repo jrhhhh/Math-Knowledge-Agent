@@ -1,0 +1,22 @@
+.vault-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
+.vault-trigger { background: #eff3ff; color: #343780; border: 1px solid #c6cdf4; border-radius: 10px; padding: 8px 12px; white-space: nowrap; }
+#obsidianVault {
+  width: min(460px, calc(100% - 32px)); max-height: calc(100dvh - 32px);
+  border: 1px solid #d2d9ee; border-radius: 20px; padding: clamp(16px, 5vw, 28px);
+  background: #fafbff; color: #202749; box-shadow: 0 24px 80px #111e5138;
+}
+#obsidianVault::backdrop { background: #101b3a66; backdrop-filter: blur(4px); }
+#obsidianVault header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+#obsidianVault h2 { margin: 0; color: inherit; }
+#obsidianVault p, #obsidianVault small, #obsidianVault output { color: #4b5679; line-height: 1.55; }
+#obsidianVault fieldset { border: 0; padding: 0; margin: 16px 0; min-width: 0; }
+#obsidianVault legend { margin-bottom: 8px; font-weight: 700; }
+#obsidianVault label { display: flex; align-items: center; gap: 12px; padding: 10px; margin-bottom: 6px; border: 1px solid #dbe1f3; border-radius: 10px; background: #fff; cursor: pointer; }
+#obsidianVault input { width: 18px; height: 18px; flex: none; accent-color: #4545a0; }
+#obsidianVault small { display: block; }
+#obsidianVault output { display: block; margin-top: 10px; }
+#obsidianVault button[type="submit"] { width: 100%; background: #41428c; color: #fff; border-radius: 10px; }
+#obsidianVault button:disabled { opacity: .65; cursor: wait; }
+#obsidianVault :focus-visible, .vault-trigger:focus-visible { outline: 2px solid #595bc6; outline-offset: 3px; }
+#obsidianVault button[type="submit"] { min-height: 44px; border: 0; font: inherit; font-weight: 700; }
+#obsidianVault [data-close-vault] { min-width: 44px; min-height: 44px; margin: -8px -8px 0 0; border: 0; border-radius: 10px; background: #edf0fa; color: inherit; font-size: 22px; cursor: pointer; }
