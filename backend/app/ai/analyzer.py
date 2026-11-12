@@ -12,7 +12,7 @@ load_dotenv()
 
 primary_api_key = os.getenv("DEEPSEEK_API_KEY")
 primary_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-primary_model = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
+primary_model = os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
 try:
     primary_timeout = max(1.0, float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "20")))
 except (TypeError, ValueError):
@@ -35,7 +35,7 @@ backup_client = OpenAI(api_key=backup_api_key, base_url=backup_base_url, timeout
 def analyze_problem(problem: str):
 
     response = client.chat.completions.create(
-        model="deepseek-v4-pro",
+        model=primary_model,
         messages=[
             {
                 "role": "system",

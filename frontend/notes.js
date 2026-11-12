@@ -49,5 +49,5 @@
   $('noteFilter').value='all';
   ['noteSearch','noteCourse','noteFilter'].forEach(id=>$(id).addEventListener(id==='noteSearch'?'input':'change',render));
   document.addEventListener('workspacechange',()=>{sync();if(MathWorkspace.view==='study-notes')load();});
-  window.MathNotes={sync,load};sync();load();
+  window.MathNotes={sync,load,openDraft(item){if(item?.id&&!item.draft){editor(item);return;}editor();$('noteTitle').value=item?.title||'';$('noteCourseEdit').value=item?.course||'未分课程';$('noteContent').value=item?.content||'';}};sync();load();
 })();

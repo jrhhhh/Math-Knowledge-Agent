@@ -1,11 +1,12 @@
 /* Task-based navigation. Existing panels keep their IDs and API contracts. */
 (() => {
   const views = {
+    'concept-workbench': {title:'围绕知识点，把阅读与思考连起来。',sections:['conceptWorkbench']},
     ask: { title: '把难题，变成清晰的思路。', sections: ['ask', 'studyModeBar', 'responseWorkspace'] },
     'course-reader': { title: '与教材一起，走通每一步。', sections: ['course-reader'] },
     practice: { title: '生成题目，积累自己的习题本。', sections: ['practice'] },
-    'knowledge-library': { title: '把知识与理解，放在一起。', sections: ['resourceHub', 'knowledge-library'] },
-    'study-notes': { title: '把知识与理解，放在一起。', sections: ['resourceHub', 'study-notes'] },
+    'knowledge-library': { title: '笔记资料', sections: ['resourceHub', 'knowledge-library'] },
+    'study-notes': { title: '笔记资料', sections: ['resourceHub', 'study-notes'] },
     'math-lab': { title: '把抽象，变成可以观察的变化。', sections: ['math-lab'] },
     graph: { title: '看见知识之间的联系。', sections: ['graph'] },
     management: { title: '让学习空间稳定运转。', sections: ['management'] },
@@ -35,7 +36,7 @@
     panelIds.forEach(id => $(id)?.classList.toggle('workspace-hidden', !visible.has(id)));
     $('workspaceTitle').textContent = views[key].title;
     document.querySelectorAll('.sidebar nav a').forEach(link => {
-      const current = link.hash.slice(1) === key || (key === 'study-notes' && link.hash === '#knowledge-library');
+      const current = link.hash.slice(1) === key || (key === 'concept-workbench' && link.hash === '#graph') || (key === 'knowledge-library' && link.hash === '#study-notes');
       link.classList.toggle('active', current);
       if (current) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current');
     });

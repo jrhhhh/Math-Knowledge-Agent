@@ -38,7 +38,7 @@
       $('readerPage').innerHTML=book.chunks.map(x=>`<option value="${x.id}">第 ${x.page_start || '?'} 页 · ${statuses[x.review_status] || '待校对'}</option>`).join('');await page();
     }catch(error){$('readerStatus').textContent=error.message;}
   }
-  document.querySelectorAll('[data-library-view]').forEach(button=>button.onclick=()=>{const textbooks=button.dataset.libraryView==='textbooks';document.querySelectorAll('[data-library-view]').forEach(x=>x.setAttribute('aria-pressed',String(x===button)));document.querySelectorAll('#knowledge-library > .library-intro,#knowledge-library > .library-workbench').forEach(x=>x.classList.toggle('workspace-hidden',textbooks));$('textbookWorkspace').classList.toggle('workspace-hidden',!textbooks);if(textbooks)list();});
+  window.MathTextbooks = {list};
   $('openTextbookImport').onclick=()=>$('textbookImportDialog').showModal();$('closeTextbookImport').onclick=()=>$('textbookImportDialog').close();
   $('textbookImportForm').onsubmit=async(event)=>{event.preventDefault();const file=$('importBookFile').files[0];if(!file)return;$('submitTextbookImport').disabled=true;$('textbookImportStatus').textContent='正在提取文字，请等待…';
     try {if(file.size>50*1024*1024)throw new Error('文件超过 50 MB，请分章导入');const query=new URLSearchParams({title:$('importBookTitle').value,course:$('importBookCourse').value,chapter:$('importBookChapter').value});const response=await fetch(`${API}/textbooks/upload?${query}`,{method:'POST',headers:{'Content-Type':'application/pdf'},body:file});const data=await response.json();if(!response.ok)throw new Error(data.detail || '导入失败');$('textbookImportDialog').close();await list();await open(data.id);$('readerStatus').textContent=`${data.message}${data.empty_pages?` ${data.empty_pages} 页没有文字层，请对照补录。`:''}`;}

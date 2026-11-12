@@ -324,73 +324,6 @@ function ensureConceptSearch() {
   document.addEventListener('click', event => { if (!search.contains(event.target)) results.classList.remove('is-visible'); });
 }
 
-function initKnowledgeLibrary() {
-  const form = $('knowledgeSearchForm');
-  if (!form) return;
-  const input = $('knowledgeSearchInput');
-  const filter = $('knowledgeTypeFilter');
-  const results = $('knowledgeSearchResults');
-  const status = $('knowledgeSearchStatus');
-  const detail = $('knowledgeDetail');
-  let latestItems = [];
-  const renderResults = items => {
-    latestItems = items;
-    results.innerHTML = items.length ? items.map((item, index) => '<button type="button" class="library-result" data-library-index="' + index + '"><span><b>' + escapeHtml(item.name) + '</b><small>' + escapeHtml(item.field || '数学知识') + ' · ' + escapeHtml(item.type || 'concept') + '</small></span><i>查看 →</i></button>').join('') : '<div class="library-empty">没有找到匹配的知识点</div>';
-    results.querySelectorAll('[data-library-index]').forEach(button => button.addEventListener('click', () => showDetail(latestItems[Number(button.dataset.libraryIndex)])));
-  };
-  const showDetail = async item => {
-    if (!item) return;
-    detail.classList.remove('hidden');
-    detail.innerHTML = '<div class="library-detail-head"><span class="graph-card-tag">' + escapeHtml(item.type || 'concept').toUpperCase() + ' · ' + escapeHtml(item.field || '数学知识') + '</span><button type="button" aria-label="关闭知识点详情">×</button></div><h3>' + escapeHtml(item.name) + '</h3><p>' + escapeHtml(item.description || '该知识点暂无定义。') + '</p><div class="library-detail-actions"><button type="button" data-library-network>加载关系网络</button><button type="button" data-library-add>带入当前对话</button><button type="button" data-library-exercises>生成辅助习题</button></div><div class="library-detail-network">选择操作查看更多信息</div>';
-    detail.querySelector('button[aria-label]').onclick = () => detail.classList.add('hidden');
-    detail.querySelector('[data-library-exercises]').onclick = () => window.MathConceptExercises?.open(item);
-    detail.querySelector('[data-library-add]').onclick = () => {
-      const question = $('question');
-      const prefix = question.value.trim() ? question.value.trim() + '\\n\\n' : '';
-      question.value = prefix + '请结合知识点“' + item.name + '”继续讲解。';
-      question.focus();
-      showMessage('已将“' + item.name + '”带入当前对话输入框。');
-      window.MathWorkspace?.setMode('explain');
-      document.querySelector('#ask')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-    detail.querySelector('[data-library-network]').onclick = async event => {
-      const button = event.currentTarget;
-      button.disabled = true;
-      button.textContent = '加载中…';
-      try {
-        const response = await fetch(API + '/concepts/' + item.id + '/network');
-        const network = await response.json();
-        if (!response.ok) throw new Error(network.detail || '关系网络读取失败');
-        renderGraph(network);
-        $('graphStatus').textContent = '已加载：' + item.name + ' · ' + network.nodes.length + ' 个节点';
-        detail.querySelector('.library-detail-network').textContent = '已加载 ' + network.nodes.length + ' 个节点、' + network.edges.length + ' 条关系。';
-        window.MathWorkspace?.showView('graph');
-        document.querySelector('#graph')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (error) {
-        detail.querySelector('.library-detail-network').textContent = '关系网络暂不可用：' + error.message;
-      } finally { button.disabled = false; button.textContent = '加载关系网络'; }
-    };
-  };
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-    const query = input.value.trim();
-    const type = filter.value;
-    status.textContent = '正在检索本地知识库…';
-    results.innerHTML = '<div class="library-empty">正在检索…</div>';
-    try {
-      const response = await fetch(API + '/concepts/search?q=' + encodeURIComponent(query) + '&type=' + encodeURIComponent(type) + '&limit=50');
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || '检索失败');
-      const items = data.items || [];
-      renderResults(items);
-      status.textContent = '找到 ' + items.length + ' 个知识点' + (query ? ' · “' + query + '”' : '');
-    } catch (error) {
-      status.textContent = '知识库暂不可用';
-      results.innerHTML = '<div class="library-empty">' + escapeHtml(error.message) + '</div>';
-    }
-  });
-}
-
 async function loadGraph() { $('graphStatus').textContent = '加载中'; try { const response = await fetch(`${API}/concepts/graph`); if (!response.ok) throw Error('图谱请求失败'); renderGraph(await response.json()); } catch (error) { $('graphStatus').textContent = '暂不可用'; $('graphCanvas').innerHTML = '<div class="empty-state">请先启动后端服务</div>'; } }
 function graphHash(value) { return [...String(value)].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0) >>> 0; }
 
@@ -518,22 +451,9 @@ async function batchSaveCandidates() {
 function renderGraph(graph) {
   const nodes = (graph.nodes || []), edges = (graph.edges || graph.relations || []).map(edge => ({ ...edge, source: typeof edge.source === 'object' ? edge.source.id : edge.source, target: typeof edge.target === 'object' ? edge.target.id : edge.target }));
   activeGraphContext = { nodes, edges };
-  if (!nodes.length) { $('graphStatus').textContent = '暂无节点'; $('graphCanvas').innerHTML = '<div class="graph-empty"><span aria-hidden="true">◎</span><strong>关系尚未成形</strong><p>检索已有知识点，或从一次对话生成候选图谱。</p></div>'; window.GraphExplorer?.refresh(); return; }
-  const outerRing = Math.max(0, Math.floor((nodes.length - 15) / 16));
-  const outerRadius = 245 + outerRing * 85;
-  const width = Math.max(1000, outerRadius * 2 + 220), height = Math.max(620, outerRadius * 2 + 140), center = { x: width / 2, y: height / 2 }, positions = {};
-  nodes.forEach((node, index) => { const ring = index < 5 ? 0 : index < 14 ? 1 : 2 + Math.floor((index - 14) / 16), count = ring === 0 ? Math.min(nodes.length, 5) : ring === 1 ? Math.min(Math.max(nodes.length - 5, 0), 9) : Math.min(Math.max(nodes.length - 14 - (ring - 2) * 16, 1), 16), offset = ring === 0 ? index : ring === 1 ? index - 5 : (index - 14) % 16, angle = (Math.PI * 2 * offset / count) - Math.PI / 2 + (ring ? .18 : 0), radius = ring < 2 ? [90, 160][ring] : 245 + (ring - 2) * 85, jitter = (graphHash(node.id) % 18) - 9; positions[node.id] = { x: center.x + Math.cos(angle) * (radius + jitter), y: center.y + Math.sin(angle) * (radius + jitter), ring }; });
-  const particles = Array.from({ length: 160 }, (_, index) => { const seed = (Math.imul(index + 1, 2654435761) ^ Math.imul(index + 37, 1597334677)) >>> 0, x = 18 + (seed % (width - 35)), y = 14 + ((seed >>> 9) % (height - 28)), size = 1 + ((seed >>> 17) % 3); return `<circle class="ambient-particle" cx="${x}" cy="${y}" r="${size / 2}" style="animation-delay:-${(seed % 6000) / 1000}s"/>`; }).join('');
-  const edgeMarkup = edges.filter(edge => positions[edge.source] && positions[edge.target]).map((edge, index) => { const a = positions[edge.source], b = positions[edge.target], color = typeColor[nodes.find(n => n.id === edge.source)?.type] || '#55d8ff', path = `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)}`; return `<g class="graph-edge"><path d="${path}"/><path class="edge-glow" d="${path}"/><circle class="edge-pulse" r="2.2" fill="${color}"><animateMotion dur="${3.8 + (index % 4) * .7}s" repeatCount="indefinite" path="${path}"/></circle></g>`; }).join('');
-  const nodeMarkup = nodes.map((node, index) => { const p = positions[node.id], color = typeColor[node.type] || typeColor.concept, radius = p.ring === 0 ? 16 : p.ring === 1 ? 13 : 10, labelY = p.y + radius + 19; return `<g class="graph-node graph-node-${escapeHtml(node.type || 'concept')}" role="button" tabindex="0" aria-label="查看 ${escapeHtml(node.name)} 在聊天中的出处" data-graph-node-id="${escapeHtml(String(node.id))}" style="--node-color:${color};animation-delay:${Math.min(index * 35, 700)}ms"><circle class="node-orbit" cx="${p.x}" cy="${p.y}" r="${radius + 10}"/><circle class="node-halo" cx="${p.x}" cy="${p.y}" r="${radius + 5}"/><circle class="node-core" cx="${p.x}" cy="${p.y}" r="${radius}"/><circle class="node-specular" cx="${p.x - radius * .28}" cy="${p.y - radius * .32}" r="${Math.max(2, radius * .22)}"/><text x="${p.x}" y="${labelY}" text-anchor="middle">${escapeHtml(node.name).slice(0, 14)}</text><title>${escapeHtml(node.name)} · ${escapeHtml(node.type || 'concept')} · 点击回看聊天出处</title></g>`; }).join('');
-  $('graphCanvas').innerHTML = `<div class="graph-vignette"></div><svg viewBox="0 0 ${width} ${height}" role="img" aria-label="数学知识图谱，包含 ${nodes.length} 个知识点和 ${edges.length} 条关系"><defs><radialGradient id="graph-depth" cx="50%" cy="44%"><stop offset="0" stop-color="#163b59"/><stop offset=".5" stop-color="#0b1e32"/><stop offset="1" stop-color="#07111f"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#graph-depth)"/>${particles}<g class="graph-rings"><circle cx="${center.x}" cy="${center.y}" r="90"/><circle cx="${center.x}" cy="${center.y}" r="160"/><circle cx="${center.x}" cy="${center.y}" r="245"/></g><g class="graph-edges">${edgeMarkup}</g><g class="graph-nodes">${nodeMarkup}</g></svg>`;
+  if (!nodes.length) { window.MathGraphRenderer?.clear();$('graphStatus').textContent = '暂无节点'; $('graphCanvas').innerHTML = '<div class="graph-empty"><span aria-hidden="true">◎</span><strong>关系尚未成形</strong><p>检索已有知识点，或从一次对话生成候选图谱。</p></div>'; window.GraphExplorer?.refresh(); return; }
+  window.MathGraphRenderer.render({nodes,edges},typeColor);
   window.GraphExplorer?.refresh();
-  $('graphCanvas').querySelectorAll('[data-graph-node-id]').forEach(element => {
-    const node = nodes.find(item => String(item.id) === element.dataset.graphNodeId);
-    const showNode = () => { openGraphConceptCard(node); };
-    element.addEventListener('click', showNode);
-    element.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); showNode(); } });
-  });
   $('graphStatus').textContent = `${nodes.length} 个节点 · ${edges.length} 条关系`;
   $('legend').innerHTML = '<span class="legend-concept">概念</span><span class="legend-theorem">定理</span><span class="legend-property">性质</span><span class="legend-method">方法</span><em>点击节点查看知识卡片</em>';
 }
@@ -586,8 +506,9 @@ async function openGraphConceptCard(concept) {
   card.classList.remove('hidden');
   card.dataset.conceptId = String(concept.id);
   const evidenceMarkup = nodeEvidence.length ? nodeEvidence.map(item => `<blockquote><small>${item.context ? `教材 PDF ${escapeHtml(String(item.context.reading_context.start))}–${escapeHtml(String(item.context.reading_context.end))} 页 · ${item.source_kind === 'textbook_verified' ? '人工对照原页' : `伴读消息 ${escapeHtml(String(item.context.course_message_id))}`}` : `消息 ${escapeHtml(String(item.source_message_id || ''))}`} · ${escapeHtml(item.review_status || '未审核')}</small>${escapeHtml(item.excerpt || '')}${item.context ? `<button type="button" data-course-source="${item.id}">回到教材与讨论</button>` : ''}</blockquote>`).join('') : '';
-  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-practice"><button type="button" data-concept-exercises>生成辅助习题 ↗</button></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
+  card.innerHTML = `<div class="graph-card-head"><div><span class="graph-card-tag">${escapeHtml(concept.type || 'concept').toUpperCase()} · ${escapeHtml(concept.field || '数学知识')}</span><h4 id="graphCardTitle">${escapeHtml(concept.name)}</h4></div><button class="graph-card-close" type="button" aria-label="关闭概念卡片">×</button></div><p>${escapeHtml(concept.description || '该知识点暂无说明。')}</p><div class="graph-card-sources"><b>对话出处</b><span>${nodeEvidence.length ? `已保存 ${nodeEvidence.length} 条证据` : (sourceMessages.length ? `当前对话中出现 ${sourceMessages.length} 条消息` : '当前对话未直接提及，由图谱关系推断')}</span>${evidenceMarkup}</div><div class="graph-card-relations"><b>关系来源</b><div>${relationMarkup}</div></div><div class="graph-card-practice"><button type="button" data-concept-workbench>进入学习工作台 ↗</button><button type="button" data-concept-exercises>生成辅助习题 ↗</button></div><div class="graph-card-path"><b>推荐学习顺序</b><small class="learning-evidence-note">掌握状态只由审核后的作答证据更新，不再通过点击手动标记。</small><span>正在生成路径…</span></div><div class="graph-card-links"><span>正在读取关联知识点…</span></div>`;
   card.querySelectorAll('[data-course-source]').forEach(button=>button.onclick=()=>{const origin=nodeEvidence.find(e=>String(e.id)===button.dataset.courseSource)?.context;if(origin){card.classList.add('hidden');MathWorkspace.showView('course-reader');window.MathCourseReader.openSource(origin.reading_context.document_id,origin.reading_context.start,origin.course_conversation_id);}});
+  card.querySelector('[data-concept-workbench]').onclick=()=>window.MathConceptWorkbench?.open(concept);
   card.querySelector('[data-concept-exercises]').onclick = () => window.MathConceptExercises?.open(concept);
   card.setAttribute('aria-labelledby', 'graphCardTitle');
   const closeCard = () => { card.classList.add('hidden'); if (trigger?.isConnected) trigger.focus({ preventScroll: true }); };
@@ -649,7 +570,6 @@ $('askForm').addEventListener('submit', ask);
 ensureAskCancelButton();
 ensureAnswerFeedback();
 ensureAdminPanel();
-initKnowledgeLibrary();
 $('generateGraphButton').addEventListener('click', generateRelatedGraph);
 $('saveGraphButton').addEventListener('click', validateAndSaveGraph);
 $('cancelGraphCandidate').addEventListener('click', toggleGraphCandidate);
@@ -868,7 +788,7 @@ function restoreConversationAnswer(messages) {
   renderAgentTaskEvents(assistant.request_id);
   showFormulaFixes(metadata.formula_fixes || []);
   renderConcepts(metadata.concepts || []);
-  if (metadata.knowledge_graph) renderGraph(metadata.knowledge_graph);
+  if (metadata.knowledge_graph && window.MathWorkspace?.view !== 'graph') renderGraph(metadata.knowledge_graph);
   $('answerStatus').textContent = '已恢复历史回答 · ' + (metadata.answer_source === 'exact_calculus_tool' ? '受限多项式精确计算' : metadata.teaching_mode === 'hint' ? '教学提示' : '数学正确性未验证');
 }
 

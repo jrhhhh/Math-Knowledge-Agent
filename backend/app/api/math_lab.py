@@ -15,9 +15,10 @@ FUNCTIONS = {name: getattr(s, name) for name in ('sin','cos','tan','cot','sec','
 FUNCTIONS['abs'] = s.Abs
 
 
-def expression(text, domain_terms=None):
+def expression(text, domain_terms=None, variables=None, max_power=12):
     if not text or len(text) > 180:
         raise ValueError('表达式长度须为 1–180 个字符')
+    variables = variables or {'x': X}
     tree = ast.parse(text.replace('^', '**'), mode='eval')
     if len(list(ast.walk(tree))) > 64:
         raise ValueError('表达式过于复杂，请拆成小实验')
@@ -27,16 +28,16 @@ def expression(text, domain_terms=None):
     def visit(n):
         if isinstance(n, ast.Constant) and type(n.value) in (int,float) and math.isfinite(n.value) and abs(n.value) <= 10000:
             return s.Rational(str(n.value))
-        if isinstance(n, ast.Name) and n.id in ('x','pi','e'):
-            return {'x':X,'pi':s.pi,'e':s.E}[n.id]
+        if isinstance(n, ast.Name) and n.id in (*variables, 'pi', 'e'):
+            return {**variables,'pi':s.pi,'e':s.E}[n.id]
         if isinstance(n, ast.UnaryOp) and isinstance(n.op,(ast.UAdd,ast.USub)):
             a=visit(n.operand);return -a if isinstance(n.op,ast.USub) else a
         if isinstance(n,ast.BinOp):
             a,b=visit(n.left),visit(n.right)
             if isinstance(n.op,ast.Pow):
                 if b.is_Rational:
-                    if abs(b)>12 or b.q>12:raise ValueError('常数幂指数须为绝对值不超过 12 的有理数')
-                elif not (a.is_number and a.is_positive and a<=100):raise ValueError('变量指数只用于不超过 100 的正数底数')
+                    if abs(b)>max_power or b.q>12:raise ValueError(f'常数幂指数须为绝对值不超过 {max_power}、分母不超过12的有理数')
+                elif not (a.is_number and ((a.is_positive and a<=100) or (b.is_integer is True and abs(a)<=100))):raise ValueError('变量指数只用于不超过 100 的正数底数')
                 record(s.Pow(a,b,evaluate=False))
                 return a**b
             if isinstance(n.op,ast.Add):return a+b
@@ -64,6 +65,7 @@ def real_number(value):
 class CalculusInput(BaseModel):
     expression: str = Field(min_length=1,max_length=180)
     mode: str = 'derivative'
+    graph_on_invalid_observation: bool = False
     x: float = Field(default=1,ge=-20,le=20)
     h: float = Field(default=.1,ge=-5,le=5)
     a: float = Field(default=0,ge=-20,le=20)
@@ -131,9 +133,15 @@ def calculus(payload):
     result={'function':s.latex(f),'derivative':s.latex(d),'primitive':s.latex(F) if not F.has(s.Integral) else None,'domain':s.latex(domain),'samples':samples,'x_min':xmin,'x_max':xmax,'engine':'SymPy '+s.__version__}
     if mode=='derivative':
         x=s.Rational(str(payload['x']));h=s.Rational(str(payload['h']))
-        if h==0:raise ValueError('增量 h 不能为零')
-        if not contains(x) or not contains(x+h):raise ValueError('切点或割线端点不在实数定义域内')
+        if h==0:
+            if payload.get('graph_on_invalid_observation'): return {**result, 'warning':'增量 h 不能为零'}
+            raise ValueError('增量 h 不能为零')
+        if not contains(x) or not contains(x+h):
+            if payload.get('graph_on_invalid_observation'): return {**result, 'warning':'切点或割线端点不在实数定义域内'}
+            raise ValueError('切点或割线端点不在实数定义域内')
         if real_number(f.subs(X,x)) is None or real_number(f.subs(X,x+h)) is None:
+
+            if payload.get('graph_on_invalid_observation'): return {**result, 'warning':'切点或割线端点没有有限实数函数值'}
             raise ValueError('切点或割线端点没有有限实数函数值')
         t=s.Symbol('t',real=True)
         q=(f.subs(X,x+t)-f.subs(X,x))/t
@@ -145,6 +153,8 @@ def calculus(payload):
     else:
         a=s.Rational(str(payload['a']));b=s.Rational(str(payload['b']))
         if not interval_ok(a,b):
+
+            if payload.get('graph_on_invalid_observation'): return {**result, 'warning':'区间跨越未定义点或奇点；请选连续区间。此实验不把反常积分当作普通定积分'}
             raise ValueError('区间跨越未定义点或奇点；请选连续区间。此实验不把反常积分当作普通定积分')
         exact=s.simplify(F.subs(X,b)-F.subs(X,a)) if f.func in (s.tan,s.cot,s.sec,s.csc) else s.integrate(f,(X,a,b));dx=(float(b)-float(a))/payload['n'];rectangles=[];total=0
         for i in range(payload['n']):
@@ -195,7 +205,15 @@ def matrix_analysis(payload):
 
 
 def worker(kind,payload,queue):
-    try:queue.put({'result':calculus(payload) if kind=='calculus' else matrix_analysis(payload)})
+    try:
+        if kind == 'explore':
+            from app.api.math_lab_explore import explore
+            result = explore(payload)
+        elif kind in ('series', 'surface'):
+            from app.api.math_lab_extra import series, surface
+            result = series(payload) if kind == 'series' else surface(payload)
+        else: result = calculus(payload) if kind == 'calculus' else matrix_analysis(payload)
+        queue.put({'result': result})
     except Exception as exc:queue.put({'error':str(exc) or '该对象目前无法计算'})
 
 

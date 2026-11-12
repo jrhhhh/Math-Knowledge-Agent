@@ -59,7 +59,10 @@ from app.api.notes import router as notes_router
 from app.api.textbooks import router as textbooks_router
 from app.api.learning_metrics import router as learning_metrics_router
 from app.api.course_reader import router as course_reader_router
+from app.api.graph_navigation import router as graph_navigation_router
 from app.api.math_lab import router as math_lab_router
+from app.api.math_lab_extra import router as math_lab_extra_router
+from app.api.math_lab_explore import router as math_lab_explore_router
 from app.api.concept_exercises import router as concept_exercise_router
 
 
@@ -100,7 +103,10 @@ app.include_router(notes_router)
 app.include_router(textbooks_router)
 app.include_router(learning_metrics_router)
 app.include_router(course_reader_router)
+app.include_router(graph_navigation_router)
 app.include_router(math_lab_router)
+app.include_router(math_lab_extra_router)
+app.include_router(math_lab_explore_router)
 app.include_router(concept_exercise_router)
 
 

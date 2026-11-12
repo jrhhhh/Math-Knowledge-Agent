@@ -35,3 +35,7 @@
 cd backend
 MATH_AGENT_DISABLE_RETRY_WORKER=1 python -m unittest discover -s tests -q
 ```
+
+## 后续扩展（2026-10-21）
+
+两级学科导航与 Taylor、函数列、路径/梯度、方程组、二次型、SVD/迭代实验的当前说明及24项回归验证，见 [math-lab-exploration.md](math-lab-exploration.md)。参数输入异常时，当前交互保留并明确标注上次有效图像；这替代上文历史版本中“清除上一轮图形”的处理。

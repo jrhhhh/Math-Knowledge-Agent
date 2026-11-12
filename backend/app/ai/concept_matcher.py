@@ -10,7 +10,7 @@ from app.models.problem_concept import ProblemConcept
 from app.models.concept_relation import ConceptRelation
 from app.models.concept_alias import ConceptAlias
 
-from app.ai.analyzer import client
+from app.ai.analyzer import client, primary_model
 
 
 # ============================================================
@@ -326,7 +326,7 @@ def semantic_match(
     try:
 
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=primary_model,
             messages=[
                 {
                     "role": "system",
@@ -577,7 +577,7 @@ def semantic_retrieve_concepts(
     try:
 
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=primary_model,
             messages=[
                 {
                     "role": "system",
@@ -968,7 +968,7 @@ def rank_similar_problems(
     try:
 
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=primary_model,
             messages=[
                 {
                     "role": "system",
@@ -1412,7 +1412,7 @@ source 是 target 的特殊情形。
     try:
 
         response = client.chat.completions.create(
-            model="deepseek-v4-pro",
+            model=primary_model,
             messages=[
                 {
                     "role": "system",
