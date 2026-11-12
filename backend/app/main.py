@@ -56,6 +56,7 @@ from app.api.conversations import router as conversations_router
 from app.api.problem_attempts import router as problem_attempt_router
 from app.api.learning import router as learning_router
 from app.api.notes import router as notes_router
+from app.api.obsidian import router as obsidian_router
 from app.api.textbooks import router as textbooks_router
 from app.api.learning_metrics import router as learning_metrics_router
 from app.api.course_reader import router as course_reader_router
@@ -100,6 +101,7 @@ app.include_router(conversations_router)
 app.include_router(problem_attempt_router)
 app.include_router(learning_router)
 app.include_router(notes_router)
+app.include_router(obsidian_router)
 app.include_router(textbooks_router)
 app.include_router(learning_metrics_router)
 app.include_router(course_reader_router)
